@@ -24,6 +24,15 @@ window.DPRWorkflowRunner = (function () {
       name: '重置 content（docs + archive）',
       desc: '将 docs 恢复为 docs_init 基线，并清空 archive。该操作为危险操作。',
     },
+    {
+      key: 'maintain-conference',
+      id: 'maintain-supabase.yml',
+      name: '会议论文 Supabase 拉取',
+      desc: '一次性触发 NIPS/ICML OpenReview 抓取并同步到 Supabase。',
+      dispatchInputs: {
+        maintain_target: 'conference',
+      },
+    },
   ];
 
   const QUICK_FETCH_PRESETS = {
@@ -815,9 +824,45 @@ window.DPRWorkflowRunner = (function () {
     return runWorkflowByKey(preset.key, mergedInputs);
   };
 
+  const normalizeConferenceName = (value) => {
+    const text = String(value || '').trim();
+    const lower = text.toLowerCase();
+    if (lower === 'nips' || lower === 'neurips') return 'NeurIPS';
+    if (lower === 'icml') return 'ICML';
+    return '';
+  };
+
+  const normalizeConferenceYears = (values) => {
+    const raw = Array.isArray(values) ? values : [values];
+    const out = [];
+    const seen = new Set();
+    raw.forEach((item) => {
+      const year = parseInt(item, 10);
+      if (!Number.isFinite(year) || year <= 0 || seen.has(year)) return;
+      seen.add(year);
+      out.push(String(year));
+    });
+    return out;
+  };
+
+  const runConferenceMaintain = async (conference, years) => {
+    const normalizedConference = normalizeConferenceName(conference);
+    const normalizedYears = normalizeConferenceYears(years);
+    if (!normalizedConference || !normalizedYears.length) {
+      open();
+      setStatus('请先选择支持的会议和年份。', '#c00');
+      return false;
+    }
+    return runWorkflowByKey('maintain-conference', {
+      conference: normalizedConference,
+      years: normalizedYears.join(','),
+    });
+  };
+
   return {
     open,
     runWorkflowByKey,
     runQuickFetchByDays,
+    runConferenceMaintain,
   };
 })();

@@ -542,7 +542,7 @@ window.SubscriptionsManager = (function () {
     return runQuickFetch(days, quickRunMsgEl || msgEl, tip, options);
   };
 
-  const runQuickConferencePlaceholder = (msgEl) => {
+  const runQuickConferenceMaintain = (msgEl) => {
     const years = selectedConferenceYears.slice();
     const conf = String(selectedConference || '').trim();
     if (!years.length || !conf) {
@@ -552,9 +552,17 @@ window.SubscriptionsManager = (function () {
       }
       return;
     }
+    if (!window.DPRWorkflowRunner || typeof window.DPRWorkflowRunner.runConferenceMaintain !== 'function') {
+      if (msgEl) {
+        msgEl.textContent = '工作流触发器未加载到当前页面。';
+        msgEl.style.color = '#c00';
+      }
+      return;
+    }
+    window.DPRWorkflowRunner.runConferenceMaintain(conf, years);
     if (msgEl) {
-      msgEl.textContent = `${conf} ${years.join(', ')} 的会议论文抓取功能暂未接入。`;
-      msgEl.style.color = '#c90';
+      msgEl.textContent = `已发起 ${conf} ${years.join(', ')} 会议论文拉取任务。`;
+      msgEl.style.color = '#080';
     }
   };
 
@@ -857,7 +865,7 @@ window.SubscriptionsManager = (function () {
               <div class="dpr-conference-subtitle">独立维护会议论文数据源，不参与每日论文抓取。</div>
 
               <div class="dpr-conference-note">
-                会议论文任务暂未接入前端触发；后续可在这里接入公开状态检查与上传。
+                会议论文任务不会写入 config；这里只触发一次性 Supabase 拉取任务。
               </div>
 
               <div class="dpr-choice-field">
@@ -870,14 +878,13 @@ window.SubscriptionsManager = (function () {
               </div>
               <button
                 id="arxiv-admin-quick-run-conference-run-btn"
-                class="chat-quick-run-run-btn chat-quick-run-item--disabled"
+                class="chat-quick-run-run-btn"
                 type="button"
-                disabled
               >
-                暂未接入
+                开始拉取
               </button>
               <div id="arxiv-admin-conference-run-msg" class="chat-quick-run-msg">
-                后续这里会接入会议公开状态检查和上传任务。
+                选择会议和年份后，会一次性触发 Supabase 会议论文拉取。
               </div>
             </div>
           </div>
@@ -1091,9 +1098,9 @@ window.SubscriptionsManager = (function () {
     resetContentBtn = document.getElementById('arxiv-admin-reset-content-btn');
     resetContentMsgEl = document.getElementById('arxiv-admin-reset-content-msg');
     if (quickRunConferenceBtn) {
-      quickRunConferenceBtn.disabled = true;
-      quickRunConferenceBtn.classList.add('chat-quick-run-item--disabled');
-      quickRunConferenceBtn.title = '会议论文抓取功能暂未接入';
+      quickRunConferenceBtn.disabled = false;
+      quickRunConferenceBtn.classList.remove('chat-quick-run-item--disabled');
+      quickRunConferenceBtn.title = '一次性触发会议论文拉取任务';
     }
     initializeConferenceChoices();
     renderConferenceChoiceButtons();
@@ -1157,7 +1164,8 @@ window.SubscriptionsManager = (function () {
     if (quickRunConferenceBtn && !quickRunConferenceBtn._bound) {
       quickRunConferenceBtn._bound = true;
       quickRunConferenceBtn.addEventListener('click', () => {
-        runQuickConferencePlaceholder(quickRunMsgEl);
+        const conferenceMsgEl = document.getElementById('arxiv-admin-conference-run-msg');
+        runQuickConferenceMaintain(conferenceMsgEl || quickRunMsgEl);
       });
     }
 
