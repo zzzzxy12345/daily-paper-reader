@@ -12,6 +12,7 @@ const {
   buildPromptFromTemplate,
   containsCjk,
   defaultPromptTemplate,
+  deriveTagFromCandidates,
   isEnglishRetrievalText,
   normalizeGenerated,
   sanitizeAutoTag,
@@ -24,12 +25,22 @@ function testPromptRequiresEnglishRetrievalFieldsAndChineseCnFields() {
   assert.match(prompt, /keyword_cn and query_cn MUST be Chinese/);
   assert.match(prompt, /The query field MUST be English only/);
   assert.match(prompt, /hyphen-separated words/);
+  assert.match(prompt, /English words or an English acronym only/);
   assert.match(prompt, /No fixed length limit/);
 }
 
 function testSuggestedTagUsesHyphenWithoutLengthLimit() {
   assert.equal(sanitizeAutoTag('reinforcement learning algorithms'), 'reinforcement-learning-algorithms');
   assert.equal(sanitizeAutoTag('RL_optimization 2026'), 'RL-optimization');
+  assert.equal(sanitizeAutoTag('强化学习'), '');
+  assert.equal(sanitizeAutoTag('强化学习 RL'), 'RL');
+  assert.equal(
+    deriveTagFromCandidates({
+      tag: '强化学习',
+      keywords: [{ keyword: 'reinforcement learning', query: 'reinforcement learning algorithms comparison' }],
+    }),
+    'reinforcement-learning',
+  );
 }
 
 function testGeneratedCandidatesKeepChineseOutOfRetrievalFields() {

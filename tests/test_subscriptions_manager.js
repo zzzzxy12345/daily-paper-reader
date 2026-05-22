@@ -106,6 +106,25 @@ function testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields() {
   assert.equal(backend.vector_rpc_exact, 'match_biorxiv_papers_exact');
 }
 
+function testNormalizeSubscriptionsConvertsChineseTagToEnglishFallback() {
+  const config = buildBaseConfig();
+  config.subscriptions.intent_profiles[0].tag = '强化学习';
+  config.subscriptions.intent_profiles[0].keywords = [
+    {
+      keyword: 'reinforcement learning',
+      query: 'reinforcement learning algorithms comparison',
+    },
+  ];
+  config.subscriptions.intent_profiles[0].intent_queries = [
+    {
+      query: 'policy gradient reinforcement learning',
+    },
+  ];
+
+  const normalized = normalizeSubscriptions(config);
+  assert.equal(normalized.subscriptions.intent_profiles[0].tag, 'reinforcement-learning');
+}
+
 function testRunProfileQuickFetchPassesProfileTagToWorkflow() {
   const calls = [];
   global.window.DPRWorkflowRunner = {
@@ -157,6 +176,7 @@ function testQuickRunUnsavedMessageClearsAfterSave() {
 
 testNormalizeSubscriptionsAddsBiorxivBackend();
 testNormalizeSubscriptionsPreservesCustomBiorxivBackendFields();
+testNormalizeSubscriptionsConvertsChineseTagToEnglishFallback();
 testRunProfileQuickFetchPassesProfileTagToWorkflow();
 testConferenceCurrentYearDisabledForPendingSources();
 testQuickRunUnsavedMessageClearsAfterSave();

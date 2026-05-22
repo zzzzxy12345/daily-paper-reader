@@ -74,7 +74,8 @@ window.SubscriptionsManager = (function () {
     '8) Do not output extra fields like must_have / optional / exclude / rewrite_for_embedding / must_have.',
     '9) Return pure JSON only, no explanations.',
     '10) Tag suggestion should be concise and descriptive. No fixed length limit.',
-    '11) Tag suggestion must use hyphen-separated words when multiple words are needed, for example "reinforcement-learning". Do not use spaces or underscores in tag.',
+    '11) Tag suggestion must be English words or an English acronym only. Never output Chinese in tag.',
+    '12) Tag suggestion must use hyphen-separated words when multiple words are needed, for example "reinforcement-learning". Do not use spaces or underscores in tag.',
   ].join('\n');
 
   const QUICK_RUN_CONFERENCES = [
@@ -87,6 +88,51 @@ window.SubscriptionsManager = (function () {
   ]);
 
   const normalizeText = (v) => String(v || '').trim();
+  const sanitizeProfileTag = (value) => {
+    const base = normalizeText(value);
+    if (!base) return '';
+    const tag = base
+      .replace(/\((?:19|20)\d{2}(?:年)?\)/g, '')
+      .replace(/（(?:19|20)\d{2}(?:年)?）/g, '')
+      .replace(/([\u4e00-\u9fffA-Za-z]+)\s*(?:19|20)\d{2}(?!\d)/g, '$1')
+      .replace(/(?:19|20)\d{2}(?!\d)([\u4e00-\u9fffA-Za-z]+)/g, '$1')
+      .replace(/[\s_-]*(?:19|20)\d{2}(?:年)?[\s_-]*/g, '')
+      .replace(/\+/g, '-')
+      .replace(/[\s_]+/g, '-')
+      .replace(/[^A-Za-z0-9-]+/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    if (!/[A-Za-z]/.test(tag)) return '';
+    return tag;
+  };
+  const deriveProfileTag = (profile, fallback) => {
+    const values = [profile && profile.tag];
+    (Array.isArray(profile && profile.keywords) ? profile.keywords : []).forEach((item) => {
+      if (typeof item === 'string') {
+        values.push(item);
+        return;
+      }
+      if (item && typeof item === 'object') {
+        values.push(item.keyword, item.query);
+      }
+    });
+    (Array.isArray(profile && profile.intent_queries) ? profile.intent_queries : []).forEach((item) => {
+      if (typeof item === 'string') {
+        values.push(item);
+        return;
+      }
+      if (item && typeof item === 'object') {
+        values.push(item.query);
+      }
+    });
+    values.push(fallback);
+    for (let idx = 0; idx < values.length; idx += 1) {
+      const tag = sanitizeProfileTag(values[idx]);
+      if (tag) return tag;
+    }
+    return '';
+  };
   const normalizeSourceKey = (v) => normalizeText(v).toLowerCase();
   const toStableId = (value) => {
     const text = normalizeText(value).toLowerCase();
@@ -617,7 +663,7 @@ window.SubscriptionsManager = (function () {
     return profiles
       .map((p, idx) => {
         if (!p || typeof p !== 'object') return null;
-        const tag = normalizeText(p.tag) || toStableId(p.description || `profile-${idx + 1}`);
+        const tag = deriveProfileTag(p, `profile-${idx + 1}`) || `profile-${idx + 1}`;
         const description = normalizeText(p.description || '');
         const enabled = p.enabled !== false;
         const fallbackToArxiv = !Object.prototype.hasOwnProperty.call(p, 'paper_sources');
@@ -654,7 +700,7 @@ window.SubscriptionsManager = (function () {
     for (let idx = 0; idx < profiles.length; idx += 1) {
       const profile = profiles[idx];
       if (!profile || typeof profile !== 'object') continue;
-      const tag = normalizeText(profile.tag) || `词条${idx + 1}`;
+      const tag = deriveProfileTag(profile, `profile-${idx + 1}`) || `profile-${idx + 1}`;
       const fallbackToArxiv = !Object.prototype.hasOwnProperty.call(profile, 'paper_sources');
       const paperSources = normalizePaperSources(profile.paper_sources, { fallbackToArxiv });
       const keywords = dedupeKeywords(

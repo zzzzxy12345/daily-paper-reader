@@ -62,7 +62,8 @@ window.SubscriptionsSmartQuery = (function () {
     '10) intent_queries should be concise, timeless, and must not include years or year-like tokens.',
     '11) Tag suggestion should be concise and descriptive. No fixed length limit.',
     '12) Tag suggestion must NOT include any year. Do not append or embed years (including digits like 2026/2025/2024 etc.) in tag.',
-    '13) Tag suggestion must use hyphen-separated words when multiple words are needed, for example "reinforcement-learning". Do not use spaces or underscores in tag.',
+    '13) Tag suggestion must be English words or an English acronym only. Never output Chinese in tag.',
+    '14) Tag suggestion must use hyphen-separated words when multiple words are needed, for example "reinforcement-learning". Do not use spaces or underscores in tag.',
   ].join('\n');
 
   const normalizeText = (v) => String(v || '').trim();
@@ -198,11 +199,49 @@ window.SubscriptionsSmartQuery = (function () {
     tag = tag
       .replace(/\+/g, '-')
       .replace(/[\s_]+/g, '-')
+      .replace(/[^A-Za-z0-9-]+/g, '')
       .replace(/-+/g, '-')
       .replace(/-+$/g, '')
       .replace(/^-+/g, '')
       .trim();
-    return tag || base;
+    if (!/[A-Za-z]/.test(tag)) return '';
+    return tag;
+  };
+  const deriveTagFromCandidates = (candidates, fallbacks = []) => {
+    const values = [];
+    if (candidates && typeof candidates === 'object') {
+      values.push(candidates.tag);
+      const keywords = Array.isArray(candidates.keywords) ? candidates.keywords : [];
+      keywords.forEach((item) => {
+        if (typeof item === 'string') {
+          values.push(item);
+          return;
+        }
+        if (item && typeof item === 'object') {
+          values.push(item.keyword, item.query);
+        }
+      });
+      const intentQueries = Array.isArray(candidates.intent_queries)
+        ? candidates.intent_queries
+        : Array.isArray(candidates.intentQueries)
+          ? candidates.intentQueries
+          : [];
+      intentQueries.forEach((item) => {
+        if (typeof item === 'string') {
+          values.push(item);
+          return;
+        }
+        if (item && typeof item === 'object') {
+          values.push(item.query);
+        }
+      });
+    }
+    values.push(...(Array.isArray(fallbacks) ? fallbacks : [fallbacks]));
+    for (let idx = 0; idx < values.length; idx += 1) {
+      const tag = sanitizeAutoTag(values[idx]);
+      if (tag) return tag;
+    }
+    return '';
   };
   const toStableId = (value) => {
     const text = normalizeText(value).toLowerCase();
@@ -448,7 +487,8 @@ window.SubscriptionsSmartQuery = (function () {
   };
 
   const ensureProfile = (profiles, tag, description) => {
-    const t = normalizeText(tag);
+    const t = sanitizeAutoTag(tag);
+    if (!t) return null;
     let profile = profiles.find((p) => getProfileKey(p) === getProfileKey(t));
     if (profile) {
       if (normalizeText(description) && !normalizeText(profile.description)) {
@@ -974,7 +1014,9 @@ window.SubscriptionsSmartQuery = (function () {
       if (!next.subscriptions) next.subscriptions = {};
       const subs = next.subscriptions;
       const profiles = Array.isArray(subs.intent_profiles) ? subs.intent_profiles.slice() : [];
-      const profile = ensureProfile(profiles, tag, description);
+      const safeTag = sanitizeAutoTag(tag) || deriveTagFromCandidates(candidates) || 'topic';
+      const profile = ensureProfile(profiles, safeTag, description);
+      if (!profile) return next;
       const kwList = normalizeProfileKeywords(profile).slice();
       const kwSeen = new Set(
         kwList
@@ -1053,7 +1095,7 @@ window.SubscriptionsSmartQuery = (function () {
 
       profiles[idx] = {
         ...existedProfile,
-        tag: normalizeText(tag || existedProfile.tag || ''),
+        tag: sanitizeAutoTag(tag || existedProfile.tag || '') || deriveTagFromCandidates(candidates) || `profile-${idx + 1}`,
         description: normalizeText(description || existedProfile.description || ''),
         paper_sources: normalizePaperSources(paperSources, { fallbackToArxiv: false }),
         keywords:
@@ -1656,9 +1698,7 @@ window.SubscriptionsSmartQuery = (function () {
 
   const openAddModal = (tag, description, candidates) => {
     const normalizedCandidates = parseCandidatesForState(candidates);
-    const suggestedTag = sanitizeAutoTag(
-      normalizeText(candidates && candidates.tag) || normalizeText(tag),
-    );
+    const suggestedTag = deriveTagFromCandidates(candidates, [tag]) || 'topic';
     const suggestedDesc = normalizeText(candidates && candidates.description) || normalizeText(description);
     modalState = {
       type: 'add',
@@ -1695,7 +1735,7 @@ window.SubscriptionsSmartQuery = (function () {
         'intent',
       ),
       requestHistory: [],
-      inputTag: normalizeText(options.tag || ''),
+      inputTag: sanitizeAutoTag(options.tag || ''),
       inputDesc: normalizeText(options.description || ''),
       paper_sources: normalizePaperSources(options.paper_sources, { fallbackToAll: true }),
       pending: false,
@@ -1769,11 +1809,12 @@ window.SubscriptionsSmartQuery = (function () {
 
   const applyAddModal = () => {
     if (!modalState || modalState.type !== 'add') return;
-    const nextTag = normalizeText(document.getElementById('dpr-add-profile-tag')?.value || '');
+    const rawNextTag = normalizeText(document.getElementById('dpr-add-profile-tag')?.value || '');
+    const nextTag = sanitizeAutoTag(rawNextTag) || deriveTagFromCandidates(modalState) || '';
     const nextDesc = normalizeText(document.getElementById('dpr-add-profile-desc')?.value || '');
 
     if (!nextTag || !nextDesc) {
-      setMessage('标签和描述不能为空。', '#c00');
+      setMessage('标签必须是英文、英文缩写或英文连字符短语，且描述不能为空。', '#c00');
       return;
     }
 
@@ -1950,11 +1991,12 @@ window.SubscriptionsSmartQuery = (function () {
     const hasItems = selectedKeywords.length || selectedIntentQueries.length;
     const validationError = validateProfileSelection(selectedKeywords, selectedIntentQueries);
     const desc = normalizeText(document.getElementById('dpr-chat-required-desc')?.value || '');
-    const tag = normalizeText(document.getElementById('dpr-chat-tag-input')?.value || modalState.inputTag || '');
+    const rawTag = normalizeText(document.getElementById('dpr-chat-tag-input')?.value || modalState.inputTag || '');
+    const tag = sanitizeAutoTag(rawTag) || deriveTagFromCandidates(modalState) || '';
     const paperSources = normalizePaperSources(modalState.paper_sources, { fallbackToArxiv: false });
 
     if (!tag) {
-      setMessage('请先填写标签。', '#c00');
+      setMessage('请先填写英文标签、英文缩写或英文连字符短语。', '#c00');
       return;
     }
     if (!desc) {
@@ -1999,10 +2041,10 @@ window.SubscriptionsSmartQuery = (function () {
   const askChatOnce = async () => {
     if (!modalState || modalState.type !== 'chat') return;
     if (modalState.pending) return;
-    const tag = normalizeText(document.getElementById('dpr-chat-tag-input')?.value || '');
+    const tag = sanitizeAutoTag(document.getElementById('dpr-chat-tag-input')?.value || '');
     const desc = normalizeText(document.getElementById('dpr-chat-desc-input')?.value || '');
     const finalDesc = desc;
-    let finalTag = tag || `SR-${new Date().toISOString().slice(0, 10)}`;
+    let finalTag = tag || 'topic';
 
     if (!finalDesc) {
       setChatStatus('请先填写检索需求。', '#c00');
@@ -2033,7 +2075,7 @@ window.SubscriptionsSmartQuery = (function () {
         : nextCandidates.intent_queries;
       const suggestedTag = normalizeText(candidates.tag);
       const suggestedDesc = normalizeText(candidates.description);
-      const safeSuggestedTag = sanitizeAutoTag(suggestedTag);
+      const safeSuggestedTag = deriveTagFromCandidates(candidates);
       if (!tag && safeSuggestedTag) {
         finalTag = safeSuggestedTag;
       }
@@ -2327,9 +2369,9 @@ window.SubscriptionsSmartQuery = (function () {
   };
 
   const generateAndOpenAddModal = async () => {
-    const tag = normalizeText(tagInputEl?.value || '');
+    const tag = sanitizeAutoTag(tagInputEl?.value || '');
     const desc = normalizeText(descInputEl?.value || '');
-    const finalTag = tag || `SR-${new Date().toISOString().slice(0, 10)}`;
+    const finalTag = tag || 'topic';
     if (!desc) {
       setMessage('请先填写智能 Query 描述。', '#c00');
       return;
@@ -2507,6 +2549,7 @@ window.SubscriptionsSmartQuery = (function () {
       buildPromptFromTemplate,
       defaultPromptTemplate,
       containsCjk,
+      deriveTagFromCandidates,
       isEnglishRetrievalText,
       normalizeGenerated,
       sanitizeAutoTag,
