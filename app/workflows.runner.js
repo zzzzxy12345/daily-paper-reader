@@ -240,6 +240,20 @@ window.DPRWorkflowRunner = (function () {
     return data;
   };
 
+  const scrollWorkflowOutputToBottom = () => {
+    if (!runsEl) return;
+    const logEl = runsEl.querySelector('[data-dpr-workflow-log]');
+    const bodyEl = document.getElementById('dpr-workflow-body');
+    requestAnimationFrame(() => {
+      if (logEl) {
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+      if (bodyEl) {
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+      }
+    });
+  };
+
   const renderLocalRun = (run, logText) => {
     if (!runsEl || !run) return;
     const status = run.status || '';
@@ -254,7 +268,7 @@ window.DPRWorkflowRunner = (function () {
             : '#666';
     const command = Array.isArray(run.command) ? run.command.join(' ') : '';
     const logHtml = logText
-      ? `<pre style="white-space:pre-wrap; max-height:360px; overflow:auto; background:#111; color:#ddd; padding:10px; border-radius:6px; font-size:12px;">${escapeHtml(logText)}</pre>`
+      ? `<pre data-dpr-workflow-log="1" style="white-space:pre-wrap; max-height:360px; overflow:auto; background:#111; color:#ddd; padding:10px; border-radius:6px; font-size:12px;">${escapeHtml(logText)}</pre>`
       : '<div style="color:#999;">暂无日志。</div>';
     runsEl.innerHTML = `
       <div style="margin-bottom:8px;">
@@ -269,6 +283,7 @@ window.DPRWorkflowRunner = (function () {
       <div style="font-size:12px; color:#666; margin-bottom:8px;">${escapeHtml(command)}</div>
       ${logHtml}
     `;
+    scrollWorkflowOutputToBottom();
   };
 
   const refreshLocalRun = async (runId) => {
@@ -411,7 +426,9 @@ window.DPRWorkflowRunner = (function () {
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => {
         const r = selectedRun || activeRun;
-        if (r && r.owner && r.repo && r.runId) {
+        if (r && r.local && r.runId) {
+          refreshLocalRun(r.runId);
+        } else if (r && r.owner && r.repo && r.runId) {
           refreshRun(r.owner, r.repo, r.runId);
         } else {
           setStatus('暂无可刷新的运行记录。', '#666');
