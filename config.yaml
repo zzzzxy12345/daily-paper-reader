@@ -25,3 +25,48 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: agent
+      description: 请帮我查找agent相关的论文
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: intelligent agents
+          keyword_cn: 智能代理
+          query: intelligent agent systems and architectures
+        - keyword: reinforcement learning agents
+          keyword_cn: 强化学习代理
+          query: reinforcement learning agent training and policies
+      intent_queries:
+        - query: intelligent agent systems and their real world applications
+          query_cn: 智能代理系统及其实际应用
+          enabled: true
+          source: manual
+          note: ''
+        - query: multi agent reinforcement learning algorithms and challenges
+          query_cn: 多智能体强化学习算法与挑战
+          enabled: true
+          source: manual
+          note: ''
+        - query: autonomous agent navigation and decision making
+          query_cn: 自主代理的导航与决策制定
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-06-17T07:17:06.935Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
