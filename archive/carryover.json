@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-17T07:23:37.624056+00:00",
-  "updated_date": "20260519-20260617",
+  "generated_at": "2026-06-17T08:25:51.788154+00:00",
+  "updated_date": "20260608-20260617",
   "carryover_days": 9,
   "tag_states": {
     "agent": {
@@ -1318,6 +1318,232 @@
           "matched_requirement_id": "req-4",
           "selection_source": "carryover_cache",
           "paper_id": "2605.27466v1",
+          "carry_days": 1
+        }
+      ]
+    },
+    "rl-papers": {
+      "updated_date": "20260608-20260617",
+      "carryover_days": 9,
+      "items": [
+        {
+          "id": "2606.16771v1",
+          "source": "arxiv",
+          "title": "GD$^2$PO: Mitigating Multi-Reward Conflicts via Group-Dynamic reward-Decoupled Policy Optimization",
+          "abstract": "As LLMs advance, post-training reinforcement learning (RL) increasingly relies on multi-dimensional rewards to cultivate comprehensive capabilities. This shift demands new algorithms capable of optimizing diverse and potentially competing objectives simultaneously. To address this, existing methods such as Group reward-Decoupled Policy Optimization (GDPO) decompose the overall score into independent reward groups, then compute the RL loss separately within each group. However, this strategy still encounters multi-reward conflicts: a single rollout can yield positive advantages on certain reward dimensions but negative ones on others, causing opposing signals to cancel each other out during aggregation, further hindering RL training efficiency. Inspired by Dynamic sAmpling Policy Optimization (DAPO), which improves RL training efficiency by filtering out ineffective rollouts with near-zero advantages, we propose Group-Dynamic reward-Decoupled Policy Optimization (GD$^2$PO). Specifically, GD$^2$PO employs a conflict-aware filtering mechanism to mask out rollouts suffering from severe reward-wise disagreement. By preventing conflicting signals from canceling each other out, this masking strategy preserves and enhances the magnitude of effective RL advantages, thereby significantly accelerating learning efficiency. Furthermore, we introduce query-level reweighting to dynamically adjust the update intensity of each query based on its overall reward consensus. Experiments on various multi-reward scenarios, including tool calling and human preference alignment, demonstrate that GD$^2$PO consistently and significantly outperforms existing baselines. The code is available at https://github.com/Qwen-Applications/GD2PO.",
+          "authors": [
+            "Haotian Liu",
+            "Yihao Liu",
+            "Jingwei Ni",
+            "Siyuan Huang",
+            "Xinpeng Liu",
+            "Pengyu Cheng",
+            "Jiajun Song",
+            "Ruijin Ding",
+            "Junfeng Li",
+            "Zhechao Yu",
+            "Mengyu Zhou",
+            "Hongteng Xu",
+            "Xiaoxi Jiang",
+            "Guanjun Jiang"
+          ],
+          "primary_category": "cs.LG",
+          "categories": [
+            "cs.LG"
+          ],
+          "published": "2026-06-15T14:19:28+00:00",
+          "link": "https://arxiv.org/pdf/2606.16771v1",
+          "tags": [
+            "keyword:rl-papers",
+            "query:rl-papers"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "group-dynamic reward-decoupled policy optimization for multi-reward conflicts",
+          "llm_evidence_cn": "组动态奖励解耦策略优化解决多奖励冲突",
+          "llm_evidence": "组动态奖励解耦策略优化解决多奖励冲突",
+          "canonical_evidence": "组动态奖励解耦策略优化解决多奖励冲突",
+          "llm_tldr_en": "Proposes GD2PO, a method that dynamically adjusts reward group importance to mitigate conflicts among multiple reward dimensions in RL post-training of LLMs.",
+          "llm_tldr_cn": "本文针对大语言模型后训练中多维度奖励冲突导致信号抵消的问题，提出了GD2PO方法。该方法在组奖励解耦策略优化（GDPO）基础上，引入动态组权重调整机制，根据每个批次中各奖励组的表现灵活调整其重要性，从而有效缓解冲突。在多个LLM对齐任务中，GD2PO显著提升了多目标优化效果。",
+          "llm_tldr": "本文针对大语言模型后训练中多维度奖励冲突导致信号抵消的问题，提出了GD2PO方法。该方法在组奖励解耦策略优化（GDPO）基础上，引入动态组权重调整机制，根据每个批次中各奖励组的表现灵活调整其重要性，从而有效缓解冲突。在多个LLM对齐任务中，GD2PO显著提升了多目标优化效果。",
+          "llm_tags": [
+            "query:rl-papers"
+          ],
+          "matched_query_tag": "query:rl-papers",
+          "matched_query_text": "reward function design in reinforcement learning",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.16771v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.16759v1",
+          "source": "arxiv",
+          "title": "Maximum Entropy Inverse Reinforcement Learning for Mean-Field Games with Average Reward",
+          "abstract": "We study inverse reinforcement learning for discrete-time, infinite-horizon mean-field games (MFGs) under an average-reward criterion. Expert demonstrations are assumed to arise from a stationary mean-field equilibrium under an unknown reward, and the goal is to recover a policy explaining the observed behaviour via the maximum causal entropy principle. We formulate the inverse problem by enforcing consistency with the expert mean-field term and long-run feature expectations, treating two reward classes within a unified occupation-measure framework. For finite-dimensional linear rewards, we give a convex dual reformulation with an explicit log-partition objective, and prove smoothness and curvature properties justifying constant-step-size gradient descent. For infinite-dimensional RKHS rewards, we develop a Lagrangian relaxation whose inner-maximising policy is characterised by a soft Bellman equation. The main obstacle is the absence of a discount-factor contraction. We resolve this by introducing a minorisation-based sub-stochastic kernel that yields a strict contraction of the soft Bellman operator. We establish Fréchet differentiability and Lipschitz smoothness of the log-likelihood score, leading to a gradient ascent algorithm with convergence guarantees. Two numerical examples, a malware-spread MFG and an RKHS-based consumer-choice model, show that the recovered policies closely match expert behaviour.",
+          "authors": [
+            "Şevket Kaan Alkır",
+            "Naci Saldı",
+            "Berkay Anahtarcı",
+            "Can Deha Karıksız"
+          ],
+          "primary_category": "cs.LG",
+          "categories": [
+            "cs.LG"
+          ],
+          "published": "2026-06-15T14:13:16+00:00",
+          "link": "https://arxiv.org/pdf/2606.16759v1",
+          "tags": [
+            "keyword:rl-papers",
+            "query:rl-papers"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "inverse reinforcement learning for reward recovery in mean-field games",
+          "llm_evidence_cn": "通过逆强化学习从专家演示中恢复奖励函数",
+          "llm_evidence": "通过逆强化学习从专家演示中恢复奖励函数",
+          "canonical_evidence": "通过逆强化学习从专家演示中恢复奖励函数",
+          "llm_tldr_en": "This paper studies inverse RL for mean-field games under average reward, recovering reward functions via maximum causal entropy with convex dual reformulation and proven smoothness.",
+          "llm_tldr_cn": "本文针对平均报酬下的平均场博弈，研究逆强化学习问题。假设专家演示来自未知奖励下的平稳平均场均衡，通过最大因果熵原则恢复奖励函数。作者将逆问题形式化为一个统一的占用测度框架，对于有限维线性奖励给出了凸对偶重构，并证明了平滑性和曲率性质，为常步长优化提供了理论保证。该方法为多智能体场景下的奖励函数设计提供了新思路。",
+          "llm_tldr": "本文针对平均报酬下的平均场博弈，研究逆强化学习问题。假设专家演示来自未知奖励下的平稳平均场均衡，通过最大因果熵原则恢复奖励函数。作者将逆问题形式化为一个统一的占用测度框架，对于有限维线性奖励给出了凸对偶重构，并证明了平滑性和曲率性质，为常步长优化提供了理论保证。该方法为多智能体场景下的奖励函数设计提供了新思路。",
+          "llm_tags": [
+            "query:rl-papers"
+          ],
+          "matched_query_tag": "query:rl-papers",
+          "matched_query_text": "reward function design in reinforcement learning",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.16759v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.12479v1",
+          "source": "arxiv",
+          "title": "ReCal: Reward Calibration for RL-based LLM Routing",
+          "abstract": "Large language model (LLM) routing has emerged as an effective paradigm for leveraging the complementary strengths of multiple LLMs through dynamic model and reasoning-strategy selection. Recent reinforcement learning (RL)-based routing methods further improve routing quality by optimizing routing policies from interaction feedback. However, they still struggle to provide informative and comparable learning signals under heterogeneous tasks with varying difficulty. In practice, multiple objectives (e.g., correctness, format behavior) are aggregated into a single scalar reward, leading to ambiguous credit assignment and conflicting optimization signals. Moreover, reward signals exhibit significant variability across instances, where some instances produce higher or more variable rewards, introducing optimization bias that favors trivial samples over informative ones. To address these issues, we propose \\textbf{ReCal}, a \\textbf{\\underline{Re}}ward \\textbf{\\underline{Cal}}ibration framework for RL-based LLM routing. We first introduce a hierarchical reward decomposition mechanism with component-wise advantage estimation. We further propose a distribution-aware optimization strategy that calibrates optimization variability through variance-aware reweighting and per-dataset normalization. Experiments on seven datasets demonstrate that ReCal consistently improves routing performance, and training stability over baselines. Code is available at https://anonymous.4open.science/r/ReCal.",
+          "authors": [
+            "Qihang Yu",
+            "Hanwen Tong",
+            "Zhengqi Zhang",
+            "Bo Zheng",
+            "Feng Wei",
+            "Shengyu Zhang",
+            "Zemin Liu",
+            "Fei Wu"
+          ],
+          "primary_category": "cs.LG",
+          "categories": [
+            "cs.LG",
+            "cs.AI"
+          ],
+          "published": "2026-06-10T06:59:36+00:00",
+          "link": "https://arxiv.org/pdf/2606.12479v1",
+          "tags": [
+            "keyword:rl-papers",
+            "query:rl-papers"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "Reward calibration for RL-based LLM routing",
+          "llm_evidence_cn": "面向基于RL的LLM路由的奖励校准方法",
+          "llm_evidence": "面向基于RL的LLM路由的奖励校准方法",
+          "canonical_evidence": "面向基于RL的LLM路由的奖励校准方法",
+          "llm_tldr_en": "Proposes ReCal, a reward calibration method for RL-based LLM routing that adjusts reward signals for heterogeneous tasks to improve credit assignment and policy learning.",
+          "llm_tldr_cn": "针对RL路由中多任务奖励信号不统一且难以比较的问题,提出ReCal方法对奖励进行校准,消除任务难度带来的奖励偏差。该方法在多个异构任务上提升了路由策略的学习效率和质量,为多目标RL中的奖励设计提供了新思路。",
+          "llm_tldr": "针对RL路由中多任务奖励信号不统一且难以比较的问题,提出ReCal方法对奖励进行校准,消除任务难度带来的奖励偏差。该方法在多个异构任务上提升了路由策略的学习效率和质量,为多目标RL中的奖励设计提供了新思路。",
+          "llm_tags": [
+            "query:rl-papers"
+          ],
+          "matched_query_tag": "query:rl-papers",
+          "matched_query_text": "reward function design in reinforcement learning",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.12479v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.16856v1",
+          "source": "arxiv",
+          "title": "Video-Based Optimal Transport for Feedback-Efficient Offline Preference-Based Reinforcement Learning",
+          "abstract": "Conveying complex objectives to reinforcement learning (RL) agents often requires meticulous reward engineering. Preference-based RL (PbRL) offers a promising alternative by learning reward functions from human feedback, but its scalability is hindered by high labeling costs. Inspired by advances in Video Foundation Models (ViFMs), we present Video-based Optimal Transport Preference (VOTP), a semi-supervised framework that learns effective reward functions from only a handful of labels. By leveraging optimal transport to align visual trajectories within the rich representation space of ViFMs, VOTP effectively generates high-fidelity pseudo-labels for large amounts of unlabeled data, substantially reducing human supervision. Extensive experiments across locomotion and manipulation benchmarks demonstrate the superiority of VOTP, which outperforms state-of-the-art offline PbRL methods under limited feedback budgets. We also showcase the robustness of VOTP in the presence of visual distractors and validate its utility on real robotic tasks, where it learns meaningful rewards with minimal human input.",
+          "authors": [
+            "Tung M. Luu",
+            "Hwanhee Kim",
+            "Younghwan Lee",
+            "Chang D. Yoo"
+          ],
+          "primary_category": "cs.RO",
+          "categories": [
+            "cs.RO"
+          ],
+          "published": "2026-06-15T15:31:40+00:00",
+          "link": "https://arxiv.org/pdf/2606.16856v1",
+          "tags": [
+            "keyword:rl-papers",
+            "query:rl-papers"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "semi-supervised reward learning via video optimal transport",
+          "llm_evidence_cn": "通过视频最优传输的半监督奖励学习",
+          "llm_evidence": "通过视频最优传输的半监督奖励学习",
+          "canonical_evidence": "通过视频最优传输的半监督奖励学习",
+          "llm_tldr_en": "VOTP uses optimal transport in video foundation model space to generate pseudo-labels for unlabeled trajectories, learning reward functions from very few human preferences in offline PbRL.",
+          "llm_tldr_cn": "偏好强化学习(PbRL)受限于高标注成本。本文提出VOTP，利用视频基础模型的表示空间，通过最优传输对齐未标注轨迹与少量标注轨迹，自动生成高质量伪标签。该框架只需少数人类偏好即可学习有效奖励函数。实验表明VOTP在多个连续控制任务上达到接近完全监督的性能。",
+          "llm_tldr": "偏好强化学习(PbRL)受限于高标注成本。本文提出VOTP，利用视频基础模型的表示空间，通过最优传输对齐未标注轨迹与少量标注轨迹，自动生成高质量伪标签。该框架只需少数人类偏好即可学习有效奖励函数。实验表明VOTP在多个连续控制任务上达到接近完全监督的性能。",
+          "llm_tags": [
+            "query:rl-papers"
+          ],
+          "matched_query_tag": "query:rl-papers",
+          "matched_query_text": "reward function design in reinforcement learning",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.16856v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2606.15866v1",
+          "source": "arxiv",
+          "title": "STRIDE: Strategic Trajectory Reasoning via Discriminative Estimation for Verifiable Reinforcement Learning",
+          "abstract": "Reinforcement Learning with Verifiable Rewards (RLVR) has become an effective post-training paradigm for improving the reasoning abilities of large language models. However, existing RLVR methods typically rely on final-answer correctness to assign trajectory-level rewards, providing sparse supervision and treating all tokens uniformly regardless of their actual contribution to reasoning. Although recent studies introduce intermediate signals such as process rewards, high-entropy tokens, and semantic uncertainty, these signals are often not inherently verifiable and may fail to distinguish beneficial strategic patterns from harmful ones. To address this limitation, we propose STRIDE (Strategic Trajectory Reasoning with Discriminative Estimation), a fine-grained RLVR framework that derives strategic reasoning supervision from verifiable outcomes. STRIDE contrasts successful and failed trajectories within each response group to estimate the outcome-discriminative preference of each $n$-gram strategic pattern, and further combines this signal with reasoning saliency entropy to identify decision-relevant strategic patterns. These patterns are assigned differentiated advantage values during RL optimization, enabling more precise credit assignment while preserving the verifiability of RLVR. Extensive experiments demonstrate that STRIDE consistently improves reasoning performance across diverse models, tasks, and extended settings, including VLMs and agent-based systems.",
+          "authors": [
+            "Qinjian Zhao",
+            "Zhihao Dou",
+            "Dinggen Zhang",
+            "Xiangyu Li",
+            "Chaoda Song",
+            "Zhongwei Wan",
+            "Xinpeng Li",
+            "Yanyan Zhang",
+            "Kaijie Chen",
+            "Qingtao Pan",
+            "Chengcheng Feng",
+            "Zhiqiang Gao",
+            "Xiaoyu Xia"
+          ],
+          "primary_category": "cs.AI",
+          "categories": [
+            "cs.AI",
+            "cs.LG"
+          ],
+          "published": "2026-06-14T15:37:26+00:00",
+          "link": "https://arxiv.org/pdf/2606.15866v1",
+          "tags": [
+            "keyword:rl-papers",
+            "query:rl-papers"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "discriminative estimation of strategic trajectory rewards in RLVR",
+          "llm_evidence_cn": "RLVR中的战略性轨迹奖励判别估计",
+          "llm_evidence": "RLVR中的战略性轨迹奖励判别估计",
+          "canonical_evidence": "RLVR中的战略性轨迹奖励判别估计",
+          "llm_tldr_en": "STRIDE introduces discriminative estimation to identify beneficial strategic patterns in trajectories, providing verifiable intermediate reward signals beyond final correctness for RLVR.",
+          "llm_tldr_cn": "现有RLVR方法仅根据最终答案正确性分配轨迹级奖励，奖励稀疏且忽略中间推理贡献。本文提出STRIDE，通过判别估计识别轨迹中的有益战略模式，生成可验证的中间奖励信号。该方法在数学推理等任务上有效提升模型对正确推理步骤的奖励分配，提高了推理性能。STRIDE提供了比过程奖励更可靠且可验证的中间监督。",
+          "llm_tldr": "现有RLVR方法仅根据最终答案正确性分配轨迹级奖励，奖励稀疏且忽略中间推理贡献。本文提出STRIDE，通过判别估计识别轨迹中的有益战略模式，生成可验证的中间奖励信号。该方法在数学推理等任务上有效提升模型对正确推理步骤的奖励分配，提高了推理性能。STRIDE提供了比过程奖励更可靠且可验证的中间监督。",
+          "llm_tags": [
+            "query:rl-papers"
+          ],
+          "matched_query_tag": "query:rl-papers",
+          "matched_query_text": "reward function design in reinforcement learning",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2606.15866v1",
           "carry_days": 1
         }
       ]

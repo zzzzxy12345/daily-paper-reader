@@ -1,16 +1,702 @@
 {
   "mode": "standard",
-  "generated_at": "2026-06-17T07:02:48.858979+00:00",
+  "generated_at": "2026-06-17T08:25:51.786089+00:00",
   "stats": {
     "mode": "standard",
-    "tag_count": 0,
-    "deep_divecandidates": 0,
-    "deep_cap": null,
-    "deep_selected": 0,
-    "quick_candidates": 0,
-    "quick_skim_target": 10,
-    "quick_selected": 0
+    "tag_count": 1,
+    "deep_divecandidates": 21,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 35,
+    "quick_skim_target": 11,
+    "quick_selected": 11
   },
-  "deep_dive": [],
-  "quick_skim": []
+  "deep_dive": [
+    {
+      "id": "2606.12384v1",
+      "source": "arxiv",
+      "title": "APPO: Agentic Procedural Policy Optimization",
+      "abstract": "Recent advances in agentic Reinforcement Learning (RL) have substantially improved the multi-turn tool-use capabilities of large language model agents. However, most existing methods assign credit over coarse heuristic units, such as tool-call boundaries or fixed workflows, making it difficult to identify which intermediate decisions influence downstream outcomes. In this work, we study agentic RL from two perspectives: \\textit{where to branch and how to assign credit after branching}. Our pilot analysis shows that influential decision points are broadly distributed throughout the generated sequence rather than concentrated at tool calls, while token entropy alone does not reliably reflect their impact on final outcomes. Motivated by these observations, we propose \\textbf{Agentic Procedural Policy Optimization (APPO)}, which shifts branching and credit assignment from coarse interaction units to fine-grained decision points in the sequence. APPO selects branching locations using a Branching Score that combines token uncertainty with policy-induced likelihood gains of subsequent continuations, enabling more targeted exploration while filtering out spurious high-entropy positions. It further introduces procedure-level advantage scaling to better distribute credit across branched rollouts. Experiments on 13 benchmarks show that APPO consistently improves strong agentic RL baselines by nearly 4 points, while keeping efficient tool-calls and maintaining behavior interpretability.",
+      "authors": [
+        "Xucong Wang",
+        "Ziyu Ma",
+        "Yong Wang",
+        "Yuxiang Ji",
+        "Shidong Yang",
+        "Guanhua Chen",
+        "Pengkun Wang",
+        "Xiangxiang Chu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-10T17:47:07+00:00",
+      "link": "https://arxiv.org/pdf/2606.12384v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "agentic RL with procedural credit assignment",
+      "llm_evidence_cn": "具有程序化信用分配的智能体强化学习",
+      "llm_evidence": "具有程序化信用分配的智能体强化学习",
+      "canonical_evidence": "具有程序化信用分配的智能体强化学习",
+      "llm_tldr_en": "APPO studies where to branch and how to assign credit in agentic RL for LLM agents, improving multi-turn tool-use by identifying influential intermediate decisions.",
+      "llm_tldr_cn": "现有智能体强化学习在粗粒度单元（如工具调用边界）上分配信用，忽略了内部决策点。本文对智能体RL中的分支点和信用分配进行研究，发现影响力决策广泛分布在序列中。为此提出APPO，一种程序化策略优化方法，通过更细粒度的信用分配提升LLM智能体的多轮工具使用能力。实验表明APPO在多个智能体任务上显著优于现有方法。",
+      "llm_tldr": "现有智能体强化学习在粗粒度单元（如工具调用边界）上分配信用，忽略了内部决策点。本文对智能体RL中的分支点和信用分配进行研究，发现影响力决策广泛分布在序列中。为此提出APPO，一种程序化策略优化方法，通过更细粒度的信用分配提升LLM智能体的多轮工具使用能力。实验表明APPO在多个智能体任务上显著优于现有方法。",
+      "llm_tags": [
+        "query:agent:composite"
+      ],
+      "matched_query_tag": "query:agent:composite",
+      "matched_query_text": "Papers central to 请帮我查找agent相关的论文, especially work that connects or combines: intelligent agent systems and architectures; reinforcement learning agent training and policies; intelligent agent systems and their real world applications; multi agent reinforcement learning algorithms and challenges; autonomous agent navigation and decision making.",
+      "matched_requirement_id": "req-composite-agent",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.15260v1",
+      "source": "arxiv",
+      "title": "Trust-Region Diffusion Policies for Massively Parallel On-Policy RL",
+      "abstract": "Reinforcement learning with massively parallel simulations has become a standard framework for developing robust, deployable policies; however, most existing approaches still rely on simple Gaussian policy parameterizations. Diffusion models provide a more expressive policy class and have shown strong performance on challenging control problems, yet most diffusion-based RL methods are designed for offline or off-policy training. In this work, we ask whether diffusion policies can be trained effectively in the massively parallel, on-policy regime. To this end, we introduce Trust-region Diffusion Policies (TruDi), which enables diffusion policies for on-policy RL with massively parallel simulations. This setting is particularly challenging because the data distribution changes quickly across updates, making stable training with complex policies difficult. TruDi addresses this by integrating a trust-region optimization rule to enforce a KL-divergence constraint over the entire diffusion trajectory. Empirically, we evaluate TruDi on a diverse set of 4 massively parallel RL benchmarks comprising a total of 73 tasks. Across these tasks, TruDi consistently outperforms or is on-par with strong baselines on standard tasks and achieves clear gains on more challenging humanoid control tasks, establishing a strong new baseline for massively parallel on-policy RL.",
+      "authors": [
+        "Huy Le",
+        "Onur Celik",
+        "Denis Blessing",
+        "Tai Hoang",
+        "Claas A Voelcker",
+        "Axel Brunnbauer",
+        "Felix Richter",
+        "Michael Volpp",
+        "Gerhard Neumann"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-13T11:35:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.15260v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "New on-policy RL algorithm with diffusion policies for massively parallel training",
+      "llm_evidence_cn": "大规模并行在线RL的扩散策略方法",
+      "llm_evidence": "大规模并行在线RL的扩散策略方法",
+      "canonical_evidence": "大规模并行在线RL的扩散策略方法",
+      "llm_tldr_en": "Introduces Trust-region Diffusion Policies (TruDi), enabling diffusion policies for on-policy RL with massively parallel simulations, achieving expressive policy learning.",
+      "llm_tldr_cn": "针对在线强化学习策略表达能力不足的问题,提出TruDi算法,将扩散模型作为策略类,并结合信任区域方法实现在线训练。在大规模并行仿真环境中,TruDi相比传统高斯策略显著提升了性能和策略丰富度,为复杂控制任务提供了新的解决方案。",
+      "llm_tldr": "针对在线强化学习策略表达能力不足的问题,提出TruDi算法,将扩散模型作为策略类,并结合信任区域方法实现在线训练。在大规模并行仿真环境中,TruDi相比传统高斯策略显著提升了性能和策略丰富度,为复杂控制任务提供了新的解决方案。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.16236v1",
+      "source": "arxiv",
+      "title": "Evolutionary Bilevel Reward Shaping for Generalization in Reinforcement Learning",
+      "abstract": "Reinforcement learning (RL) often suffers from performance degradation when deployed in environments that differ from those encountered during training. Existing techniques such as domain randomization (DR) mitigate this, but require access to diverse training environments and full trajectory observability, assumptions that fail in privacy-preserving or restricted scenarios where only scalar performance metrics are available. We propose Generalization via Evolutionary Reward Shaping (GERS), a bilevel optimization approach to improve generalization on unseen test environments using only scalar feedback from validation environments. At the lower level, an RL agent guided via a reward function shaped by the upper level learns a policy on a limited set of training environments with accessible trajectory data; at the upper level, CMA-ES optimizes the reward shaping parameters to maximize the cumulative unshaped reward on separate validation environments for which trajectory access is unavailable. Results on continuous control tasks indicate that GERS outperforms the standard RL baseline on unseen test environments. GERS performance is comparable to DR, despite DR treating the combined set of training and validation environments of GERS as a single training set that requires trajectory access, whereas GERS cannot access validation trajectories. These results confirm that GERS effectively enhances generalization under restricted data access constraints.",
+      "authors": [
+        "Ekasit Usaratniwart",
+        "Xilin Gao",
+        "Marc Ong",
+        "Youhei Akimoto"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.NE"
+      ],
+      "published": "2026-06-15T05:35:16+00:00",
+      "link": "https://arxiv.org/pdf/2606.16236v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "evolutionary bilevel reward shaping for generalization",
+      "llm_evidence_cn": "进化双层奖励塑造用于泛化",
+      "llm_evidence": "进化双层奖励塑造用于泛化",
+      "canonical_evidence": "进化双层奖励塑造用于泛化",
+      "llm_tldr_en": "Proposes GERS, a bilevel optimization approach that uses evolutionary reward shaping to improve RL generalization on unseen test environments using only scalar validation feedback.",
+      "llm_tldr_cn": "本文针对强化学习在部署环境与训练环境不同时性能下降的问题，提出了GERS框架——一种双层优化方法。上层通过进化算法优化奖励函数，下层RL智能体利用塑形后的奖励学习策略。GERS仅需验证环境中的标量性能反馈，即可提升对未见测试环境的泛化能力，适用于隐私保护场景。",
+      "llm_tldr": "本文针对强化学习在部署环境与训练环境不同时性能下降的问题，提出了GERS框架——一种双层优化方法。上层通过进化算法优化奖励函数，下层RL智能体利用塑形后的奖励学习策略。GERS仅需验证环境中的标量性能反馈，即可提升对未见测试环境的泛化能力，适用于隐私保护场景。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "reward function design in reinforcement learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09138v1",
+      "source": "arxiv",
+      "title": "Claw-R1: A Step-Level Data Middleware System for Agentic Reinforcement Learning",
+      "abstract": "Agentic reinforcement learning (RL) has become an important post-training paradigm for turning LLMs from static chatbots into interactive agents, giving rise to representative applications such as OpenClaw. Existing work mainly focuses on policy optimization algorithms and training frameworks, but pays less attention to the full data lifecycle of agent-environment interactions, from data production to training consumption. To bridge this gap, we present Claw-R1, an interactive step-level data middleware system for agentic RL. Claw-R1 connects heterogeneous agent runtimes with RL training backends through two core components: a Gateway Server and a Data Pool. The Gateway Server captures multi-turn interaction steps through a unified LLM API entry point, while the Data Pool organizes them into step-level records consisting of prompt IDs, response IDs, rewards and other metadata. In our demo, users can interactively inspect live trajectories, examine the state, action, and reward of each step, curate data by quality and readiness, and configure training-ready batches for different downstream RL algorithms. Overall, Claw-R1 treats agent interaction traces as managed data assets rather than temporary runtime logs. Through this demonstration, we hope to encourage the community to recognize the importance of data management in agentic RL. Our code is available at https://github.com/AgentR1/Claw-R1 and the demonstration video can be found at link https://youtu.be/Pw47dAOw6B0.",
+      "authors": [
+        "Daoyu Wang",
+        "Mingyue Cheng",
+        "Qingchuan Li",
+        "Shuo Yu",
+        "Jie Ouyang",
+        "Qi Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-06-08T07:35:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.09138v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "data middleware system for agentic RL connecting agent runtimes to training backends",
+      "llm_evidence_cn": "面向智能体强化学习的数据中间件系统，连接智能体运行时与训练后端",
+      "llm_evidence": "面向智能体强化学习的数据中间件系统，连接智能体运行时与训练后端",
+      "canonical_evidence": "面向智能体强化学习的数据中间件系统，连接智能体运行时与训练后端",
+      "llm_tldr_en": "Claw-R1 is a step-level data middleware for agentic RL that manages the full data lifecycle from agent-environment interactions to training consumption via Gateway Server and Data Pool.",
+      "llm_tldr_cn": "现有智能体强化学习工作多关注策略优化算法，忽视了智能体与环境交互数据的全生命周期管理。本文提出Claw-R1，一个步级数据中间件系统，通过网关服务器和数据池连接异构智能体运行时与训练后端，实现交互数据的采集、存储和供给。该系统支持多种智能体框架，显著简化了数据管理流程，加速了智能体强化学习的迭代开发。",
+      "llm_tldr": "现有智能体强化学习工作多关注策略优化算法，忽视了智能体与环境交互数据的全生命周期管理。本文提出Claw-R1，一个步级数据中间件系统，通过网关服务器和数据池连接异构智能体运行时与训练后端，实现交互数据的采集、存储和供给。该系统支持多种智能体框架，显著简化了数据管理流程，加速了智能体强化学习的迭代开发。",
+      "llm_tags": [
+        "query:agent:composite"
+      ],
+      "matched_query_tag": "query:agent:composite",
+      "matched_query_text": "Papers central to 请帮我查找agent相关的论文, especially work that connects or combines: intelligent agent systems and architectures; reinforcement learning agent training and policies; intelligent agent systems and their real world applications; multi agent reinforcement learning algorithms and challenges; autonomous agent navigation and decision making.",
+      "matched_requirement_id": "req-composite-agent",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09124v1",
+      "source": "arxiv",
+      "title": "A Regret Minimization Framework on Preference Learning in Large Language Models",
+      "abstract": "Reinforcement learning with verifiable rewards (RLVR) has enabled progress on reasoning-intensive tasks by relying on task-specific verifiers that provide automated correctness signals. However, many realistic language tasks are difficult to equip with reliable verifiers, motivating a growing reliance on reinforcement learning from human feedback (RLHF). In this setting, we argue that a closer examination of how human feedback should be interpreted is essential. We introduce Regret-based Preference Optimization $(\\textbf{RePO})$, which reframes RLHF through $\\textit{regret minimization}$ rather than reward maximization. Human preferences are often shaped by $\\textit{prospective}$ anticipation of outcomes and $\\textit{counterfactual}$ comparisons to alternative behaviors, rather than by immediate, outcome-independent utility. $\\textbf{RePO}$ captures this structure by modeling preferences as behavior-conditioned assessments of relative suboptimality. Experiments on mathematical reasoning benchmarks and human preference datasets demonstrate consistent performance gains, indicating that $\\textbf{RePO}$ is an effective and human-aligned approach for training large language models.",
+      "authors": [
+        "Suhwan Kim",
+        "Taehyun Cho",
+        "Geon-Hyeong Kim",
+        "Yu Jin Kim",
+        "Youngsoo Jang",
+        "Moontae Lee",
+        "Jungwoo Lee"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-08T07:18:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.09124v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "regret minimization for preference-based RLHF",
+      "llm_evidence_cn": "基于遗憾最小化的RLHF偏好学习框架",
+      "llm_evidence": "基于遗憾最小化的RLHF偏好学习框架",
+      "canonical_evidence": "基于遗憾最小化的RLHF偏好学习框架",
+      "llm_tldr_en": "RePO reframes RLHF as regret minimization rather than reward maximization, better aligning with human counterfactual comparison patterns.",
+      "llm_tldr_cn": "现有RLHF方法通常将人类反馈解释为奖励信号进行最大化，但人类偏好更符合遗憾比较。本文提出RePO，将RLHF重新构建为遗憾最小化框架，通过前瞻和反事实比较计算偏好。实验表明RePO在多个文本任务上更鲁棒且与人类判断更一致。该工作为RLHF的偏好建模提供了新视角。",
+      "llm_tldr": "现有RLHF方法通常将人类反馈解释为奖励信号进行最大化，但人类偏好更符合遗憾比较。本文提出RePO，将RLHF重新构建为遗憾最小化框架，通过前瞻和反事实比较计算偏好。实验表明RePO在多个文本任务上更鲁棒且与人类判断更一致。该工作为RLHF的偏好建模提供了新视角。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "reward function design in reinforcement learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09961v1",
+      "source": "arxiv",
+      "title": "3SPO: State-Score-Supervised Policy Optimization for LLM Agents",
+      "abstract": "Training large language models (LLMs) as autonomous agents via reinforcement learning (RL) has enabled frontier models to achieve superhuman performance in long-horizon tasks. However, existing RL algorithms operate at the trajectory level, performing policy optimization only after collecting complete episode rollouts. This coarse-grained approach faces fundamental challenges in multi-turn agent settings where rewards are sparse, delayed, and credit assignment across individual steps is critical. In this work, we propose \\textbf{State-Score-Supervised Policy Optimization (3SPO)}, a novel RL algorithm that performs post-step policy optimization with dynamic state score supervision. At each step, 3SPO computes the state score based on historical success rates, supervising step-wise credit assignment, adaptive rollout and post-step policy optimization without requiring value function estimation or additional auxiliary models. Theoretically, under a per-state bandit abstraction, we show that the proposed score-supervised allocation mechanism achieves logarithmic allocation regret and provide sample-complexity guarantees for action identification, score distinguishability, and filtering stability. Experiments on ALFWorld and WebShop with Qwen2.5-1.5B/7B-Instruct show that 3SPO consistently outperforms GRPO by $+22.6\\%$ on ALFWorld and $+15.6$ points on WebShop, while using comparable resources to achieve $2.4\\times$ more state exploration and $1.8\\times$ faster convergence. Code is available at https://github.com/genalyu/3SPO.",
+      "authors": [
+        "Yu Han",
+        "Kailing Li",
+        "Yang Jiao",
+        "Yulin Dai",
+        "Yuqian Fu",
+        "Linhai Zhuo",
+        "Tianwen Qian"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T14:26:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.09961v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "RL algorithm for LLM agents with state score supervision",
+      "llm_evidence_cn": "面向LLM智能体的状态分数监督策略优化",
+      "llm_evidence": "面向LLM智能体的状态分数监督策略优化",
+      "canonical_evidence": "面向LLM智能体的状态分数监督策略优化",
+      "llm_tldr_en": "Proposes 3SPO, a novel RL algorithm that performs post-step policy optimization with dynamic state score supervision for multi-turn LLM agents, addressing sparse reward and credit assignment.",
+      "llm_tldr_cn": "针对多轮LLM智能体任务中奖励稀疏且信用分配困难的问题,提出3SPO算法,在每个步骤后基于历史成功率计算状态分数并进行策略优化。该方法在多个长期任务上提升了样本效率和最终性能,为智能体强化学习提供了新的细粒度训练范式。",
+      "llm_tldr": "针对多轮LLM智能体任务中奖励稀疏且信用分配困难的问题,提出3SPO算法,在每个步骤后基于历史成功率计算状态分数并进行策略优化。该方法在多个长期任务上提升了样本效率和最终性能,为智能体强化学习提供了新的细粒度训练范式。",
+      "llm_tags": [
+        "query:agent:composite"
+      ],
+      "matched_query_tag": "query:agent:composite",
+      "matched_query_text": "Papers central to 请帮我查找agent相关的论文, especially work that connects or combines: intelligent agent systems and architectures; reinforcement learning agent training and policies; intelligent agent systems and their real world applications; multi agent reinforcement learning algorithms and challenges; autonomous agent navigation and decision making.",
+      "matched_requirement_id": "req-composite-agent",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.09821v1",
+      "source": "arxiv",
+      "title": "Rethinking the Divergence Regularization in LLM RL",
+      "abstract": "Reinforcement learning (RL) has become a key component of post-training large language models (LLMs). In practice, LLM RL is often off-policy because of training-inference mismatch and policy staleness, making trust-region control essential for stable optimization. Mainstream methods such as PPO and GRPO approximate this control with a ratio-clipping mechanism, but the importance ratio can be a poor proxy for distributional shift in long-tailed vocabularies. Recent work such as DPPO addresses this mismatch by replacing ratio-based clipping with a divergence-based mask, yielding a trust region defined by the sampled token's absolute probability shift. However, DPPO still relies on a hard mask: once a token crosses the trust-region boundary in a harmful direction, its gradient is discarded rather than corrected. To address this, we propose Divergence Regularized Policy Optimization (DRPO), which replaces the hard mask with a smooth advantage-weighted quadratic regularizer on policy shift. DRPO preserves the same trust-region geometry as DPPO while inducing bounded, continuous gradient weights that attenuate diverging updates and provide corrective signals beyond the boundary. Experiments across model scales, architectures, and precision settings show that DRPO improves the stability and efficiency of LLM RL training.",
+      "authors": [
+        "Jiarui Yao",
+        "Xiangxin Zhou",
+        "Penghui Qi",
+        "Wee Sun Lee",
+        "Liefeng Bo",
+        "Tianyu Pang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-08T17:58:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.09821v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "New divergence-based regularization for LLM reinforcement learning",
+      "llm_evidence_cn": "面向LLM强化学习的新散度正则化方法",
+      "llm_evidence": "面向LLM强化学习的新散度正则化方法",
+      "canonical_evidence": "面向LLM强化学习的新散度正则化方法",
+      "llm_tldr_en": "Rethinks divergence regularization in LLM RL, proposing a soft mask mechanism to replace hard clipping for better trust-region control in off-policy settings.",
+      "llm_tldr_cn": "针对LLM强化学习中信任区域控制的问题,分析现有基于裁剪或硬掩码方法的不足,提出基于软掩码的散度正则化方法。该方法在保持稳定性的同时允许更有效的梯度更新,在多个LLM对齐任务上提升了性能,为LLM后训练提供了更精细的优化工具。",
+      "llm_tldr": "针对LLM强化学习中信任区域控制的问题,分析现有基于裁剪或硬掩码方法的不足,提出基于软掩码的散度正则化方法。该方法在保持稳定性的同时允许更有效的梯度更新,在多个LLM对齐任务上提升了性能,为LLM后训练提供了更精细的优化工具。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.09236v1",
+      "source": "arxiv",
+      "title": "Self-Paced Curriculum Reinforcement Learning for Autonomous Superbike Racing in Simulation",
+      "abstract": "Autonomous Racing has seen remarkable progress through deep Reinforcement Learning (RL), primarily for four-wheeled vehicles. However, motorbikes introduce substantially greater complexity due to the need to manage balance and lean angle, in addition to more reactive steering and throttle control, and a smaller weight. In this work, we present a framework for training an autonomous agent to race a superbike in VRider SBK, a physics-accurate Unity-based motorbike simulator. Our approach integrates Soft Actor-Critic (SAC) with Self-Paced curriculum Deep reinforcement Learning (SPDL), which dynamically generates progressively more challenging tasks based on the agent's performance, without requiring manual curriculum design. The agent's state space comprises proprioceptive features extended with lean-angle history, along with global track features via course points. The reward signal is shaped to encourage progress along the track while penalizing instability-inducing behaviors specific to two-wheeled dynamics. Preliminary experimental results demonstrate that SPDL outperforms SAC alone in training efficiency, lap time, and driving stability across multiple tracks and motorbike models, establishing a first baseline for RL-based autonomous motorbike racing.",
+      "authors": [
+        "Luca Ghisi",
+        "Jacopo Essenziale",
+        "Carlo D'Eramo",
+        "Matteo Luperto"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-06-08T09:14:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.09236v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-paced curriculum RL for autonomous racing",
+      "llm_evidence_cn": "自定进度课程强化学习用于自主赛车",
+      "llm_evidence": "自定进度课程强化学习用于自主赛车",
+      "canonical_evidence": "自定进度课程强化学习用于自主赛车",
+      "llm_tldr_en": "Proposes a framework combining SAC with self-paced curriculum learning for training an autonomous superbike racing agent in simulation, dynamically generating tasks based on agent performance.",
+      "llm_tldr_cn": "本文针对摩托车自主赛车中的平衡和倾斜角控制难题，提出了一种将Soft Actor-Critic (SAC)与自定进度课程深度学习 (SPDL) 相结合的框架。该方法根据智能体的表现动态生成难度递增的任务，无需手动设计课程。在VRider SBK物理仿真器中训练的智能体展示了有效的学习能力，为复杂动力学环境下的自主控制提供了新思路。",
+      "llm_tldr": "本文针对摩托车自主赛车中的平衡和倾斜角控制难题，提出了一种将Soft Actor-Critic (SAC)与自定进度课程深度学习 (SPDL) 相结合的框架。该方法根据智能体的表现动态生成难度递增的任务，无需手动设计课程。在VRider SBK物理仿真器中训练的智能体展示了有效的学习能力，为复杂动力学环境下的自主控制提供了新思路。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.10129v1",
+      "source": "arxiv",
+      "title": "Discovering Interpretable Multi-Parameter Control Policies for Evolutionary Algorithms Using Deep Reinforcement Learning",
+      "abstract": "While deep Reinforcement Learning (deep-RL) has been increasingly applied to parameter control in evolutionary algorithms, rigorous theoretical analysis of parameter control remains largely restricted to single-parameter settings, owing to the difficulty of deriving effective, interpretable multi-parameter policies amenable to formal study. We demonstrate how deep-RL can be leveraged to overcome this barrier, using the (1+($λ$,$λ$))-genetic algorithm optimizing OneMax, one of the few problems where a super-constant speedup of dynamic control has been formally proven, as a representative case study. We first show that standard approaches struggle to converge in this multi-parameter setting, and introduce algorithm-agnostic enhancements targeting action-space decomposition, reward shifting, and long-horizon discounting. With these in place, we compare common deep-RL methods and find that Double Deep Q-Networks uniquely avoid the policy collapse observed in Proximal Policy Optimization, yielding trajectories suitable for downstream analysis. Crucially, we move beyond the ``black-box'' nature of neural networks by distilling the learned behaviors into a transparent, symbolic control policy. This resulting policy does not only offer interpretability for future theoretical analysis but also yields exceptional performance, consistently outperforming existing baselines across a wide range of problem sizes.",
+      "authors": [
+        "Tai Nguyen",
+        "Phong Le",
+        "Carola Doerr",
+        "Nguyen Dang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.NE"
+      ],
+      "published": "2026-06-08T20:06:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.10129v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Deep RL applied to evolve interpretable multi-parameter control policies for evolutionary algorithms",
+      "llm_evidence_cn": "深度强化学习用于进化算法多参数控制策略发现",
+      "llm_evidence": "深度强化学习用于进化算法多参数控制策略发现",
+      "canonical_evidence": "深度强化学习用于进化算法多参数控制策略发现",
+      "llm_tldr_en": "Demonstrates how deep RL can discover interpretable multi-parameter control policies for evolutionary algorithms, using (1+(lambda,lambda))-GA on OneMax as case study.",
+      "llm_tldr_cn": "将深度强化学习应用于进化算法参数控制,以(1+(lambda,lambda))-GA优化OneMax为例,展示了深度RL如何发现可解释的多参数控制策略。该方法突破了单参数控制的理论限制,为进化算法参数自适应提供了新途径。",
+      "llm_tldr": "将深度强化学习应用于进化算法参数控制,以(1+(lambda,lambda))-GA优化OneMax为例,展示了深度RL如何发现可解释的多参数控制策略。该方法突破了单参数控制的理论限制,为进化算法参数自适应提供了新途径。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.09825v1",
+      "source": "arxiv",
+      "title": "An Agency-Transferring Model-Free Policy Enhancement Technique",
+      "abstract": "Training reinforcement learning (RL) policies from scratch is   costly: it requires careful reward and environment design,   extensive tuning, and substantial computation.   Yet many control problems already have a functional but   suboptimal policy available as a baseline.   This paper proposes a method for embedding such a baseline into   the RL training process, simultaneously improving training   efficiency relative to from-scratch methods and producing a   learning policy that outperforms the baseline.   At each step, the method arbitrates between the baseline policy   and a trainable learning policy, initially relying strongly on   the baseline policy and then progressively transferring agency to   the learning policy.   By the end of training, the learning policy is a standalone   neural network that operates without baseline policy support.   The paper formalizes what it means for the baseline policy to be   functional: under this policy, the agent reaches a goal set and   remains there with high probability.   The proposed arbitration mechanism is designed to exploit this   property during training, yielding high goal-reaching rates right   from the beginning of training.   A theoretical analysis provides a formal interpretation of this   behavior under stated assumptions and extends it to the final   baseline-free regime, where explicit lower bounds are derived for   the goal-reaching probability of the standalone learning policy.   Empirical results on continuous-control benchmarks show that the   proposed method achieves returns that match or exceed those of   competitive approaches, while maintaining the highest   goal-reaching rates throughout training among the compared   methods -- including in the final stage, where the learning policy   operates without any baseline support.",
+      "authors": [
+        "Anton Bolychev",
+        "Georgiy Malaniya",
+        "Sinan Ibrahim",
+        "Pavel Osinenko"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "eess.SY",
+        "math.OC"
+      ],
+      "published": "2026-06-08T17:59:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.09825v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "agency-transferring policy enhancement technique",
+      "llm_evidence_cn": "代理转移策略增强技术",
+      "llm_evidence": "代理转移策略增强技术",
+      "canonical_evidence": "代理转移策略增强技术",
+      "llm_tldr_en": "Proposes a method to embed a baseline policy into RL training, progressively transferring agency from baseline to learning policy to improve efficiency and outperform the baseline.",
+      "llm_tldr_cn": "本文针对从头训练策略成本高的问题，提出了一种将基线策略嵌入强化学习训练的方法。该方法在每一步在基线策略和可训练学习策略之间进行仲裁，初始时依赖基线策略，然后逐步将代理权转移给学习策略。最终学习到的策略优于基线，同时训练效率高于从零开始的方法。",
+      "llm_tldr": "本文针对从头训练策略成本高的问题，提出了一种将基线策略嵌入强化学习训练的方法。该方法在每一步在基线策略和可训练学习策略之间进行仲裁，初始时依赖基线策略，然后逐步将代理权转移给学习策略。最终学习到的策略优于基线，同时训练效率高于从零开始的方法。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.09393v1",
+      "source": "arxiv",
+      "title": "CapRL++: Unified Reinforcement Learning with Verifiable Rewards for Dense Image and Video Captioning",
+      "abstract": "Image and video captioning are fundamental tasks that bridge the visual and linguistic domains, playing a critical role in pre-training Large Vision-Language Models (LVLMs). Current state-of-the-art captioning models are typically trained with Supervised Fine-Tuning (SFT), a paradigm that relies on expensive, non-scalable annotations and often causes models to memorize specific ground-truth answers, limiting their generality and ability to generate diverse, creative descriptions. To overcome these limitations, we propose applying Reinforcement Learning with Verifiable Rewards (RLVR) to the open-ended task of multimodal captioning. We introduce Captioning Reinforcement Learning++ (CapRL++), a novel reference-free training framework that redefines caption quality through its utility: a high-quality caption should enable a non-visual language model to accurately answer questions about the corresponding visual content. CapRL++ employs a decoupled two-stage pipeline where an LVLM generates a caption, and the objective reward is derived from the accuracy of a separate, vision-free LLM answering Multiple-Choice Questions based solely on that caption. Evaluations on more than 20 image and video benchmarks show that CapRL++ improves dense caption quality and strengthens caption-based pretraining across tasks such as spatial and temporal understanding. Pretraining on scalable image and video caption datasets annotated by CapRL++ yields substantial downstream gains. Furthermore, within the Prism Framework for caption quality evaluation, compact models trained with CapRL++ achieve dense captioning performance comparable to substantially larger models such as Qwen2.5-VL-72B and Qwen3-VL-235B-A22B. These results validate that CapRL++ effectively trains models to produce generalizable, high-fidelity descriptions, establishing a robust foundation beyond the limitations of traditional SFT.",
+      "authors": [
+        "Penghui Yang",
+        "Long Xing",
+        "Xiaoyi Dong",
+        "Yuhang Zang",
+        "Yuhang Cao",
+        "Yibin Wang",
+        "Yujie Zhou",
+        "Jiazi Bu",
+        "Jianze Liang",
+        "Qidong Huang",
+        "Jiaqi Wang",
+        "Feng Wu",
+        "Dahua Lin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-08T12:09:20+00:00",
+      "link": "https://arxiv.org/pdf/2606.09393v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "RL with verifiable rewards for dense captioning",
+      "llm_evidence_cn": "使用可验证奖励的强化学习进行密集字幕生成",
+      "llm_evidence": "使用可验证奖励的强化学习进行密集字幕生成",
+      "canonical_evidence": "使用可验证奖励的强化学习进行密集字幕生成",
+      "llm_tldr_en": "CapRL++ applies reinforcement learning with verifiable rewards to open-ended dense image and video captioning, enabling diverse and generalizable descriptions without reference annotations.",
+      "llm_tldr_cn": "有监督微调字幕模型依赖昂贵的注释且易过拟合。本文提出CapRL++，将可验证奖励强化学习(RlVR)应用于开放域密集字幕生成，无需参考标注即可训练。该方法通过设计自动化验证信号奖励标题的准确性和多样性。实验表明CapRL++在多个基准上超越SFT方法，生成更丰富、更具泛化性的描述。",
+      "llm_tldr": "有监督微调字幕模型依赖昂贵的注释且易过拟合。本文提出CapRL++，将可验证奖励强化学习(RlVR)应用于开放域密集字幕生成，无需参考标注即可训练。该方法通过设计自动化验证信号奖励标题的准确性和多样性。实验表明CapRL++在多个基准上超越SFT方法，生成更丰富、更具泛化性的描述。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "reward function design in reinforcement learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.13461v1",
+      "source": "arxiv",
+      "title": "Reinforcement Learning for Neural Model Editing",
+      "abstract": "Editing pretrained neural networks requires specialized algorithms tailored to specific objectives. Designing such algorithms is often time-consuming and demands significant effort. We present an exploratory framework that formulates neural model editing as a reinforcement learning problem, where agents modify models using reward feedback. We introduce two environments: MaskWorld, where agents scale weights multiplicatively, and ShiftWorld, where agents apply additive weight updates. The reward function combines a utility-preservation objective with a task-specific editing objective, enabling agents to learn targeted modifications while maintaining overall model performance. We evaluate the framework on bias mitigation in text classification and machine unlearning in image classification, both of which traditionally rely on specialized algorithms. Our results show that the learned policies reduce forget set accuracy to nearly 0% while preserving over 90% retain set accuracy on the unlearning task. In the bias mitigation setting, the learned policies improve bias-related performance by more than 5% while maintaining general classification utility. Our findings show that neural model editing can be cast as a reinforcement learning problem, allowing editing policies to be learned from reward feedback rather than manually engineered for each task.",
+      "authors": [
+        "Shaivi Malik"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-06-11T15:16:42+00:00",
+      "link": "https://arxiv.org/pdf/2606.13461v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses RL with a custom reward function for neural model editing",
+      "llm_evidence_cn": "使用RL和自定义奖励函数进行神经模型编辑",
+      "llm_evidence": "使用RL和自定义奖励函数进行神经模型编辑",
+      "canonical_evidence": "使用RL和自定义奖励函数进行神经模型编辑",
+      "llm_tldr_en": "Formulates neural model editing as RL, introducing MaskWorld and ShiftWorld environments with a reward combining utility preservation and editing objective.",
+      "llm_tldr_cn": "将神经模型编辑建模为强化学习问题,提出MaskWorld和ShiftWorld环境,其中奖励函数结合了效用保持和任务编辑目标。在文本分类偏见缓解和图像机器遗忘任务上验证了框架的有效性,展示了RL在模型编辑中的潜力。",
+      "llm_tldr": "将神经模型编辑建模为强化学习问题,提出MaskWorld和ShiftWorld环境,其中奖励函数结合了效用保持和任务编辑目标。在文本分类偏见缓解和图像机器遗忘任务上验证了框架的有效性,展示了RL在模型编辑中的潜力。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "reward function design in reinforcement learning",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.10709v1",
+      "source": "arxiv",
+      "title": "Effective Reinforcement Learning for Agentic Search by Recycling Zero-Variance Queries During Training",
+      "abstract": "The use of GRPO-style algorithms has become the standard strategy for training LLM search agents under outcome-only rewards. With these algorithms, a query contributes to parameter updates only when its rollout group mixes successes and failures; all-correct (too-easy) and all-incorrect (too-hard) groups are zero-variance and waste rollout cost. Existing approaches treat zero-variance as a static property and either discard or pre-filter such groups. We hypothesize and empirically validate that queries flip between zero-variance and signal-bearing states as the policy evolves during training. Building on this intuition, we propose query recycling, which returns zero-variance groups to a mutable pool for future resampling, so that the effective training distribution co-evolves with the policy. With the proposed technique, a 1.7B parameter model trained on synthetic data can reach 66.0 average Pass@1 accross seven multi-hop QA benchmarks, matching or surpassing systems with up to 7B parameters trained on benchmark-derived supervision. Analysis of recycling patterns shows that recycled queries supply roughly three quarters of the effective batch by the end of training, with contributions split between recovery from policy improvement and policy drift.",
+      "authors": [
+        "João Coelho",
+        "João Magalhães",
+        "Bruno Martins",
+        "Chenyan Xiong"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI"
+      ],
+      "published": "2026-06-09T11:12:58+00:00",
+      "link": "https://arxiv.org/pdf/2606.10709v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "RL training method for LLM agentic search, recycling zero-variance queries",
+      "llm_evidence_cn": "针对LLM搜索智能体的强化学习训练方法，通过回收零方差查询提高训练效率",
+      "llm_evidence": "针对LLM搜索智能体的强化学习训练方法，通过回收零方差查询提高训练效率",
+      "canonical_evidence": "针对LLM搜索智能体的强化学习训练方法，通过回收零方差查询提高训练效率",
+      "llm_tldr_en": "Proposes query recycling for GRPO-style RL training of LLM search agents, reusing zero-variance rollout groups to reduce waste and improve sample efficiency.",
+      "llm_tldr_cn": "本文针对大语言模型搜索智能体的强化学习训练中零方差查询浪费的问题，提出查询回收机制。通过实验发现查询的零方差状态会随策略演化而翻转，因此将零方差组返回到可变池中重新采样，从而提高样本效率。该方法在保持性能的同时显著降低了训练成本，为智能体策略学习提供了实用改进。",
+      "llm_tldr": "本文针对大语言模型搜索智能体的强化学习训练中零方差查询浪费的问题，提出查询回收机制。通过实验发现查询的零方差状态会随策略演化而翻转，因此将零方差组返回到可变池中重新采样，从而提高样本效率。该方法在保持性能的同时显著降低了训练成本，为智能体策略学习提供了实用改进。",
+      "llm_tags": [
+        "query:agent:composite"
+      ],
+      "matched_query_tag": "query:agent:composite",
+      "matched_query_text": "Papers central to 请帮我查找agent相关的论文, especially work that connects or combines: intelligent agent systems and architectures; reinforcement learning agent training and policies; intelligent agent systems and their real world applications; multi agent reinforcement learning algorithms and challenges; autonomous agent navigation and decision making.",
+      "matched_requirement_id": "req-composite-agent",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.10346v1",
+      "source": "arxiv",
+      "title": "Reasoning or Memorization? Direction-Aware Diversity Exploration in LLM Reinforcement Learning",
+      "abstract": "Reinforcement learning has become a key paradigm for eliciting reasoning abilities in large language models, where exploration is crucial for discovering effective solution trajectories. Existing exploration methods typically encourage diversity in semantic or gradient spaces, without distinguishing what drives this diversity. A trajectory may appear novel because it follows a new reasoning process, or because it varies memorized patterns and shortcuts. Rewarding both cases equally may steer exploration toward memorization rather than genuine reasoning improvement. In this paper, we propose DiRL, a Direction-Aware Reinforcement Learning framework that anchors exploration to an internal reasoning-memorization direction of the policy. Specifically, DiRL extracts this direction from model representations, constructs direction-weighted gradient features to characterize rollout updates, and shapes rewards to amplify reasoning-aligned exploration while suppressing memorization-aligned variations. DiRL integrates seamlessly into standard Group Relative Policy Optimization (GRPO). Extensive experiments on mathematical and general reasoning benchmarks demonstrate the effectiveness of DiRL, showing significant improvements over various existing exploration methods.",
+      "authors": [
+        "Jiangnan Xia",
+        "Yucheng Shi",
+        "Yu Yang",
+        "Kishan Panaganti",
+        "Zhenwen Liang",
+        "Ninghao Liu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-09T02:55:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.10346v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "direction-aware exploration for RL in LLMs",
+      "llm_evidence_cn": "LLM强化学习中的方向感知探索",
+      "llm_evidence": "LLM强化学习中的方向感知探索",
+      "canonical_evidence": "LLM强化学习中的方向感知探索",
+      "llm_tldr_en": "DiRL proposes direction-aware exploration that distinguishes reasoning-driven diversity from memorization-driven diversity in LLM reinforcement learning, improving genuine reasoning improvement.",
+      "llm_tldr_cn": "现有强化学习探索方法无法区分轨迹的新颖性是由于推理改进还是记忆模式。本文提出DiRL，一种方向感知强化学习框架，将探索锚定到策略内部推理-记忆方向。在LLM推理任务中，DiRL有效引导探索朝向真正的推理改进，避免了记忆捷径。该工作为LLM强化学习中的探索带来了更细致的控制。",
+      "llm_tldr": "现有强化学习探索方法无法区分轨迹的新颖性是由于推理改进还是记忆模式。本文提出DiRL，一种方向感知强化学习框架，将探索锚定到策略内部推理-记忆方向。在LLM推理任务中，DiRL有效引导探索朝向真正的推理改进，避免了记忆捷径。该工作为LLM强化学习中的探索带来了更细致的控制。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.15793v1",
+      "source": "arxiv",
+      "title": "Proximal Policy Optimization for Amortized Discrete Sampling",
+      "abstract": "This paper explores policy gradient algorithms for training stochastic policies to sample from structured discrete probability distributions under the Generative Flow Network (GFlowNet) framework. Building on extensive theoretical connections between GFlowNets and entropy-regularized reinforcement learning, we derive equivalents of standard policy gradient algorithms for training GFlowNets, as well as experimentally explore their various methodological aspects, including baseline training and advantage estimation. Most importantly, our work is the first to derive and successfully apply proximal policy optimization to GFlowNets, showing its improved convergence speed and data efficiency compared to standard GFlowNet training objectives on benchmarks ranging from synthetic energies to molecular graph generation.",
+      "authors": [
+        "Anna Zykova-Myzina",
+        "Timofei Gritsaev",
+        "Daniil Tiapkin",
+        "Nikita Morozov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "stat.ML"
+      ],
+      "published": "2026-06-14T12:54:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.15793v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "PPO applied to GFlowNets as a policy gradient method",
+      "llm_evidence_cn": "将PPO应用于GFlowNet作为策略梯度方法",
+      "llm_evidence": "将PPO应用于GFlowNet作为策略梯度方法",
+      "canonical_evidence": "将PPO应用于GFlowNet作为策略梯度方法",
+      "llm_tldr_en": "This paper derives and applies proximal policy optimization to GFlowNets, showing improved convergence and data efficiency over standard GFlowNet objectives on discrete sampling benchmarks.",
+      "llm_tldr_cn": "生成流网络(GFlowNets)与熵正则化强化学习有深厚理论联系。本文首次推导并成功将PPO应用于GFlowNet训练，替代标准目标函数。在多个离散采样基准上，PPO训练的GFlowNet收敛更快、数据效率更高。该工作桥接了GFlowNet与策略梯度算法，为离散概率采样提供了新工具。",
+      "llm_tldr": "生成流网络(GFlowNets)与熵正则化强化学习有深厚理论联系。本文首次推导并成功将PPO应用于GFlowNet训练，替代标准目标函数。在多个离散采样基准上，PPO训练的GFlowNet收敛更快、数据效率更高。该工作桥接了GFlowNet与策略梯度算法，为离散概率采样提供了新工具。",
+      "llm_tags": [
+        "query:rl-papers:composite"
+      ],
+      "matched_query_tag": "query:rl-papers:composite",
+      "matched_query_text": "Papers central to 请帮我查找强化学习相关的论文, especially work that connects or combines: reinforcement learning survey methods; reward function design in reinforcement learning; latest research in reinforcement learning algorithms.",
+      "matched_requirement_id": "req-composite-rl-papers",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.11559v1",
+      "source": "arxiv",
+      "title": "HERO: Hindsight-Enhanced Reflection from Environment Observations for Agentic Self-Distillation",
+      "abstract": "Reinforcement learning typically improves multi-turn agent capabilities through the terminal outcome of the trajectories, which makes it difficult to determine credit assignments for each intermediate turns. Recent on-policy self-distillation methods offer a promising alternative by converting privileged feedback into dense token-level supervision through a self-teacher. Our study is motivated by the unexpected performance degradation observed when naively extending this paradigm to multi-turn settings, which we attribute to a lack of alignment between privileged feedback, such as successful trajectories or terminal outcomes, and the student's current decision context. We introduce HERO, a hindsight-enhanced self-distillation framework that uses next environment observations as locally aligned feedback. After each rollout, HERO reflects on the completed interaction to convert each observation into a compact turn-level diagnosis, that captures actionable feedback about the original action such as its necessity, validity or failure cause. On TauBench and WebShop, HERO improves task success and reduces unnecessary turns over environment-feedback-only self-distillation and GRPO. It is especially effective under limited training turn budgets, where successful rollouts are rare and GRPO provides weak reward-contrast signals.",
+      "authors": [
+        "Haoran Liu",
+        "Yuwei Zhang",
+        "Xiyao Li",
+        "Bohan Lyu",
+        "Jingbo Shang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-10T01:35:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.11559v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Hindsight-enhanced self-distillation for multi-turn RL agents",
+      "llm_evidence_cn": "面向多轮RL智能体的后见之明增强自蒸馏",
+      "llm_evidence": "面向多轮RL智能体的后见之明增强自蒸馏",
+      "canonical_evidence": "面向多轮RL智能体的后见之明增强自蒸馏",
+      "llm_tldr_en": "Proposes HERO, a hindsight-enhanced self-distillation method that aligns privileged feedback with agent's current context for multi-turn RL, improving credit assignment.",
+      "llm_tldr_cn": "针对多轮智能体RL中信用分配困难的问题,提出HERO算法,通过后见之明增强的自蒸馏将成功轨迹等特权反馈与学生当前决策上下文对齐。实验表明该方法在多轮任务中显著提升了智能体的决策质量,为自蒸馏范式在智能体领域的应用提供了新思路。",
+      "llm_tldr": "针对多轮智能体RL中信用分配困难的问题,提出HERO算法,通过后见之明增强的自蒸馏将成功轨迹等特权反馈与学生当前决策上下文对齐。实验表明该方法在多轮任务中显著提升了智能体的决策质量,为自蒸馏范式在智能体领域的应用提供了新思路。",
+      "llm_tags": [
+        "query:agent:composite"
+      ],
+      "matched_query_tag": "query:agent:composite",
+      "matched_query_text": "Papers central to 请帮我查找agent相关的论文, especially work that connects or combines: intelligent agent systems and architectures; reinforcement learning agent training and policies; intelligent agent systems and their real world applications; multi agent reinforcement learning algorithms and challenges; autonomous agent navigation and decision making.",
+      "matched_requirement_id": "req-composite-agent",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.10613v1",
+      "source": "arxiv",
+      "title": "Fast and Highly Expressive Policy Learning for Offline Reinforcement Learning via Bootstrapped Flow Q-Learning",
+      "abstract": "Diffusion-based Q-learning has emerged as a powerful paradigm for offline reinforcement learning, but its reliance on multi-step denoising makes both training and inference computationally expensive and brittle. Recent efforts to accelerate diffusion Q-learning toward single-step action generation typically introduce auxiliary networks, policy distillation, or multi-phase training, which frequently compromise simplicity, stability, or performance. To address these limitations, we introduce Bootstrapped Flow Q-Learning (BFQ), a novel framework that enables accurate single-step action generation during both training and inference, without auxiliary networks or distillation procedures. BFQ adopts a divide-and-conquer view of the displacement vector along the flow path: it begins by learning short-range displacements that can be accurately estimated from the Flow Matching marginal velocity, and bootstraps these components to directly learn a noise-to-action mapping in a single step. This formulation eliminates multi-step denoising, resulting in a learning procedure that is substantially faster, simpler, and more robust. Extensive D4RL evaluations show that BFQ improves performance while significantly reducing computational cost compared to multi-step diffusion baselines, demonstrating that single-step action generation suffices for high-performance offline Reinforcement Learning.",
+      "authors": [
+        "Thanh Nguyen",
+        "Tri Ton",
+        "Hongbin Choe",
+        "Tung M. Luu",
+        "Chang D. Yoo"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-09T09:12:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.10613v1",
+      "tags": [
+        "keyword:rl-papers",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "single-step action generation for offline RL via bootstrapped flow",
+      "llm_evidence_cn": "通过引导流实现离线RL的单步动作生成",
+      "llm_evidence": "通过引导流实现离线RL的单步动作生成",
+      "canonical_evidence": "通过引导流实现离线RL的单步动作生成",
+      "llm_tldr_en": "BFQ introduces bootstrapped flow Q-learning that enables single-step action generation without auxiliary networks or distillation, outperforming diffusion-based offline RL methods.",
+      "llm_tldr_cn": "扩散Q学习需要多步去噪，计算昂贵且不稳定。本文提出BFQ，采用分而治之的思想，用流模型实现单步动作生成，无需辅助网络或知识蒸馏。BFQ在离线RL基准上既保持了高表达性，又显著提升了推理速度。该方法为离线策略学习提供了更实用、高效的方案。",
+      "llm_tldr": "扩散Q学习需要多步去噪，计算昂贵且不稳定。本文提出BFQ，采用分而治之的思想，用流模型实现单步动作生成，无需辅助网络或知识蒸馏。BFQ在离线RL基准上既保持了高表达性，又显著提升了推理速度。该方法为离线策略学习提供了更实用、高效的方案。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
 }
