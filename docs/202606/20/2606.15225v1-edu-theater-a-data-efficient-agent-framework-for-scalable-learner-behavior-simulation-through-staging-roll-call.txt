@@ -1,0 +1,582 @@
+Title: Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+URL Source: https://arxiv.org/pdf/2606.15225v1
+
+Published Time: Tue, 16 Jun 2026 00:43:26 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+Edu-Theater 
+
+# Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behav-ior Simulation through Staging Roll-Call 
+
+Weibo Gao 1,2, Qi Liu 1,2, Linan Yue 3, Zheng Zhang 1,2, Yichao Du 4, Fangzhou Yao 1,2, Ao Yu 1,2, Zhenya Huang 1,2, Shijin Wang 5,2
+
+1University of Science and Technology of China 2State Key Laboratory of Cognitive Intelligence 
+
+3Southeast University 4Alibaba Group 5iFLYTEK Co., Ltd. weibogao@mail.ustc.edu.cn 
+
+## Abstract Large-scale learner-task interaction data are crucial for intelligent educational systems but are costly to collect and constrained by privacy and learner engagement. Learner simulators play a critical role in simulating scalable learner behavior without the need for continuous involvement of real learners. However, existing methods are predominantly individual-centric , pairing a simulator with each learner to iteratively infer latent knowledge states from dense interaction histories, which is both data- and computation-intensive, and fragile in cold-start scenarios. We propose a cohort-aware roll-call simulation paradigm that first constructs cohort-level proficiency priors and refines individual learner states through a small number of targeted diagnostic queries. Based on this paradigm, we introduce Edu-Theater , an LLM-powered agent system that performs cohort-aware learner simulation via a teacher agent and retrospective roll-call probing over learner logs. Edu-Theater enables scalable future behavior simulation without the need for dense per-learner histories. Experiments on two real-world datasets demonstrate that Edu-Theater achieves higher simulation accuracy with significantly fewer LLM calls, producing synthetic data that enhances downstream applications such as adaptive testing. 
+
+Keywords: LLM Agent, Educational Data Mining, Data Synthesis, Human Simulation Class 1 Class 2                                                   
+
+> Class 3Class 4Class 5
+> Let’s work on fractions today.
+> Problem 1: !
+> "+#
+> #$ =?
+> Let me think…
+> Answer: !
+> "+#
+> #$ =!
+> #$ +#
+> #$ =%
+> #$
+> I see what happened: !
+> "# should
+> not become $
+> "# . To add
+> fractions, we need a …
+> Estimated mastery level
+> (Fractions: addition): low (~0.35)
+> Given the estimation, I predict a
+> higher probability of incorrect
+> responses on related items.
+> Starting behavior simulation
+> Attention, class! Let’s do a
+> quick learning -level check.
+> Problem 1: What is !
+> "+#
+> #$ ?
+> 3
+> 10
+> Nice —here’s what I observe:
+> Common wrong patterns:
+> •Add denominator
+> Class looks : a struggling group
+> Now I’ll call on a few peopl e so I
+> can understand what’s going on.
+> Can explain your steps?
+> 1
+> 10
+> 1
+> 10
+> 1
+> 5
+> Testing for Class 5:
+> Multi -Round Individual Testing (omitted)
+> Starting behavior simulation
+
+Synthetic data 
+
+: :
+
+Edu -Theater 
+
+Legend    
+
+> Formal attire indicates
+> the teacher role, one per
+> class
+> Casual attire indicates
+> learner roles, at least one
+> per class
+
+Individual -centric Simulation Cohort -aware Simulation   
+
+> Observing Every Historical Interaction (Omitted)
+
+... ...    
+
+> Teacher
+> Learner
+> Teacher
+> Learner Learner Learner Learner
+> Teacher
+> Teacher
+> Teacher
+> Teacher
+> Teacher
+> Discussion
+
+Figure 1: Illustration of Edu-Theater, a learner behavior simulation framework powered by LLM-enabled generative agents. The system simulates a classroom environment where a central Teacher Agent (center) conducts cohort-wide diagnostic probing (right) across learners with diverse cognitive traits and learning histories. Edu-Theater uses population-aware priors to efficiently infer learner states, while also having the flexibility to revert to a traditional ‘Private Tutor’ mode (left) for individualized interactions. Our approach enables scalable, high-fidelity simulations of learner behavior in educational settings, utilizing the power of LLM-based agents to model complex learning processes.  
+
+> arXiv:2606.15225v1 [cs.LG] 13 Jun 2026 Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+## 1 Introduction 
+
+Education is one of the most interactive domains for generative AI [ 7]. Each learning task, such as an exercise or a lesson, elicits learner behaviors and leaves behind interaction traces, including submitted answers and revision trajectories. Modern tutoring platforms leverage large-scale learner-task interactions to model learning progress and provide personalized support, such as hints and task recommendations [ 19 ]. However, collecting such records is costly because learning requires time and cognitive effort, and data collection is often constrained by privacy policies [ 10 ]. As a result, training and evaluating personalized support algorithms directly on real learners’ interaction data at scale is difficult. Generative learner simulators therefore serve as a key enabler, producing scalable interaction data from observed histories and supporting efficient offline training and evaluation without continuously involving real learners [35]. We revisit learner simulation from a simple yet fundamental perspective: How can a simulator infer a learner’s latent state from observed interaction data and use it as evidence to simulate future learning behaviors? Most existing approaches [ 11 , 18 , 35 , 37 ] follow an individual-centric paradigm. To understand a learner, the simulator is paired one-to-one with the same learner over time. It observes learning traces as the learner engages with learning tasks and gradually forms an individualized estimate of the learner’s knowledge mastery state to predict future behaviors. In this sense, a learner simulator resembles a companion private tutor . Its operation can be viewed as presenting learning tasks to the learner, summarizing knowledge mastery from the returned learning traces, and using these signals to simulate future behaviors, as illustrated in the left part of Figure 1. This private-tutor-style paradigm relies on sufficiently rich interaction data to enable fine-grained personalization and long-term state tracking, but it comes with a cost. Dependence on dense histories and repeated model invocations makes it data- and computation-intensive at scale. Moreover, when observations are limited, individual-level state estimation can become unstable, making long-horizon simulation difficult. This raises a key question: Can we make learner simulation more data-efficient, reducing cost while remaining reliable under limited observations? 
+
+To address this challenge, the private-tutoring lens naturally leads us to a contrasting yet familiar classroom setting. When facing a newly enrolled class, teachers rarely build a deep understanding for every student from the start. Instead, they often rely on roll-call-style diagnostic probing . By observing each student’s initial behaviors from only a few learning tasks and drawing on experience with previously taught 
+
+similar cohorts , teachers can quickly form a coarse view of the class’s proficiency distribution without exhaustively querying every student one by one. During instruction, a few rounds of roll-call questioning are then sufficient to pinpoint each individual’s learning state and anticipate subsequent learning behaviors, since most students differ only slightly from the cohort-level baseline. This observation suggests that learner simulation can benefit from cohort-aware inference [ 4]. The key intuition is that learners are not independent. Students with similar prior experiences tend to follow similar learning trajectories, and group-level regularities can serve as informative priors for estimating individual latent states. Motivated by this, we formalize a roll-call simulation paradigm . The simulator first constructs population-level priors from observed cohort experience by grouping learners with similar histories and estimating cohort-level proficiency distributions. It then refines each learner’s state through a small number of targeted interactive queries, thereby generating future behaviors while preserving individual variation in a single pass. Based on this insight, we propose Edu-Theater , a data-efficient, LLM-powered agent system that operationalizes roll-call-style learner understanding for scalable learner behavior simulation. True to its name, each simulation run resembles a staged “performance” that combines cohort-aware diagnosis with targeted roll-call probing. All interactions are retrospective, and no real learners are queried, as illustrated in a toy example in the right part of Figure 1. Edu-Theater begins by casting learners into cohorts (“classes”) according to their learning histories and appoints a teacher agent to orchestrate the simulation. Rather than modeling each learner as a full-fledged agent as in previous methods, Edu-Theater represents learners 
+
+as lightweight, indexed log databases that return grounded interaction traces when queried. This design provides reliable evidence while avoiding expensive learner-side long-horizon reasoning. During rehearsal, the teacher agent maintains a cohort-level knowledge proficiency state and derives individualized learner knowledge proficiency estimates from retrospective roll-call traces, while a cognitive diagnosis prop provides auxiliary mastery references. When the two mastery assessments are inconsistent, a teacher-side retriever is used to propose informative probing tasks for further refinement. During this process, teachers from  
+
+> 2Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+different cohorts can also discuss and share their cohort experiences and, when appropriate, adjust a learner to a more suitable cohort. Once the assessments align, the learner is considered fully understood. After rehearsal, the teacher performs scalable future behavior simulation by replaying and re-organizing existing evidence. Overall, Edu-Theater reframes learner simulation from isolated one-to-one tutoring into a cohort-aware roll-call protocol. This enables reliable simulation with substantially reduced reliance on extensive interaction histories. It is worth noting that Edu-Theater maintains the flexibility to switch to a traditional ‘Private Tutor’ mode when each cohort contains a single learner. Our contributions are summarized as follows: • New Perspective. We approach learner simulation from a teacher’s perspective, emphasizing the impor-tance of data-efficient learner simulation. • New Framework. We introduce Edu-Theater, a cohort-aware, LLM-powered simulation framework that uses population-level priors and individualized probing to efficiently predict learner behaviors with minimal data. • Empirical Evaluation. We evaluate Edu-Theater through extensive experiments on two real-world datasets, demonstrating its superior performance and cost-efficiency compared to existing simulators, particularly under data-sparse conditions. 
+
+## 2 Preliminary 
+
+2.1 Roles and Props in Edu-Theater 
+
+Edu-Theater formulates learner simulation as a staged classroom roll-call, where all interactions are retrospective and no real learners are queried. The system replays historical learner-task interactions, with a teacher agent performing reasoning and generation. Each simulation within a cohort involves two roles: a teacher agent and a cohort of learners, supported by two props for task retrieval and cognitive diagnosis estimation. 
+
+2.1.1 Roles in Edu-Theater Teacher (Agent) AT . The teacher agent AT is the central actor in Edu-Theater that generates simulated learner behaviors. It maintains an internal memory state M summarizing retrieved interaction evidence. Given a target task e⋆ and learner-task interaction traces Qu, the teacher produces a predicted outcome of learner u as 
+
+ˆyu,e ⋆ = AT (xe⋆ , M, Qu) , (1) where Qu denotes a small set of historical interaction records for learner u, with each record in the form of a task–response pair (xe, y u,e ), e.g., xe is a problem statement or lesson prompt, and yu,e is the corresponding answer or action. 
+
+Learner (Log Database) Du. Each learner u is represented as a static, indexed log database Du that stores historical interactions and serves as the sole evidence source for retrospective roll-call. Given a task e,it returns the corresponding recorded interaction: 
+
+(xe, y u,e ) = Du(e). (2) 
+
+2.1.2 Props in Edu-Theater Cognitive Diagnosis Model. The cognitive diagnosis prop is a supervised model that fits collected learner–task interactions and outputs concept-wise mastery estimates for each learner: 
+
+μu = CD ϕ(Qu), μu(c) ∈ [0 , 1] . (3) The model is shared across all cohorts and trained by fitting task-solving correctness, minimizing the supervised loss P 
+
+> u
+
+LCD (ϕ; Qu). In our implementation, we adopt NeuralCD [ 29 ] as the cognitive diagnosis prop, where each dimension of μu corresponds to the mastery estimate μu(c) of a knowledge concept c. 
+
+> 3Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+Teacher-side Task Retriever. The task retriever R proposes a small set of informative probing tasks for each learner, based on the teacher’s current assessment and auxiliary diagnostic references. The specific retrieval mechanism is detailed in Section 3. 
+
+2.2 Problem Formulation 
+
+We consider a learner population u ∈ U and a set of learning tasks e ∈ E . Each learner is associated with a set of historical interaction logs stored in a learner-specific database Du. Given the defined roles and supporting props, Edu-Theater operates in a staged classroom setting, where all interactions are retrospective and no real learners are queried. Given a future unseen task e⋆, the goal of learner simulation is to predict the learner’s response ˆyu,e ⋆ (Eq. (1) ), while relying only on limited retrospective interaction records and efficient teacher-side model invocations. 
+
+## 3 Edu-Theater Framework 
+
+Edu-Theater is an LLM-powered agent framework for roll-call-style learner simulation with population-aware inference . The framework adopts a theatrical abstraction: the teacher agent conducts a staged classroom performance, while learners are passive log entities whose past behaviors are replayed on demand. All probing operations are strictly retrospective, and no online interaction with real learners is involved. The system only reorganizes and summarizes existing historical logs, while the teacher performs inference and generation as if conducting a classroom roll-call. Following this metaphor, each simulation run consists of three phases, as shown in Figure 2: Casting (cohort construction), Rehearsal (retrospective roll-call diagnosis and learner state estimation), and Final Performance (teacher-centered scalable simulation). Each learner u is represented as a static log database Du, while a single teacher agent AT orchestrates evidence retrieval, learner state estimation, and behavior generation across all cohorts. All the prompts in this section are provided in Appendix. 
+
+3.1 Stage I: Casting (Cohort Construction) 
+
+Casting constructs cohort-level priors by grouping learners with similar observed histories. Each cohort serves as a minimal classroom unit that contains at least one learner and is paired with a dedicated teacher agent. This design allows the teacher to reuse population-level regularities as informative baselines, rather than building fully personalized models for every learner from scratch. For each learner u, we compute a representation vector ru and cluster {ru} into K cohorts {Ck}Kk=1 .Each cohort Ck is associated with a cohort memory Mk and a cohort-specific teacher agent AT 
+
+> k
+
+. All teacher agents share the same underlying reasoning parameters, but maintain independent memory states to support population-aware and context-sensitive inference. When task-solving correctness logs are available, we instantiate ru using a lightweight task-wise status encoding inspired by prior work [22]. For each task e ∈ E , we define 
+
+ru,e =
+
+
+
+[1 , 0, 0] if u attempted e and yu,e = 0 ,
+
+[0 , 0, 1] if u attempted e and yu,e = 1 ,
+
+[0 , 1, 0] if u did not attempt e, 
+
+(4) and construct 
+
+ru = Concat( {ru,e }e∈E ) ∈ R3|E| . (5) This encoding yields a high-dimensional but sparse representation of each learner’s historical status over the task space. When correctness logs are unavailable, ru can alternatively be obtained by embedding an LLM-generated summary of the learner’s historical interactions, depending on specific task requirements. Casting provides a coarse cohort prior using lightweight features, while fine-grained learner-specific adaptation is deferred to Stage II rehearsal. Cohort assignment may optionally be revised during rehearsal when newly retrieved evidence indicates systematic mismatch; unless otherwise specified, cohort membership is kept fixed for stability. 
+
+> 4
+
+Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call I. Casting (Cohort Construction)       
+
+> Class 1Class 2
+> Teacher (Agent) Teacher (Agent)
+> Learner
+> (Database)
+> Learner
+> (Database)
+
+II. Rehearsal (Retrospective Roll -call Diagnosis)                                    
+
+> Clustering
+> Class, please answer the following
+> questions: Q1, Q2, Q3 .
+> Q1 :Correct ;Q2 :Incorrect
+> Q3: I have not attempted Q3
+> Q1 :Correct ;Q2 :Incorrect ;Q3: Correct
+> Cohort Diagnosis
+> Q2: Good mastery across
+> students.
+> Q1: Mixed performance.
+> Q3: Low familiarity.
+> Teacher Props
+> Cognitive
+> Diagnosis
+> Model
+> Task
+> Retriever
+> ACT II: Individualized Informative Probing
+> ACT I: Whole -class Retrospective Diagnosis
+> Retrieve task Solve task
+> Individual Prob
+> (Repeat Rrounds)
+> Individual Profile
+> Q1: Good mastery
+> Q2: Good mastery
+> Q1: Good mastery
+> Q2: Low familiarity
+> Q1: Good mastery
+> Q2: Low familiarity Other Class Teachers
+> (For Cross -Class Discussion)
+
+III: Final Performance (Simulation)                        
+
+> I have already
+> understood
+> each learner’s
+> learning state.
+> Teacher -centered Simulation (for )
+> Task: Solving this question: !
+> "+#
+> #$ =?
+> Student has low mastery
+> in
+> fraction addition and may
+> make denominator errors .
+> Simulated response:
+> !
+> "+#
+> #$ =!
+> #$ +#
+> #$ =%
+> #$
+> Teacher
+> Agen t
+> Real
+> Learners
+
+Figure 2: Overview of the Edu-Theater framework. The simulation process consists of three key phases: I. Casting 
+
+(cohort construction), II. Rehearsal (retrospective roll-call diagnosis and learner state estimation), and III. Final Performance (teacher-centered scalable simulation). Each learner is represented as a static log database, and the teacher agent orchestrates interaction log retrieval, learner state estimation, and behavior generation. 
+
+3.2 Stage II: Rehearsal (Retrospective Roll-call Diagnosis) 
+
+Rehearsal equips the teacher with a compact yet diagnostic view of each learner by selectively retrieving a small set of historical interaction traces. Instead of consuming full learner histories or executing long simulated trajectories as in previous methods, Edu-Theater performs retrospective roll-call by querying static log databases. Within each cohort Ck, rehearsal proceeds in two acts: whole-class retrospective diagnosis for cohort calibration, followed by individualized informative probing for learner state estimation refinement. 
+
+3.2.1 Act I: Whole-class Retrospective Diagnosis 
+
+Act I aims to obtain a high-coverage cohort sketch by retrieving a diverse set of historical interactions, enabling the teacher to characterize cohort-level proficiency patterns and calibrate the cognitive diagnosis model. Following coverage-based designs [ 5 ], a probe set Ecov is constructed to maximize knowledge concept coverage. Each task e is associated with a knowledge concept set K(e). For each concept c, we randomly sample p tasks satisfying c ∈ K (e) and take their union to construct the probe set: 
+
+Ecov = Cover( E), (6) where Cover( ·) samples m tasks per concept whenever available, and |E cov | ≪ |E| .For each learner u ∈ Ck and each task e ∈ E cov , the teacher retrieves the recorded interaction (xe, y u,e )
+
+from Du if it exists. Missing records yield no observation. The retrieved interactions for learner u form a retrospective query set 
+
+Qu = {(xe, y u,e ) | e ∈ E cov , (xe, y u,e ) ∈ D u}. (7) The agent leverages its internal LLM (e.g., GPT-4o) to aggregate the collected cohort-level interaction data into the cohort memory as: 
+
+Mk = LLM  {Q u}u∈Ck
+
+. (8) Here, Mk stores a compact description of the cohort’s overall knowledge mastery patterns. The cognitive diagnosis model is refined using aggregated learner–task interaction data {Q u}u∈U via gradient-based updates: 
+
+ϕ ← ϕ − η∇ϕ
+
+X
+
+u∈U 
+
+LCD (ϕ; Qu), (9) where η is the learning rate. At this stage, both the teacher agent and the cognitive diagnosis prop only provide coarse and potentially imperfect assessments of individual learners, which motivates further refinement through subsequent individualized probing. 
+
+5Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call 
+
+3.2.2 Act II: Individualized Informative Probing 
+
+Act II reduces uncertainty about individual learners by selectively retrieving additional evidence through roll-call scenarios. The teacher rely on cohort-level memory and each learner’s accumulated interaction history to assess the learner. In each round r ∈ { 1, . . . , R }, the teacher performs at most one roll-call query for each learner under a strict probing budget R.Given the current cohort memory M(r) 
+
+> k
+
+at round r (M(0)  
+
+> k
+
+= Mk) and the learner’s interaction record 
+
+Qu, the teacher infers the learner’s current knowledge state. The interaction record Qu serves as the direct individual evidence, while the cohort memory provides a population-level prior. We do not construct a separate long-term memory summary for each learner. Instead, when a learner exhibits systematic deviations or boundary behaviors, such observations are incorporated into the shared cohort memory during the update step. The resulting assessment is represented by a teacher-side estimate ˜μ(r) 
+
+> u
+
+(c) for each knowledge concept 
+
+c.Meanwhile, the cognitive diagnosis prop provides an auxiliary mastery reference μu(c) for learner u
+
+on concept c, based on the same individual interaction traces . At this stage, both the teacher agent and the cognitive diagnosis prop rely on incomplete evidence, and their assessments of individual learners are inherently biased and potentially imperfect. A learner is considered sufficiently understood only when the two assessments are largely consistent. The comparison between these two estimates is therefore used to identify concepts on which the learner’s state remains ambiguous and may benefit from additional evidence. We define disagreement as 
+
+D(r) 
+
+> u
+
+(c) = |μu(c) − ˜μ(r) 
+
+> u
+
+(c)|, (10) and quantify the internal ambiguity of the auxiliary diagnosis by 
+
+U (r) 
+
+> u
+
+(c) = μu(c) 1 − μu(c). (11) This scoring rule prioritizes concepts that are both inconsistent with the teacher’s assessment and internally ambiguous under the auxiliary reference. Based on D(r) 
+
+> u
+
+(c) and U (r) 
+
+> u
+
+(c), the teacher-side task retriever proposes a small set of candidate probing tasks for learner u:
+
+C(r)(u) = R(˜ μ(r) 
+
+> u
+
+, μ u), (12) where each candidate task e ∈ C (r)(u) is scored by 
+
+Score (r)(u, e ) = X
+
+> c∈K (e)
+
+ D(r) 
+
+> u
+
+(c) + U (r) 
+
+> u
+
+(c). (13) The highest-scoring task e(r) is selected and its historical interaction (xe(r) , y u,e (r) ) is retrieved from Du if it exists. If the record is missing, no observation is returned. The retrieved interaction is appended to 
+
+Qu ← Q u ∪ { (xe(r) , y u,e (r) )}. (14) After all learners are processed in the current round, the cohort memory is updated: 
+
+M(r+1)  
+
+> k
+
+= LLM  {Q u}u∈Ck
+
+, (15) which revises the teacher’s class-level priors. The cognitive diagnosis prop is then incrementally refined using the updated {Q u}u∈Ck as auxiliary diagnostic references. After the cohort memory is updated in each round, the teacher agent broadcasts the profiles of the learners it has just probed to a small subset of other teacher agents, and queries them one by one about whether these learners would fit better in their cohorts. Each receiving teacher compares the learner’s interaction history with its own cohort summary and returns a binary decision. Once a cohort that provides a more consistent explanation is found, the learner is reassigned to that cohort and the cross-cohort review for this learner terminates. We do not exhaustively query all teachers or search for the globally best cohort. Although doing so could yield a more optimal reassignment, it would incur prohibitive token costs, and in practice identifying a locally better cohort already provides a meaningful improvement over making no adjustment. This iterative roll-call process continues until the probing budget is exhausted ( r = R), indicating that further queries are unlikely to yield informative gains.  
+
+> 6Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+3.3 Stage III: Final Performance (Teacher-centered Simulation) 
+
+After rehearsal, the teacher agent is treated as a calibrated performer that encodes both cohort-level learning patterns and individual learner histories. Edu-Theater then conducts scalable simulation with the teacher as the only agentic actor, while learners remain passive log entities. At this stage, the cognitive diagnosis prop can also be applied to the same interaction records to provide auxiliary concept-wise mastery estimates μu
+
+as a reference. Given a target task e⋆, the teacher generates a simulated learner response by conditioning on the task content, the cohort memory, and the learner’s interaction history: 
+
+ˆyu,e ⋆ = AT (xe⋆ , Mk, Qu, μu) , (16) where ˆyu,e ⋆ is the simulated outcome for learner u on task e⋆.
+
+3.4 Computational Cost 
+
+The computational cost of Edu-Theater is mainly determined by LLM invocations and token consumption. In Act I, the system performs at most |U||E cov | retrospective log queries, where |U| is the number of learners and |E cov | is the size of the coverage probe set. In Act II, it conducts at most |U| R informative queries under the probing budget R. The total number of queries is thus O(|U| (|E cov | + R)) . The number of LLM invocations is K(R + 1) : K initial calls for cohort memory construction and KR updates during iterative rehearsal. The total log units processed by the LLM are approximately |U||E cov | + R|U| . By comparison, traditional agent methods require incremental full-sequence replay, leading to per-learner cost proportional to Tavg (Tavg + 1) /2 and overall population cost |U| · Tavg (Tavg + 1) /2, where Tavg is the average number of tasks per learner. In our experiments, R ≈ 15 ∼20 and K = 15 , both small relative to typical sequence lengths. By only accessing a compact, informative subset of logs instead of replaying full histories, Edu-Theater significantly reduces both LLM calls and token usage, yielding a much lighter computational footprint. More details are provided in Appendix. 
+
+## 4 Experiments 
+
+Edu-Theater is designed to enable reliable learner response simulation under limited retrospective interaction traces with substantially reduced LLM-side cost. We evaluate Edu-Theater through the following research questions: RQ1: Under varying observation availability, how faithfully can Edu-Theater reproduce real learner response patterns? RQ2: How much teacher-side cost can Edu-Theater reduce compared with individual-centric LLM simulators and classical supervised simulators? RQ3: Which staged components (Casting, Act I coverage diagnosis, Act II discrepancy-driven probing) are necessary for stability and accuracy? RQ4: Can the simulated responses generated by Edu-Theater improve downstream educational applications such as adaptive testing? 
+
+4.1 Basic Setup 
+
+Dataset We evaluate learner simulation on two task-solving datasets: DBE-KT22 [ 1 ] and EduHS. DBE-KT22 consists of online exercise interactions collected from undergraduate students enrolled in a Relational Databases course at the Australian National University (2018–2021) via the CodeBench platform. EduHS is collected from a private online practice system and contains interaction logs from high-school learners on mathematics and physics exercises. Both datasets consist of multiple-choice exercise interactions, where each task corresponds to a specific exercise and each response contains the learner’s selected option and a binary correctness label. Each record is associated with textual descriptions of the exercise and its annotated knowledge concepts. For both datasets, we randomly sample 500 learners, each with at least 20 interactions, for experiments. EduHS will be released upon acceptance. Table 1 summarizes dataset statistics. 
+
+Baselines. We select two categories of simulators as baselines.               
+
+> 7Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+> Table 1: The statistics of two datasets. Datasets DBE-KT22 EduHS #learners 500 500 #tasks 183 1,032 #knowledge concepts 67 458 #responses 51,150 18,045 #responses per learners 102.3 36.09
+
+(i) Supervised simulators. We include KES [ 15 ], DKVMN [ 40 ], EERNN (with Markov) [ 27 ], SAKT [ 20 ], and DAISIM [ 42 ] as supervised simulation baselines. These methods do not rely on LLMs and model learner task-solving outcomes only at the correctness level, formulating simulation as a binary classification problem (predictions above 0.5 are treated as correct). Among them, EERNN incorporates textual exercise content, whereas the others mainly operate on historical correctness traces. 
+
+(ii) LLM-based generative simulators. We include EduAgent [ 35 ] and Agent4Edu [ 11 ] with multiple LLM implementations as generative baselines. Because expert-annotated cognitive factors are unavailable, we follow prior work by training NeuralCD [29] and using its concept-wise mastery estimates as auxiliary cognitive factors in the prompt. We also include a history-conditioned LLM baseline that directly predicts a learner’s response from a fixed number of retrieved historical records, without cohort memory or auxiliary diagnostic modeling. 
+
+Implementation We implement the teacher agent using both API-based and open-source LLMs. For API-based models, we use the OpenAI service 1 and adopt GPT-3.5-turbo-1106 (denoted as GPT-3.5), GPT-4o-2024-11-20 (denoted as GPT-4o), and GPT-4.1-mini. For open-source models, we use Llama2-7B and Llama3-8B [ 28 ]. The temperature of all LLMs is fixed at 0 to ensure deterministic generation. For 
+
+Edu-Theater , we conducted simulations with various parameter settings (see Section 4.4 for details). Specifically, we report the results for K = 15 , p = 10 , and R = 15 on the DBE-KT22 dataset, and K = 15 ,
+
+p = 15 , and R = 20 on the EduHS dataset. To train NeuralCD, we adopt the original parameters from its corresponding paper, with the learning rate η set to 0.002. We report the mean over five runs on a Linux server equipped with 4 × NVIDIA A100 80GB GPUs. 
+
+Evaluation Metrics for Simulation Effectiveness. We evaluate simulation effectiveness from two aspects: (1) whether the simulated model selects the same answer option as the real learner, measured by accuracy (ACC); and (2) whether the predicted task-solving correctness matches the ground truth, measured by ACC and F1-score. Following [ 42 ], we further adopt ROUGE-3 to assess the similarity between the simulated correctness and the real correctness distribution. 
+
+4.2 Simulation Performance (RQ1) 
+
+The goal of Edu-Theater is to generate simulated learner responses that resemble real responses under limited retrospective interaction records. We therefore evaluate response simulation performance in two settings: a data-available scenario and a cold-start scenario. 
+
+Data-Available Scenario. In this setting, each learner’s interaction log is split into 90% observed records (for optimization) and 10% held-out future tasks (for test). Supervised baseline models are trained on the observed records, with the last 20% of each learner’s observed records used for validation. Edu-Theater is allowed to retrieve retrospective interaction records during rehearsal (Stage II) and then generate responses for held-out tasks during final performance (Stage III). The learner’s task-solving response simulation performance on DBE-KT22 is summarized in Table 2, with the full results on DBE-KT22 and EduHS listed in Appendix .The results indicate that: (1) LLM-based simulators consistently outperform supervised baselines and native LLMs, demonstrating a stronger ability to simulate learner task-solving behavior. (2) Among  
+
+> 1https://platform.openai.com/docs/models
+> 8Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+Table 2: Performance on DBE-KT22 , with full results on two datasets listed in Appendix.Higher is better ( ↑). “–” indicates that methods cannot predict answers. Best results are in bold. Within each backbone LLM, the best-performing agent is highlighted with a light-blue background. 
+
+Answer Correctness Model ACC ↑ ACC ↑ F1-score ↑ ROUGE-3 ↑
+
+KES – 65.41 74.92 35.17 DKVMN – 67.79 79.50 40.84 EERNN – 69.32 79.66 42.15 SAKT – 68.92 81.13 34.39 DAISIM – 69.03 81.05 34.92 Llama3-8b 59.40 66.13 78.24 40.05 GPT-3.5-turbo 57.60 65.05 75.21 35.77 GPT-4.1-mini 58.10 64.67 79.30 35.13 
+
+Agent-based Methods (Grouped by Backbone LLM) 
+
+EduAgent (Llama2-7b) 61.90 68.32 78.82 41.25 Agent4Edu (Llama2-7b) 63.80 69.30 79.92 42.13 Edu-Theater (Llama2-7b) 65.20 69.55 80.21 42.12 EduAgent (Llama3-8b) 62.30 68.45 79.22 41.40 Agent4Edu (Llama3-8b) 64.10 69.50 80.62 42.25 Edu-Theater (Llama3-8b) 65.80 69.77 80.88 42.33 EduAgent (GPT-3.5-turbo) 63.20 69.70 80.72 42.25 Agent4Edu (GPT-3.5-turbo) 64.80 70.30 81.82 42.57 Edu-Theater (GPT-3.5-turbo) 67.10 71.72 83.21 43.63 EduAgent (GPT-4o) 65.30 69.82 80.82 42.40 Agent4Edu (GPT-4o) 66.90 70.82 82.13 42.73 Edu-Theater (GPT-4o) 68.60 72.93 83.72 43.73 
+
+EduAgent (GPT-4.1-mini) 65.90 69.95 81.22 42.60 Agent4Edu (GPT-4.1-mini) 67.40 71.30 82.93 43.15 Edu-Theater (GPT-4.1-mini) 69.40 73.03 83.95 42.85 
+
+supervised models, EERNN performs best due to its use of exercise text. (3) GPT-based teachers outperform Llama-based teachers, suggesting stronger capacity in modeling learner–task interaction patterns. (4) All models achieve higher performance on DBE-KT22 than on EduHS, as DBE-KT22 contains denser learner interaction logs. (5) The answer-level simulation accuracy is consistently lower than correctness-level performance, since answer prediction involves a larger output space and thus poses a more challenging learning problem. 
+
+Cold-Start Scenario. In the cold-start setting, we construct five levels of data sparsity by randomly selecting 0%, 20%, 30%, 50%, and 100% of each learner’s observed records. Supervised models are trained on the available subset, while Edu-Theater initializes cohort construction and rehearsal using only the same limited records. Results on DBE-KT22 are reported in Table 3, and similar trends are observed on the EduHS dataset. We observe that: (1) When no historical records are available (0%), supervised models cannot operate, while Edu-Theater remains functional. (2) As observation becomes sparser, supervised models degrade sharply, whereas Edu-Theater maintains stable performance. (3) Edu-Theater achieves the highest robustness under cold-start conditions, benefiting from cohort-level priors and population-aware inference. 
+
+4.3 LLM-based Learner Simulation Cost (RQ2) 
+
+LLM-based simulators generally incur higher computational costs than supervised models due to the repeated invocation of large language models during simulation. To demonstrate that Edu-Theater reduces such costs compared with existing agents, we analyze both data usage and API computational expense.  
+
+> 9Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+Table 3: Correctness simulation accuracy on the DBE-KT22 dataset under cold-start scenarios. Model 0% 20% 30% 50% 100% KES - 55.31 60.13 63.27 65.41 DKVMN - 60.14 64.32 65.33 67.79 EERNN - 68.53 68.35 69.04 69.32 SAKT - 67.88 67.92 68.37 68.92 DAISIM - 65.25 66.33 68.44 69.03 EduAgent (Llama3-8b) 63.25 65.67 65.30 67.33 68.45 EduAgent (GPT-4.1-mini) 66.93 68.42 68.57 68.52 69.95 Agent4Edu (Llama3-8b) 65.83 66.02 68.30 69.63 69.50 Agent4Edu (GPT-4.1-mini) 68.43 69.32 69.43 69.95 71.30 Edu-Theater (Llama3-8b) 66.50 66.33 68.67 69.67 69.77 Edu-Theater (GPT-4.1-mini) 68.85 69.90 70.33 71.27 73.03 
+
+Table 4: Time and monetary costs of GPT-based LLM simulators. ↓ indicates lower is better. Model DBE-KT22 EduHS Time ↓ Money ↓ Time ↓ Money ↓
+
+EduAgent (GPT-3.5-turbo) 4h 27m 47.5$ 3h 35m 27.4$ Agent4Edu (GPT-3.5-turbo) 6h 30m 62.7$ 5h 20m 43.5$ Our Edu-Theater (GPT-3.5-turbo) 3h 52m 42.3$ 2h 24m 20.1$ 
+
+EduAgent (GPT-4.1-mini) 4h 53m 44.7$ 3h 25m 25.3$ Agent4Edu (GPT-4.1-mini) 6h 55m 59.0$ 5h 33m 40.5$ Our Edu-Theater (GPT-4.1-mini) 4h 24m 39.3$ 2h 23m 18.5$ 
+
+Data Cost A key advantage of Edu-Theater lies in its data efficiency during the casting and rehearsal stages. Instead of requiring full historical interaction logs to initialize learner states, Edu-Theater constructs cohort-level priors using only a subset of retrospective interaction records, and refines individual learners through a small number of roll-call queries. Specifically, Edu-Theater initializes using only 63.4% of the DBE-KT22 data and 69.5% of the EduHS data, while baseline LLM-based simulators rely on the full training dataset. This property makes Edu-Theater particularly suitable for cold-start settings and scenarios where learner histories are incomplete or sparsely observed. 
+
+Time & Monetary Cost Table 4 reports the total wall-clock time and monetary costs for representative LLM-based simulators to complete both the rehearsal phase (retrospective roll-call diagnosis) and the final performance phase (teacher-centered response generation), under identical experimental settings. All compared agents follow the same simulation pipeline and API usage protocol. The reported costs include all API calls made during a full simulation run. As shown, Edu-Theater consistently requires less computational time and lower monetary expense than existing LLM-based methods, demonstrating its efficiency in both learner state estimation and scalable response generation. A similar trend is observed on EduHS. 
+
+4.4 Parameter and Module Analysis (RQ3) 
+
+Cohort Number ( K) Analysis We analyze how the number of cohorts affects the simulation performance of Edu-Theater. Figure 3 (a) shows the accuracy of the GPT-3.5-turbo-based Edu-Theater with K set to 1, 5, 10, 15, 20, 25 and 35. As K increases, performance improves and stabilizes after K = 15 . Finer cohort construction leads to more homogeneous learning patterns within each cohort, which provides more informative population-level priors for roll-call simulation. When K = 1 , all learners are grouped into a single cohort, resulting in degraded performance due to the high diversity of learner behaviors. 
+
+Whole-class Diagnosis Density Analysis ( p) We analyze how the number of sampled tasks per knowledge concept at the Whole-class Diagnosis stage affects simulation performance. Recall that in Act I of rehearsal, for each concept c we sample p tasks satisfying c ∈ K (e) to construct the probe set Ecov . We vary 
+
+p ∈ { 1, 3, 5, 10 , 15 , 20 } in the experiments. Figure 3 (b) shows a clear performance gain as p increases from 
+
+> 10
+
+Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call (a)  (b)                    
+
+> K
+> 𝑝
+> 𝑞 50
+> 55
+> 60
+> 65
+> 70
+> 75 AgenticClass w/o ct
+> w/o it w/o colla
+> w/o discuss
+> (a) (b)
+> DBE -KT22 SchoolData
+> ACC
+> (c) (d)
+> 62
+> 64
+> 66
+> 68
+> 70
+> 72
+> 74
+> 1510 15 20 25 30
+> DBE-KT22
+> EduHS
+> K
+> AC C
+> 60
+> 62
+> 64
+> 66
+> 68
+> 70
+> 72
+> 74
+> 13510 15 20
+> DBE-KT22
+> EduHS
+> p
+> AC C
+> (a) (b)
+
+Figure 3: (a) Performance under different cohort numbers K. (b) The impact of whole-class diagnosis density ( p). 62           
+
+> 64
+> 66
+> 68
+> 70
+> 72
+> 74
+> 1510 15 20 25 30
+> DBE-KT22
+> EduHS
+> R
+> ACC
+> AUC
+> (a) (b)
+> 65
+> 70
+> 75
+> 80
+> 85
+> DBE-KT22 EduHS
+> Edu-Theater w/o Casting
+> w/o Act I w/o Act II
+> w/o inter-cohort disc.
+
+Figure 4: (a) The impact of Budget ( R). (b) Ablation Study. 
+
+1 to 5 on EduHS and from 1 to 10 on DBE-KT22, indicating that denser concept coverage allows the teacher to form more accurate cohort-level proficiency sketches. However, the improvement becomes marginal when 
+
+p exceeds 10, and almost saturates at p = 10 ∼ 20 . This suggests that a small number of representative tasks per concept is already sufficient for effective cohort calibration, and additional retrospective queries mainly introduce redundant information. Overall, the analysis demonstrates that Edu-Theater can achieve strong simulation performance with relatively low rehearsal cost, highlighting the efficiency of its coverage-based roll-call design. 
+
+Individualized Informative Probing Budget ( R) We investigate how the probing budget R of individual-ized roll-call affects simulation performance. Recall that in Act II of rehearsal, the teacher performs at most 
+
+R retrospective queries for each learner. We vary R ∈ { 1, 5, 10 , 15 , 20 , 25 , 30 } for GPT-4.1-mini-based Edu-Theater. As shown in Figure 4 (a), increasing R consistently improves performance on EduHS, with gains gradually stabilizing when R ≥ 20 on DBE-KT22 and R ≥ 15 on EduHS. Longer roll-call sequences provide richer retrospective interaction evidence, leading to more accurate learner state estimation. 
+
+Ablation Study We conduct an ablation study by removing key stages of the Edu-Theater roll-call framework to examine their individual contributions. Specifically, we consider the following variants: (i) 
+
+w/o Casting , where cohort construction is removed and all learners share a single teacher memory; (ii) w/o Act I , where cohort-level retrospective diagnosis is skipped and the teacher directly performs individualized probing; (iii) w/o Act II , where individualized informative probing is disabled and learner states rely solely on cohort-level summaries; and (iv) w/o inter-cohort disc. , where teacher agents do not discuss and exchange cohort memories during rehearsal. As shown in Figure 4 (b), removing any component leads to a clear degradation in simulation performance. Eliminating Casting or Act II causes the most significant drops, emphasizing the importance of learner-specific refinement beyond coarse cohort estimates. Removing Act I also results in a substantial performance loss, highlighting the importance of population-level priors and cohort calibration for a reliable diagnostic context. Disabling inter-cohort discussion only slightly decreases performance, suggesting it provides additional constraints for boundary learners, but with less impact than other components. Overall, the ablation results confirm that Edu-Theater’s effectiveness stems from the integration of cohort construction, cohort-level rehearsal, and individualized roll-call refinement, rather than any single component. 
+
+4.5 Education Algorithm Improvement (RQ4) 
+
+We investigate whether the simulated data generated by Edu-Theater can improve downstream intelligent education algorithms. We choose Computerized Adaptive Testing (CAT) as the evaluation task, as it is a representative and widely used paradigm in personalized assessment. CAT relies on a cognitive diagnostic model (e.g., IRT [ 3]) to estimate learner abilities and designs an item selection strategy to adaptively 
+
+11 Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call                                 
+
+> Table 5: The improvement of CAT services on DBE-KT22. Testing length is 5 Testing length is 10 Model F1-score ↑F1-score+ ↑Imp. ↑F1-score ↑F1-score+ ↑Imp. ↑
+> FSI 83.33 84.87 +1.54 85.16 86.17 +1.01 KLI 81.86 85.13 +3.27 84.30 85.69 +1.39 MAAT 82.59 83.90 +1.31 82.87 83.70 +0.83
+
+recommend informative questions. The collected responses are then used to refine the diagnostic model and predict future learner performance. If the simulated data generated by Edu-Theater can enhance the prediction accuracy of the diagnostic model, this would indicate that the simulated responses provide useful and realistic learning signals. We use 60% of learner interaction data from DBE-KT22 to train the IRT model, and reserve the remaining 40% for evaluation. For each learner in the test set, Edu-Theater simulates responses to 20 randomly selected unseen exercises based on the calibrated teacher and learner evidence. The generated responses are combined with the original training set to construct an augmented dataset, denoted as DBE-KT22+. We then retrain the IRT model using both DBE-KT22 and DBE-KT22+ under three standard CAT strategies, including FSI [ 17 ], KLI [ 6], and MAAT [ 5 ]. Each strategy recommends either 5 or 10 test items per learner. Table 5 reports the IRT prediction performance, where F1-score denotes performance on the original dataset, and F1-score+ denotes performance after augmentation. The results show consistent improvements across all strategies. This suggests that Edu- Theater can generate high-quality learner response data for the applications. 
+
+## 5 Related Work 
+
+5.1 Learner Simulation 
+
+Learner simulation addresses the scarcity of high-quality interaction data in educational systems [ 36 , 42 ]. Early methods primarily trained classifiers on historical data to predict future responses [ 15 , 42 ], employing memory-based architectures [ 26 ] or RNN variants such as EERNN [ 27 ] and KES [ 15 ]. While DAISim [ 42 ]utilizes Markov decision processes to capture multi-scale patterns, such traditional methods often struggle with interpretability and cold-start challenges. Recently, LLM-based generative agents have emerged as a robust alternative. Specifically, GenStu [ 18 ] generates exercise responses, EduAgent [ 35 ] simulates instructional learning, and Agent4Edu [ 11 ] incorporates forgetting dynamics across interaction turns. Furthermore, CoderAgent [ 37 ] extends these simulations to the coding task. Despite their potential, current LLM agents for individual learner simulation entail high computational costs and rely heavily on the model’s inherent generalization capabilities. In this work, we introduce Edu-Theater , a novel framework that reduces computational costs and maintains effective learner simulation by leveraging cohort-level priors and retrospective roll-call probing, making it ideal for data-scarce scenarios. 
+
+5.2 LLM-based Agents 
+
+LLM-based generative agents have demonstrated exceptional capabilities in perception, decision-making, and execution, sparking extensive cross-domain research [ 31 ]. A foundational architecture proposed by Park et al. [ 21 ]—integrating profiles, memory, action, and reflection—has enabled the simulation of complex, temporally extended human behaviors. Building on this, subsequent research has specialized agents for communication, tool usage, recommendation, and interactive decision-making [ 12 , 24 , 30 , 34 ,38, 39], alongside large-scale multi-agent simulations [9, 16, 32, 33]. In educational contexts, LLM-based agents have been increasingly leveraged to support teaching and classroom interactions [ 2, 8 , 13 , 14 ]. Beyond evaluating ChatGPT’s utility in specialized fields like engineering [ 23 , 25 ], recent work emphasizes pedagogical alignment. For instance, EduAgent [ 35 ] and Agent4Edu [ 11 ] instantiate learner simulators by encoding personalized profiles and workflows, while SimClass [ 41 ] extends this to classroom-level activities through role-based agent modeling.  
+
+> 12 Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+## 6 Conclusion 
+
+In this work, we proposed a novel approach to learner simulation through Edu-Theater , a data-efficient, cohort-aware simulation framework powered by large language models (LLMs). By leveraging population-level priors and targeted roll-call-style diagnostic probing, Edu-Theater offers a significant departure from traditional one-to-one tutoring paradigms, making learner behavior simulation more scalable and efficient. Edu-Theater demonstrated the feasibility of achieving personalized and accurate learner simulations with minimal data, even under sparse observation conditions. Through empirical evaluation, we showed that our approach outperforms existing simulators in both cost-effectiveness and prediction accuracy. By reframing learner simulation from individual-centric models to a cohort-aware, roll-call protocol, we paved the way for more efficient, cost-effective, and scalable simulations that can support the next generation of intelligent educational systems. Future work could explore further optimization of cohort clustering strategies and the incorporation of additional learner attributes for even finer-grained personalization. 
+
+## References 
+
+[1] Ghodai Abdelrahman, Sherif Abdelfattah, Qing Wang, and Yu Lin. 2022. Dbe-kt22: A knowledge tracing dataset based on online student evaluation. arXiv preprint arXiv:2208.12651 (2022). [2] David Baidoo-Anu and Leticia Owusu Ansah. 2023. Education in the era of generative artificial intelligence (AI): Understanding the potential benefits of ChatGPT in promoting teaching and learning. 
+
+Journal of AI 7, 1 (2023), 52–62. [3] Frank B Baker. 2001. The basics of item response theory . ERIC. [4] Haoyang Bi, Enhong Chen, Weidong He, Han Wu, Weihao Zhao, Shijin Wang, and Jinze Wu. 2023. BETA-CD: A Bayesian meta-learned cognitive diagnosis framework for personalized learning. In 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 37. 5018–5026. [5] Haoyang Bi, Haiping Ma, Zhenya Huang, Yu Yin, Qi Liu, Enhong Chen, Yu Su, and Shijin Wang. 2020. Quality meets diversity: A model-agnostic framework for computerized adaptive testing. In 
+
+2020 IEEE International Conference on Data Mining (ICDM) . IEEE, 42–51. [6] Hua-Hua Chang and Zhiliang Ying. 1996. A global information approach to computerized adaptive testing. Applied Psychological Measurement 20, 3 (1996), 213–229. [7] Ling Dai, Yuan-Hao Jiang, Yuanyuan Chen, Zinuo Guo, Tian-Yi Liu, and Xiaobao Shao. 2024. Agent4EDU: Advancing AI for Education with Agentic Workflows. In Proceedings of the 2024 3rd International Conference on Artificial Intelligence and Education . 180–185. [8] Yuhao Dan, Zhikai Lei, Yiyang Gu, Yong Li, Jianghao Yin, Jiaju Lin, Linhao Ye, Zhiyan Tie, Yougen Zhou, Yilei Wang, et al . 2023. Educhat: A large-scale language model-based chatbot system for intelligent education. arXiv preprint arXiv:2308.02773 (2023). [9] Chen Gao, Xiaochong Lan, Zhihong Lu, Jinzhu Mao, Jinghua Piao, Huandong Wang, Depeng Jin, and Yong Li. 2023. S 3: Social-network Simulation System with Large Language Model-Empowered Agents. arXiv preprint arXiv:2307.14984 (2023). [10] Weibo Gao, Qi Liu, Zhenya Huang, Yu Yin, Haoyang Bi, Mu-Chun Wang, Jianhui Ma, Shijin Wang, and Yu Su. 2021. RCD: Relation map driven cognitive diagnosis for intelligent education systems. In Proceedings of the 44th international ACM SIGIR conference on research and development in information retrieval . 501–510. [11] Weibo Gao, Qi Liu, Linan Yue, Fangzhou Yao, Rui Lv, Zheng Zhang, Hao Wang, and Zhenya Huang. 2025. Agent4edu: Generating learner response data by generative agents for intelligent education systems. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 39. 23923–23932.  
+
+> 13 Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+[12] Xu Huang, Jianxun Lian, Yuxuan Lei, Jing Yao, Defu Lian, and Xing Xie. 2023. Recommender ai agent: Integrating large language models for interactive recommendations. arXiv preprint arXiv:2308.16505 
+
+(2023). [13] Fabian Kieser, Peter Wulff, Jochen Kuhn, and Stefan Küchemann. 2023. Educational data augmentation in physics education research using ChatGPT. Physical Review Physics Education Research 19, 2 (2023), 020150. [14] Hang Li, Tianlong Xu, Chaoli Zhang, Eason Chen, Jing Liang, Xing Fan, Haoyang Li, Jiliang Tang, and Qingsong Wen. 2024. Bringing generative AI to adaptive learning in education. arXiv preprint arXiv:2402.14601 (2024). [15] Qi Liu, Shiwei Tong, Chuanren Liu, Hongke Zhao, Enhong Chen, Haiping Ma, and Shijin Wang. 2019. Exploiting cognitive structure for adaptive learning. In Proceedings of the 25th ACM SIGKDD international conference on knowledge discovery & data mining . 627–635. [16] Ruibo Liu, Ruixin Yang, Chenyan Jia, Ge Zhang, Denny Zhou, Andrew M Dai, Diyi Yang, and Soroush Vosoughi. 2023. Training socially aligned language models in simulated human society. arXiv preprint arXiv:2305.16960 (2023). [17] Frederic M Lord. 2012. Applications of item response theory to practical testing problems . Routledge. [18] Xinyi Lu and Xu Wang. 2024. Generative students: Using llm-simulated student profiles to support question item evaluation. In Proceedings of the Eleventh ACM Conference on Learning@ Scale .16–27. [19] Martin Mladenov, Chih-Wei Hsu, Vihan Jain, Eugene Ie, Christopher Colby, Nicolas Mayoraz, Hubert Pham, Dustin Tran, Ivan Vendrov, and Craig Boutilier. 2021. Recsim ng: Toward principled uncertainty modeling for recommender ecosystems. arXiv preprint arXiv:2103.08057 (2021). [20] Shalini Pandey and George Karypis. 2019. A self-attentive model for knowledge tracing. In 12th International Conference on Educational Data Mining, EDM 2019 . International Educational Data Mining Society, 384–389. [21] Joon Sung Park, Joseph O’Brien, Carrie Jun Cai, Meredith Ringel Morris, Percy Liang, and Michael S Bernstein. 2023. Generative agents: Interactive simulacra of human behavior. In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology . 1–22. [22] Chris Piech, Jonathan Bassen, Jonathan Huang, Surya Ganguli, Mehran Sahami, Leonidas J Guibas, and Jascha Sohl-Dickstein. 2015. Deep knowledge tracing. Advances in neural information processing systems 28 (2015). [23] Junaid Qadir. 2023. Engineering education in the era of ChatGPT: Promise and pitfalls of generative AI for education. In 2023 IEEE Global Engineering Education Conference (EDUCON) . IEEE, 1–9. [24] Chen Qian, Xin Cong, Cheng Yang, Weize Chen, Yusheng Su, Juyuan Xu, Zhiyuan Liu, and Maosong Sun. 2023. Communicative agents for software development. arXiv preprint arXiv:2307.07924 
+
+(2023). [25] Md Mostafizer Rahman and Yutaka Watanobe. 2023. ChatGPT for education and research: Opportuni-ties, threats, and strategies. Applied Sciences 13, 9 (2023), 5783. [26] Siddharth Reddy, Sergey Levine, and Anca Dragan. 2017. Accelerating human learning with deep reinforcement learning. In NIPS workshop: teaching machines, robots, and humans .[27] Yu Su, Qingwen Liu, Qi Liu, Zhenya Huang, Yu Yin, Enhong Chen, Chris Ding, Si Wei, and Guoping Hu. 2018. Exercise-enhanced sequential modeling for student performance prediction. In Proceedings of the AAAI conference on artificial intelligence , Vol. 32.  
+
+> 14 Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call
+
+[28] Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al . 2023. Llama 2: Open foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288 (2023). [29] Fei Wang, Qi Liu, Enhong Chen, Zhenya Huang, Yuying Chen, Yu Yin, Zai Huang, and Shijin Wang. 2020. Neural cognitive diagnosis for intelligent education systems. In Proceedings of the AAAI conference on artificial intelligence , Vol. 34. 6153–6161. [30] Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023. Voyager: An open-ended embodied agent with large language models. 
+
+arXiv preprint arXiv:2305.16291 (2023). [31] Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, et al . 2024. A survey on large language model based autonomous agents. 
+
+Frontiers of Computer Science 18, 6 (2024), 1–26. [32] Lei Wang, Jingsen Zhang, Xu Chen, Yankai Lin, Ruihua Song, Wayne Xin Zhao, and Ji-Rong Wen. 2023. Recagent: A novel simulation paradigm for recommender systems. arXiv preprint arXiv:2306.02552 (2023). [33] Lei Wang, Jingsen Zhang, Hao Yang, Zhiyuan Chen, Jiakai Tang, Zeyu Zhang, Xu Chen, Yankai Lin, Ruihua Song, Wayne Xin Zhao, et al . 2023. User behavior simulation with large language model based agents. arXiv preprint arXiv:2306.02552 (2023). [34] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Shaokun Zhang, Erkang Zhu, Beibin Li, Li Jiang, Xiaoyun Zhang, and Chi Wang. 2023. Autogen: Enabling next-gen llm applications via multi-agent conversation framework. arXiv preprint arXiv:2308.08155 (2023). [35] Songlin Xu, Xinyu Zhang, and Lianhui Qin. 2024. EduAgent: Generative Student Agents in Learning. 
+
+arXiv preprint arXiv:2404.07963 (2024). [36] Fangzhou Yao, Qi Liu, Linan Yue, Weibo Gao, Jiatong Li, Xin Li, and Yuanjing He. 2024. Adard: An adaptive response denoising framework for robust learner modeling. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining . 3886–3895. [37] Yi Zhan, Qi Liu, Weibo Gao, Zheng Zhang, Tianfu Wang, Shuanghong Shen, Junyu Lu, and Zhenya Huang. 2025. CoderAgent: Simulating Student Behavior for Personalized Programming Learning with Large Language Models. arXiv preprint arXiv:2505.20642 (2025). [38] An Zhang, Yuxin Chen, Leheng Sheng, Xiang Wang, and Tat-Seng Chua. 2024. On generative agents in recommendation. In Proceedings of the 47th international ACM SIGIR conference on research and development in Information Retrieval . 1807–1817. [39] Junjie Zhang, Yupeng Hou, Ruobing Xie, Wenqi Sun, Julian McAuley, Wayne Xin Zhao, Leyu Lin, and Ji-Rong Wen. 2023. Agentcf: Collaborative learning with autonomous language agents for recommender systems. arXiv preprint arXiv:2310.09233 (2023). [40] Jiani Zhang, Xingjian Shi, Irwin King, and Dit-Yan Yeung. 2017. Dynamic key-value memory networks for knowledge tracing. In Proceedings of the 26th international conference on World Wide Web . 765–774. [41] Zheyuan Zhang, Daniel Zhang-Li, Jifan Yu, Linlu Gong, Jinchang Zhou, Zhiyuan Liu, Lei Hou, and Juanzi Li. 2024. Simulating classroom education with llm-empowered agents. arXiv preprint arXiv:2406.19226 (2024). [42] Guanhao Zhao, Zhenya Huang, Yan Zhuang, Jiayu Liu, Qi Liu, Zhiding Liu, Jinze Wu, and Enhong Chen. 2023. Simulating Student Interactions with Two-stage Imitation Learning for Intelligent Educational Systems. In Proceedings of the 32nd ACM International Conference on Information and Knowledge Management . 3423–3432.
