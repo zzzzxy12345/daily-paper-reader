@@ -6,77 +6,77 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-20
-- 运行时间：2026-06-20 21:05:51 UTC
+- 最新运行日期：2026-06-21
+- 运行时间：2026-06-21 20:48:27 UTC
 - 运行状态：成功
 - 本次总论文数：19
 - 精读区：7
 - 速读区：12
 
 ### 今日简报（AI）
-今日精读突破多智能体安全解耦与因果模型规划，速读覆盖无人机自主导航与大语言模型游戏交互。最值得关注的是《TRIDENT》提出解耦安全-物理耦合的证明安全方法，以及《Causal Object-Centric Models》结合MCTS的因果规划框架。建议优先精读这两篇高分论文，并速读AgenticRL的视觉导航实践以拓展应用场景。
-- 详情：[/202606/20/README](/202606/20/README)
+今日精读7篇、速读12篇，重点推出策略轨迹推理与自主事件驱动多智能体编排两大方向。最值得关注的是9分精读论文《STRIDE》与《Autonomous Event-Driven Multi-Agent Orchestration》，分别聚焦验证性强化学习和企业级AI自动编排。建议优先阅读这两篇以把握智能体推理与规模化协作的前沿进展。
+- 详情：[/202606/21/README](/202606/21/README)
 
 ### 精读区论文标签
-1. [TRIDENT: Breaking the Hybrid-Safety-Physics Coupling for Provably Safe Multi-Agent Reinforcement Learning](/202606/20/2606.18308v1-trident-breaking-the-hybrid-safety-physics-coupling-for-provably-safe-multi-agent-reinforcement-learning)  
-   标签：评分：10.0/10、query:agent
-   evidence：针对混合动作、安全约束和物理动力学的可证明安全多智能体RL框架
-2. [Causal Object-Centric Models for Planning with Monte Carlo Tree Search](/202606/20/2606.14418v1-causal-object-centric-models-for-planning-with-monte-carlo-tree-search)  
+1. [STRIDE: Strategic Trajectory Reasoning via Discriminative Estimation for Verifiable Reinforcement Learning](/202606/21/2606.15866v1-stride-strategic-trajectory-reasoning-via-discriminative-estimation-for-verifiable-reinforcement-learning)  
    标签：评分：9.0/10、query:rl-papers
-   evidence：基于对象中心模型的蒙特卡洛树搜索规划
-3. [A Gradient Perspective on RLVR Stability and Winner Advantage Policy Optimization](/202606/20/2606.16154v1-a-gradient-perspective-on-rlvr-stability-and-winner-advantage-policy-optimization)  
+   evidence：可验证强化学习中的奖励函数设计
+2. [Autonomous Event-Driven Multi-Agent Orchestration for Enterprise AI at Scale](/202606/21/2606.20058v1-autonomous-event-driven-multi-agent-orchestration-for-enterprise-ai-at-scale)  
    标签：评分：9.0/10、query:agent
-   evidence：提出胜者优势策略优化方法用于强化学习智能体训练
-4. [Qwen-RobotNav Technical Report: A Scalable Navigation Model Designed for an Agentic Navigation System](/202606/20/2606.18112v2-qwen-robotnav-technical-report-a-scalable-navigation-model-designed-for-an-agentic-navigation-system)  
+   evidence：企业级多智能体系统架构
+3. [GroundControl: Anticipating Navigation Failures in Vision-Language Agents via Trajectory-Consistent Uncertainty Estimates](/202606/21/2606.20479v1-groundcontrol-anticipating-navigation-failures-in-vision-language-agents-via-trajectory-consistent-uncertainty-estimates)  
    标签：评分：9.0/10、query:agent
-   evidence：为智能体导航系统设计的可扩展导航模型
-5. [UBP2: Uncertainty-Balanced Preference Planning for Efficient Preference-based Reinforcement Learning](/202606/20/2606.19328v1-ubp2-uncertainty-balanced-preference-planning-for-efficient-preference-based-reinforcement-learning)  
-   标签：评分：9.0/10、query:rl-papers
-   evidence：基于偏好的强化学习奖励函数设计
-6. [Uncertainty-Aware Reward Modeling for Stable RLHF](/202606/20/2606.19818v1-uncertainty-aware-reward-modeling-for-stable-rlhf)  
-   标签：评分：9.0/10、query:rl-papers
-   evidence：不确定性感知的奖励建模用于稳定RLHF
-7. [Connect the Dots: Training LLMs for Long-Lifecycle Agents with Cross-Domain Generalization Via Reinforcement Learning](/202606/20/2606.20002v1-connect-the-dots-training-llms-for-long-lifecycle-agents-with-cross-domain-generalization-via-reinforcement-learning)  
-   标签：评分：9.0/10、query:agent
-   evidence：通过强化学习训练面向长生命周期智能体的大语言模型
+   evidence：视觉语言智能体导航失败预测
+4. [Exploring Agentic Tool-Calling Decisions via Uncertainty-Aligned Reinforcement Learning](/202606/21/2606.06976v1-exploring-agentic-tool-calling-decisions-via-uncertainty-aligned-reinforcement-learning)  
+   标签：评分：8.0/10、query:agent
+   evidence：基于不确定性对齐的强化学习用于智能体工具调用决策
+5. [Representation-Aware Advantage Estimation: Your Reward Model Provides More Than A Scalar Output](/202606/21/2606.10528v1-representation-aware-advantage-estimation-your-reward-model-provides-more-than-a-scalar-output)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：利用奖励模型隐藏状态改进优势估计，提升奖励信号保真度
+6. [GraphWorld: Long-Horizon Planning with World Models for End-to-End Autonomous Driving](/202606/21/2606.16274v1-graphworld-long-horizon-planning-with-world-models-for-end-to-end-autonomous-driving)  
+   标签：评分：8.0/10、query:agent
+   evidence：基于世界模型的自动驾驶长时域规划
+7. [Quantile of Means: A Bonus-Free Ensemble Method for Minimax Optimal Reinforcement Learning](/202606/21/2606.20107v1-quantile-of-means-a-bonus-free-ensemble-method-for-minimax-optimal-reinforcement-learning)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：基于集成方法的新型强化学习算法
 
 ### 速读区论文标签
-1. [AgenticRL: Self-Refining Agentic Reinforcement Learning for Vision-Conditioned UAV Navigation](/202606/20/2606.03963v2-agenticrl-self-refining-agentic-reinforcement-learning-for-vision-conditioned-uav-navigation)  
+1. [ConMem: Structured Memory-Guided Adaptation in Training-Free Multi-Agent Systems](/202606/21/2606.08702v1-conmem-structured-memory-guided-adaptation-in-training-free-multi-agent-systems)  
    标签：评分：8.0/10、query:agent
-   evidence：智能体引导的视觉无人机导航强化学习
-2. [SMAC-Talk: A Natural Language Extension of the StarCraft Multi-Agent Challenge for Large Language Models](/202606/20/2606.04202v1-smac-talk-a-natural-language-extension-of-the-starcraft-multi-agent-challenge-for-large-language-models)  
+   evidence：多智能体系统，记忆引导适应，无需训练
+2. [Claw-R1: A Step-Level Data Middleware System for Agentic Reinforcement Learning](/202606/21/2606.09138v1-claw-r1-a-step-level-data-middleware-system-for-agentic-reinforcement-learning)  
    标签：评分：8.0/10、query:agent
-   evidence：基于自然语言通信的多智能体协作基准
-3. [AgentJet: A Flexible Swarm Training Framework for Agentic Reinforcement Learning](/202606/20/2606.04484v1-agentjet-a-flexible-swarm-training-framework-for-agentic-reinforcement-learning)  
+   evidence：智能体强化学习数据中间件系统
+3. [Soul Computing: A Theoretical Framework and Technical Architecture for Intelligent Agents with Independent Consciousness](/202606/21/2606.10413v1-soul-computing-a-theoretical-framework-and-technical-architecture-for-intelligent-agents-with-independent-consciousness)  
    标签：评分：8.0/10、query:agent
-   evidence：分布式群训练框架用于LLM智能体强化学习
-4. [GARL: Game-Theoretic Reinforcement Learning for Multi-Agent Strategic Prioritisation](/202606/20/2606.05002v1-garl-game-theoretic-reinforcement-learning-for-multi-agent-strategic-prioritisation)  
+   evidence：具有意识智能体的理论框架与架构
+4. [HIPIF: Hierarchical Planning and Information Folding for Long-Horizon LLM Agent Learning](/202606/21/2606.10507v1-hipif-hierarchical-planning-and-information-folding-for-long-horizon-llm-agent-learning)  
    标签：评分：8.0/10、query:agent
-   evidence：面向多智能体战略优先级的博弈论强化学习框架
-5. [Lyapunov-Based Sample Complexity Analysis for Weakly-Coupled MDPs](/202606/20/2606.14095v2-lyapunov-based-sample-complexity-analysis-for-weakly-coupled-mdps)  
+   evidence：用于长程LLM代理的分层强化学习与规划
+5. [LatentGym: A Testbed For Cross-Task Experiential Learning With Controllable Latent Structure](/202606/21/2606.15306v1-latentgym-a-testbed-for-cross-task-experiential-learning-with-controllable-latent-structure)  
+   标签：评分：7.0/10、query:agent
+   evidence：为持续学习智能体系统提供可控测试环境
+6. [Proximal Policy Optimization for Amortized Discrete Sampling](/202606/21/2606.15793v1-proximal-policy-optimization-for-amortized-discrete-sampling)  
    标签：评分：7.0/10、query:rl-papers
-   evidence：弱耦合MDP的样本复杂度分析，强化学习理论
-6. [Edu-Theater: A Data-Efficient Agent Framework for Scalable Learner Behavior Simulation through Staging Roll-Call](/202606/20/2606.15225v1-edu-theater-a-data-efficient-agent-framework-for-scalable-learner-behavior-simulation-through-staging-roll-call)  
+   evidence：PPO应用于GFlowNet，强化学习算法扩展
+7. [PathRouter: Aligning Rewards with Retrieval Quality in Agentic Graph Retrieval-Augmented Generation](/202606/21/2606.16409v1-pathrouter-aligning-rewards-with-retrieval-quality-in-agentic-graph-retrieval-augmented-generation)  
    标签：评分：7.0/10、query:agent
-   evidence：面向教育中学习者行为模拟的数据高效代理框架
-7. [Discovering Lattice Reduction Strategies via Self-Play](/202606/20/2606.15301v1-discovering-lattice-reduction-strategies-via-self-play)  
-   标签：评分：7.0/10、query:agent
-   evidence：使用自对弈深度强化学习发现格基约简策略
-8. [PO-PDDL: Learning Symbolic POMDPs from Visual Demonstrations for Robot Planning Under Uncertainty](/202606/20/2606.15654v1-po-pddl-learning-symbolic-pomdps-from-visual-demonstrations-for-robot-planning-under-uncertainty)  
-   标签：评分：7.0/10、query:agent
-   evidence：不确定性下的机器人规划与POMDP
-9. [Can LLM Agents Infer World Models? Evidence from Agentic Automata Learning](/202606/20/2606.16576v1-can-llm-agents-infer-world-models-evidence-from-agentic-automata-learning)  
-   标签：评分：6.0/10、query:agent
-   evidence：通过自动机学习评估LLM代理推断世界模型的能力
-10. [Continuous-time Optimal Stopping through Deep Reinforcement Learning](/202606/20/2606.17545v1-continuous-time-optimal-stopping-through-deep-reinforcement-learning)  
+   evidence：智能体图检索增强生成的路径感知训练
+8. [Deep Q-Learning on Hölder Spaces](/202606/21/2606.16846v1-deep-q-learning-on-hlder-spaces)  
+   标签：评分：7.0/10、query:rl-papers
+   evidence：连续空间深度Q学习的理论分析
+9. [Learning from Own Solutions: Self-Conditioned Credit Assignment for Reinforcement Learning with Verifiable Rewards](/202606/21/2606.18810v1-learning-from-own-solutions-self-conditioned-credit-assignment-for-reinforcement-learning-with-verifiable-rewards)  
    标签：评分：6.0/10、query:rl-papers
-   evidence：针对最优停止问题的新型连续时间深度强化学习算法
-11. [SEAGym: An Evaluation Environment for Self-Evolving LLM Agents](/202606/20/2606.17546v1-seagym-an-evaluation-environment-for-self-evolving-llm-agents)  
+   evidence：提出面向可验证奖励强化学习的信用分配新方法
+10. [Process-Verified Reinforcement Learning for Theorem Proving via Lean](/202606/21/2606.20068v1-process-verified-reinforcement-learning-for-theorem-proving-via-lean)  
+   标签：评分：6.0/10、query:rl-papers
+   evidence：利用Lean证明助手提供密集反馈的新型强化学习方法
+11. [A Model-Driven Approach for Developing Families of Reinforcement Learning Environments](/202606/21/2606.20324v1-a-model-driven-approach-for-developing-families-of-reinforcement-learning-environments)  
    标签：评分：6.0/10、query:agent
-   evidence：自演化LLM智能体的评估环境
-12. [SAGE: Stochastic Prompt Optimization via Agent-Guided Exploration](/202606/20/2606.18902v1-sage-stochastic-prompt-optimization-via-agent-guided-exploration)  
-   标签：评分：6.0/10、query:agent
-   evidence：使用智能体引导探索的多智能体提示优化管道
+   evidence：模型驱动的强化学习环境家族开发
+12. [CRAX: Fast Safe Reinforcement Learning Benchmarking](/202606/21/2606.20376v1-crax-fast-safe-reinforcement-learning-benchmarking)  
+   标签：评分：6.0/10、query:rl-papers
+   evidence：快速安全RL基准测试工具
 
 
 <div class="dpr-home-promo-card">

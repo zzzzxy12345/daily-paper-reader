@@ -1,0 +1,1581 @@
+Title: Quantile of Means: A Bonus-Free Ensemble Method for Minimax Optimal Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2606.20107v1
+
+Published Time: Fri, 19 Jun 2026 00:49:34 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Quantile of Means: A Bonus-Free Ensemble Method for Minimax Optimal Reinforcement Learning 
+
+Asaf Cassel 
+
+Google Research 
+
+asafca@google.com 
+
+Aviv Rosenberg 
+
+Google Research 
+
+avivros@google.com 
+
+## Abstract 
+
+Optimal Reinforcement Learning (RL) algorithms typically rely on carefully con-structed count-based uncertainty estimates to drive exploration. Although theoreti-cally sound, such estimates are hard to compute in practical settings and therefore offer limited insight for designing exploration heuristics. Meanwhile, ensembling has emerged as a practical approach, but remains without theoretical justification. Building on a recent ensemble-based method for Multi-Armed Bandits, we propose a quantile-based ensemble method for finite-horizon Markov Decision Processes (MDPs). Our simple count-free approach achieves optimal variance-dependent regret bounds, providing theoretical grounding for ensemble-based exploration in RL. 
+
+## 1 Introduction 
+
+Reinforcement learning (RL) provides a general framework for sequential decision-making under uncertainty, where an agent interacts with an environment to optimize a long-term objective. RL algorithms have achieved remarkable success across domains ranging from robotics and games [Mnih et al., 2015, Schulman et al., 2015, 2017, Haarnoja et al., 2018] to Large Language Models (LLMs; Stiennon et al. [2020], Ouyang et al. [2022]). Despite this progress, designing algorithms that can efficiently explore their environment – gathering informative experience while avoiding excessive trial and error – remains one of the fundamental challenges in RL. Efficient exploration is central to achieving optimal performance in RL. In principle, optimal algo-rithms rely on carefully constructed uncertainty estimates to balance exploration and exploitation. Count-based approaches, in particular, offer a theoretically elegant means of quantifying uncertainty, leading to algorithms with near-optimal regret guarantees. However, these methods depend on explicit access to state-action visitation counts or precise transition models – quantities that are infeasible to compute or approximate in high-dimensional or continuous environments. Consequently, while these methods yield important theoretical insights, they provide limited guidance for practical exploration strategies. In contrast, ensemble-based methods have become a staple of modern deep reinforcement learning [Lee et al., 2021, Chen et al., 2021]. By maintaining a collection of function approximators and leveraging their diversity to drive exploration, ensemble methods have achieved empirical success across a wide range of domains [Osband et al., 2016a,b, Pathak et al., 2019, Peer et al., 2021]. Yet, despite their practical utility, the theoretical basis for their effectiveness remains poorly understood. In particular, it is unclear how or why ensembling induces the kind of optimism or uncertainty quantification required for efficient exploration. Recent progress in Multi-Armed Bandits (MAB) has begun to bridge this gap. In Cassel et al. [2025], a simple batch ensemble scheme was shown to achieve variance-dependent regret bounds for stochastic bandits – matching the performance of carefully tuned count-based methods – without requiring 
+
+> Preprint.
+> arXiv:2606.20107v1 [cs.LG] 18 Jun 2026
+
+knowledge of the reward distributions or explicit confidence bounds. This result demonstrates that ensemble diversity alone can serve as a proxy for uncertainty, providing a count-free, distribution-agnostic route to optimal exploration in the bandit setting. While Viel et al. [2025] recently adapted the bandit ensemble technique of Cassel et al. [2025] to MDPs in an imitation learning context, their approach achieves suboptimal rates and requires binarizing the state space – a construction that scales quadratically with the state space and cannot be applied heuristically in a function approximation setting. This leaves open the question of whether a direct ensemble method, without such structural modifications, can achieve optimal regret in MDPs. In this work, we answer this question affirmatively. We propose a quantile-based ensemble method for finite-horizon MDPs that selects actions according to a fixed quantile of an ensemble of Q-value estimates. This simple mechanism naturally captures optimism in the face of uncertainty, while requiring no explicit counts, no posterior computation, and no prior knowledge of reward distributions. 
+
+Contributions. 
+
+1. Instance-optimal regret for MDPs. We prove that our algorithm achieves instance-optimal (variance-dependent) regret bounds for tabular finite-horizon MDPs, matching the best known results [Zanette and Brunskill, 2019, Zhou et al., 2023] – previously attainable only through complex count-based bonus constructions. To our knowledge, this is the first provably efficient ensemble-based exploration algorithm for MDPs, and moreover it achieves optimal rates. 2. Optimal bandit bounds via quantiles. The quantile-based approach also yields improved results in the bandit setting, shaving a logarithmic factor from the regret of Cassel et al. [2025] and achieving the optimal instance-dependent rate. See analysis in Section C. 3. Distribution-agnostic algorithm, distribution-adaptive analysis. Our algorithm encodes no distributional assumptions – it works unchanged for bounded, sub-Gaussian, and non-negative heavy-tailed reward distributions. Yet the analysis can leverage the true concentra-tion properties of the underlying distributions (e.g., KL-based bounds for Bernoulli rewards), yielding tighter guarantees without algorithmic modification. 4. Simple and transparent analysis. We present the complete proof in the main paper. The absence of bonus terms makes the key arguments – particularly the replacement of empirical value functions with optimal ones for establishing optimism – considerably more transparent than in prior variance-dependent analyses. Extending ensemble-based exploration from bandits to MDPs is substantially more challenging than a per-state reduction: Q-value estimates at each step depend on subsequent value estimates through Bellman backups, breaking the independence structure that makes the bandit analysis clean. Standard covering arguments over the value function address this dependence but result in an ensemble size linear in the number of states, rather than logarithmic. Achieving optimal dependence requires more careful arguments that replace the empirical value function with the optimal one when establishing optimism – a technique that, in prior work, is always intertwined with intricate bonus constructions [Zanette and Brunskill, 2019, Zhou et al., 2023]. In our setting, the absence of bonuses makes this argument considerably more transparent, suggesting that ensemble methods may be a more natural algorithmic primitive for exploration in MDPs than the bonus-based paradigm. Whether this approach extends to linear or general function approximation settings remains an interesting open question. 
+
+1.1 Related work. Variance-dependent regret in MDPs. Achieving minimax optimal regret in tabular MDPs has been the focus of a long line of work [Azar et al., 2017, Dann et al., 2017, Jin et al., 2018], with tight bounds scaling as ˜O(√H3SAT ). Building on this, Zanette and Brunskill [2019] provided the first variance-dependent regret bounds, introducing carefully constructed count-based bonuses that yield a highly complex algorithm and analysis. Zhou et al. [2023] recently refined this variance dependence further and established matching lower bounds, confirming the tightness of such problem-dependent results. However, both methods fundamentally require explicit uncertainty quantification through bonuses. In contrast, our algorithm achieves the same variance-dependent guarantees using a simple 2quantile-based ensemble mechanism—requiring no bonuses, no explicit visitation counts, and no prior knowledge of the reward distribution—while matching the lower bounds of Zhou et al. [2023]. 
+
+Posterior/quantile-based exploration in MDPs. Our work also conceptually relates to Posterior Sampling for RL (PSRL) and randomized value functions [Osband et al., 2013, Agrawal and Jia, 2017, Russo, 2019]. More recently, Tiapkin et al. [2022b] proposed Bayes-UCBVI, which uses quantiles of a posterior over Q-values to achieve optimal ˜O(√H3SAT ) regret without explicit bonuses. Similarly, Tiapkin et al. [2022a] take an ensembling approach using a few posterior samples. Both algorithms, however, fundamentally rely on maintaining a Dirichlet posterior over transition probabilities—an inherently count-based statistical operation—and assume the reward function is fully known. Adapting these methods to unknown reward distributions requires strong prior knowledge. Our method achieves comparable optimism using a pure data-partitioning ensemble that requires no explicit posterior computation or distributional assumptions. 
+
+Ensemble methods in bandits. Our work directly builds on Cassel et al. [2025], which introduced the batch ensemble scheme for stochastic bandits achieving variance-dependent regret without distributional assumptions. This paper is the first to extend this strictly count-free approach to MDPs. Other bandit perturbation and ensemble techniques [Lu and Van Roy, 2017, Kveton et al., 2019, Lee and Oh, 2024] or bootstrap bounds [Hao et al., 2019] either fail to adapt to unknown reward distributions, inject artificial noise, or strictly require symmetric rewards. Furthermore, while Bayesian approaches like Bayes-UCB [Kaufmann et al., 2012] use posterior quantiles, they still fundamentally rely on computing explicit count-dependent confidence levels. 
+
+Practical ensemble methods in deep RL. Ensembles are a key technique in empirical deep RL exploration. Methods such as Bootstrapped DQN [Osband et al., 2016a,b], UCB Q-ensembles [Chen et al., 2017], Ensemble Bootstrapped Q-Learning [Peer et al., 2021], and SUNRISE [Lee et al., 2021] have demonstrated remarkable empirical success in complex environments. However, the theoretical justification for why these ensemble heuristics successfully induce exploration has remained largely open. Our work bridges this gap, providing a rigorous theoretical foundation for bonus-free ensemble-driven exploration in RL. 
+
+## 2 The Quantile of Means (QoM) Estimator 
+
+To build the foundation for our ensemble-based MDP algorithm, we first isolate the core statistical challenge: estimating the mean of a distribution optimistically from a finite sample without relying on explicit uncertainty bonuses. To this end, we introduce the Quantile of Means (QoM) estimator, a generalization of the classic Median of Means (MoM) approach. Let X1, . . . , X n be i.i.d nonnegative random variables, with expectation μ. First, for any sequence 
+
+ˆμ1, . . . , ˆμB ∈ R define its quantile at level α ∈ [0 , 1] as 
+
+qα(ˆ μb, b ∈ [B]) def 
+
+= ˆ μ(⌈αB ⌉), (1) where ˆμ(1) , . . . , ˆμ(B) is the sequence sorted in ascending order, and ⌈·⌉ is the ceiling function (which rounds numbers towards infinity). Then, given a partition of the n samples into B fixed, disjoint subsets D1, . . . , DB , the Quantile of Means estimator is defined as: 
+
+ˆμα
+
+> def
+
+= qα
+
+ X
+
+> X∈D b
+
+X
+
+|D b| + 1 , b ∈ [B]
+
+. (2) We establish the following guarantees for the QoM estimator (see proof in Section A.1). 
+
+Lemma 1. Let X1, . . . , X n be i.i.d. non-negative random variables bounded almost surely by R,with expectation μ and variance σ2. Let ˆμα be the QoM estimator (Eq. (2) ) instantiated with 
+
+B ≥ 26 log δ−1 batches and quantile level α = 1 /65 . Then, each of the following bounds holds individually with probability at least 1 − δ:1. ( Optimism ) ˆμα ≤ μ.2. ( Bias ) If |D b| ≥ ⌊ n/B ⌋ for all b ∈ [B], then: ˆμα ≥ μ − 1.7
+
+q σ2B 
+
+> max {1,n }
+
+− 9RB  
+
+> max {1,n }
+
+.
+
+3Standard estimators achieve optimism by explicitly subtracting an uncertainty estimate from an unbiased mean estimator. Consequently, bounding their bias requires carefully designing and computing tight uncertainty bonuses. In contrast, QoM achieves optimism purely through data partitioning and order statistics. This mechanism relies on the following corollary, which states that a minor modification to the standard sample average is optimistic with constant probability. 
+
+Corollary 2. Let X1, . . . , X n be i.i.d nonnegative random variables with expectation μ. Then for any c ≥ 1/12 it holds that: Pr 
+
+Pni=1  
+
+> Xi
+> n+c
+
+< μ 
+
+
+
+≥ 1/13 .
+
+Proof. Apply Lemma 13 in Section A.2 (Feige [2004], Theorem 1) with Xi/μ and δ = c. ■
+
+Crucially, this is not a standard concentration inequality and requires no information beyond the first moment. Using Corollary 2, the QoM estimator is optimistic if at least ⌈αB ⌉ of the subsets yield optimistic estimates. Because the B subsets are independent, the number of optimistic subsets follows a Binomial distribution with B trials and a success probability of at least 1/13 . Bounding the lower tail of this Binomial variable via a Chernoff bound yields the optimism guarantee in Lemma 1. The bias property of QoM follows a similar logic, replacing Corollary 2 with Freedman’s inequality (Lemma 14 in Section A.2). Similar guarantees can be obtained using other tail inequalities. For example, applying Chebyshev’s inequality allows us to handle unbounded random variables with finite variance, albeit with significantly worse constants. Importantly, adapting to these different distributions requires essentially no changes to the QoM estimator itself—only to the analysis. This stands in stark contrast to bonus-based estimators, where the algorithmic implementation must change to incorporate distribution-specific bonus terms. Finally, we note that Cassel et al. [2025] recently considered the Minimum of Means estimator, which is equivalent to QoM with α = 1 /B . They provide similar guarantees in their Lemmas 3 and 4; however, their optimism claim is applicable only for Bernoulli or symmetric random variables, and their bias bound incurs additional logarithmic factors. 
+
+## 3 Setting and Notations 
+
+MDP. A finite horizon MDP is defined by a tuple M = ( S, A, H, P, L), where S is a set of states (of size S), A is a set of actions (of size A), H is the decision horizon, Ph, h ∈ [H] are the transition dynamics, and L is the loss distribution. Each episode k ∈ [K] starts at state s1 ∈ S and proceeds inductively as follows. If at step h ∈ [H] the system is in state skh ∈ S , and an agent chooses action 
+
+akh ∈ A , then the system transitions to a new state skh+1 ∈ S sampled independently according to 
+
+Ph(· | skh, a kh), and a loss Lkh ∈ R is sampled independently according to Lh(skh, a kh) whose mean is denoted ℓh(skh, a kh). The process ends after H steps, at which point a new episode begins. We note that fixing the initial state is done to ease the notation and does not lose generality. 
+
+Assumption 3 (Bounded total loss). The random losses Lh are non-negative and satisfy P 
+
+> h∈[H]
+
+Lh ≤ H almost surely for all policies. 
+
+Policy and Regret. We consider agent strategies known as (deterministic) Markov policies π =(πh)h∈[H] : [ H] × S 7 → A , which map a step and state to an action. Such a policy induces a distribution over trajectories ι = ( sh, a h)h∈[H], and we denote expectation with respect to this distribution as EP,π [·]. For each policy π and horizon h ∈ [H] we define its value (or loss to-go) as 
+
+V πh (s) = EP,π [PHh′=h ℓh′ (sh′ , a h′ ) | sh = s], which is the expected loss if one starts from state s
+
+at horizon h and follows policy π. The performance of a policy, also called its value, is measured by its expected cumulative loss, given by V π 
+
+> 1
+
+(s1). Thus, the optimal policy and value are given by 
+
+π⋆ ∈ arg min π∈ΠM V π (s1) and V ⋆ = V π⋆ 
+
+> 1
+
+, where ΠM is the class of deterministic Markov policies, which is known to be optimal even among the class of stochastic history-dependent policies. Finally, we measure the quality of any algorithm via its regret – the difference between the value of the policies πk generated by the algorithm and that of the optimal policy π⋆, i.e., 
+
+regret K = X
+
+> k∈[K]
+
+V πk 
+
+> 1
+
+(s1) − V ⋆ 
+
+> 1
+
+(s1).
+
+4Additional notation. We use the following notations throughout. [m] for any m ∈ N, denotes the set {1, . . . , m }. For any V : S → R, s ∈ S , a ∈ A we denote P V (s, a ) = P 
+
+> s′∈S
+
+P (s′ | s, a )V (s′).For a random variable X, let Var s,a,h (X) be its variance conditioned on (sh, a h) = ( s, a ).
+
+## 4 Algorithm and Main Result 
+
+We now introduce Value Iteration with Bootstrap Ensemble (VIBE; Algorithm 1), an algorithm that replaces explicit uncertainty bonuses with our QoM estimator. Standard optimistic algorithms construct explicit upper confidence bounds by estimating the empirical mean and subtracting a bonus proportional to the inverse square root of the visitation count. VIBE bypasses this entirely. Instead, we maintain B independent, non-overlapping datasets Dk,b h (s, a ) for each state-action-step tuple. Concretely, to ensure these datasets grow at the same rate—thereby maintaining a balanced variance across the ensemble—we assign incoming transitions (skh+1 , L kh) using a strict round-robin schedule: 
+
+Dk+1 ,b h (s, a ) = Dk,b h (s, a ) [ (skh+1 , L kh), if (s, a, b ) = ( skh, a kh, b kh(s, a )) 
+
+∅, otherwise , (3) where bkh(s, a ) = arg min b∈[B]|D k,b h (s, a )|.During planning, we perform standard value iteration (without bonuses), but evaluate the Q−value using a QoM estimate (see Eq. (2)) applied across our B (nearly) equal non-overlapping datasets at quantile level α. Because we are minimizing loss, taking the α-quantile of the Q-value estimates naturally filters out overestimations while implicitly establishing a high-probability optimistic lower bound on the true loss-to-go. The full procedure is detailed in Algorithm 1. From a practical standpoint, VIBE is highly tunable. It requires only two hyperparameters: the quantile level α (which is constant) and the number of batches B (which scales logarithmically with 
+
+H, S, K , and δ−1). Computationally, VIBE essentially runs value iteration B times per episode, taking O(SAHB ) time. Because B is logarithmic, this ensemble approach introduces negligible overhead compared to standard bonus-based value iteration. 
+
+Algorithm 1 Value Iteration with Bootstrap Ensemble (VIBE)  
+
+> 1:
+
+input : Number of batches B, quantile level α. 
+
+> 2:
+
+initialize : Datasets D1,b h (s, a ) = ∅ for all s ∈ S, a ∈ A, h ∈ [H]. 
+
+> 3:
+
+for episode k = 1 , 2, . . . , K do  
+
+> 4:
+
+Define ˆV kH+1 (s) = 0 for all s ∈ S. 
+
+> 5:
+
+for h = H, . . . , 1 do  
+
+> 6:
+
+for b ∈ [B] do  
+
+> 7:
+
+ˆP k,b h (s′ | s, a ) = P 
+
+> s+∈D k,b h(s,a )
+> 1
+
+{s+=s′}  
+
+> |D k,b h(s,a )|+1
+> 8:
+
+ˆℓk,b h (s, a ) = P   
+
+> L∈D k,b h(s,a )
+> L
+> |D k,b h(s,a )|+1
+> 9:
+
+ˆQk,b h (s, a ) = [ ˆℓk,b h + ˆP k,b h ˆV kh+1 ]( s, a ) 
+
+> 10:
+
+ˆV kh (s) = min a∈A qα
+
+ ˆQk,b h (s, a ), b ∈ [B]
+
+
+
+▷ QoM Eq. (2)  
+
+> 11:
+
+Play πk defined as πkh(s) ∈ arg min a∈A qα
+
+ ˆQk,b h (s, a ), b ∈ [B]
+
+
+
+and observe trajectory ιk. 
+
+> 12:
+
+Add each (skh+1 , L kh) to Dk+1 ,b h (skh, a kh) with fewest samples. ▷ Round-Robin Eq. (3) 
+
+Main result. To state our theoretical guarantees, we characterize the problem complexity using the maximum cumulative conditional variance of the MDP, similarly to Zanette and Brunskill [2019]. We define Q⋆ = P 
+
+> h∈[H]
+
+Q⋆h where 
+
+Q⋆h = max  
+
+> s∈S ,a ∈A
+
+Var 
+
+> s,a,h
+
+(Lh + V ⋆h+1 (sh+1 )) . (4) Theorem 4 establishes that VIBE achieves a variance-dependent regret bound without requiring explicit variance estimation or bonuses. See proof in Section 6, and discussion on extending to heavy-tailed losses in Section B. 5Theorem 4. Suppose we run Algorithm 1 with α = 1 /65 and B = 26 log(5 SAHKδ −1), and let 
+
+κ = log(20 HS 2AKδ −1) be a logarithmic factor. With probability at least 1 − δ,
+
+regret K ≤ 22 pmin {Q⋆, HV ⋆}HSAKκ 2 + 1924 H3S2Aκ 3.
+
+Crucially, the leading term of this bound establishes the optimality of our ensemble approach in two distinct regimes (up to logarithmic factors). In the worst case, it matches the standard Ω( √H3SAK )
+
+minimax lower bound of [Domingues et al., 2021]. Moreover, in environments with low stochasticity, the bound scales with the problem-dependent variance Q∗, matching the refined variance-dependent lower bounds established by Zhou et al. [2023]. 
+
+## 5 Ensembles as a Tool for Optimism 
+
+Having established VIBE’s theoretical guarantees and algorithmic simplicity, we now dissect the mathematical engine driving these results. The purpose of this section is to formally demonstrate how our ensemble quantile mechanism naturally induces optimism in the MDP setting, bypassing the need for explicit uncertainty bonuses. To see this, we first decompose the cumulative regret into two standard components—colloquially referred to as bias and optimism: 
+
+regret K = X
+
+> k∈[K]
+
+V πk 
+
+> 1
+
+(s1) − ˆV k 
+
+> 1
+
+(s1)
+
+| {z }
+
+> bias
+
++ X
+
+> k∈[K]
+
+ˆV k 
+
+> 1
+
+(s1) − V ⋆ 
+
+> 1
+
+(s1)
+
+| {z }
+
+> optimism
+
+. (5) The primary goal of optimistic algorithms is to ensure that the optimism term is non-positive , and thus the total regret is bounded entirely by the bias term. Traditionally, bounding the optimism term requires carefully designed count-based bonuses, which then become the dominant factor when analyzing the bias. Because VIBE completely forgoes explicit bonuses, the analysis of our bias term is significantly simplified and relies mostly on standard techniques (detailed in Section 6.1). In what follows, we show that our QoM approach achieves optimism on the following high-probability event. 
+
+Lemma 5 (Good event for optimism). Suppose that α = 1 /65 and B ≥ 26 log(5 SHKδ −1), then with probability at least 1 − δ/ 5 simultaneously for all h ∈ [H], s ∈ S , k ∈ [K].
+
+qα
+
+
+
+[ˆℓk,b h + ˆP k,b h V ⋆h+1 ]( s, π ⋆h(s)) , b ∈ [B]
+
+
+
+≤ [ℓh + PhV ⋆h+1 ]( s, π ⋆h(s)) .
+
+Proof. First, plugging in the definitions of ˆℓ and ˆP (see Algorithm 1), we have 
+
+[ˆℓk,b h + ˆP k,b h V ⋆h+1 ]( s, a ) = X 
+
+> L,s ′∈D k,b h(s,a )
+
+L + V ⋆h+1 (s′)
+
+|D k,b h (s, a )| + 1 .
+
+Moreover, the datasets Dk,b h (s, a ) are disjoint and each contain i.i.d. samples that satisfy 
+
+E[L + V ⋆h+1 (s′)] = [ ℓh + PhV ⋆h+1 ]( s, a ). Thus, the proof is concluded by performing a union bound on Lemma 1 with respect to h ∈ [H], s ∈ S , and all valid configurations of dataset sizes 
+
+|D k,b h (s, π ⋆(s)) |, b ∈ [B]. Because we use a round-robin schedule 1, there are at most K valid configurations, and thus the total number of events is bounded by SHK , as desired. ■
+
+Lemma 6 (Optimism). Conditioning on the good event defined in Lemma 5, we have ˆV kh (s) ≤ V ⋆h (s)
+
+for all s ∈ S , h ∈ [H], k ∈ [K].
+
+Proof. We prove the claim by reverse induction on h ∈ [H + 1] . The base case is satisfied because 
+
+ˆV kH+1 = V ⋆H+1 = 0 . Now, assuming the hypothesis holds for h + 1 , we have 
+
+ˆV kh (s) = min  
+
+> a∈A
+
+qα
+
+ ˆQk,b h (s, a ), b ∈ [B]
+
+
+
+≤ qα
+
+ ˆQk,b h (s, π ⋆(s)) , b ∈ [B]
+
+
+
+= qα
+
+
+
+[ˆℓk,b h + ˆP k,b h ˆV kh+1 ]( s, π ⋆h(s)) , b ∈ [B]
+
+
+
+≤ qα
+
+
+
+[ˆℓk,b h + ˆP k,b h V ⋆h+1 ]( s, π ⋆h(s)) , b ∈ [B]
+
+
+
+(induction hypothesis) 
+
+≤ [ℓh + PhV ⋆h+1 ]( s, π ⋆h(s)) (Good event - Lemma 5) 
+
+= V ⋆h (s), (Bellman optimality equation)  
+
+> 1There is a one-to-one mapping from the total number of samples, which is at most K, to the current configuration.
+
+6where the second and third inequalities also used that qα(x) ≤ qα(y) for x ≤ y (point-wise). ■
+
+## 6 Regret Analysis 
+
+As established in Section 5, our ensemble approach ensures the optimism term in the regret decomposition is non-positive. Consequently, the regret of VIBE is bounded entirely by the bias. To formalize this, we first define our empirical counters and operators. Let N kh (s, a ) = 
+
+P 
+
+> k′∈[k−1]
+
+1
+
+n
+
+(s, a ) = ( sk′ 
+
+> h
+
+, a k′ 
+
+> h
+
+)
+
+o
+
+be the total visitation count. Because the data is distributed across 
+
+B batches, the effective inverse count per batch is given by βkh (s, a ) = B/ max {1, N kh (s, a )}. Let 
+
+ˆT kh denote the empirical QoM Bellman operator: 
+
+ˆT kh V (s, a ) = qα
+
+
+
+[ˆℓk,b h + ˆP k,b h V ]( s, a ), b ∈ [B]
+
+
+
+.
+
+We define the good event E as the intersection of several high-probability inequalities that hold simultaneously for all s, s ′ ∈ S , a ∈ A , h ∈ [H], k ∈ [K], and b ∈ [B]:
+
+ˆT kh V ⋆h+1 (s, π ⋆h(s)) ≤ [ℓh + PhV ⋆h+1 ]( s, π ⋆h(s)) (6) 
+
+ˆT kh V ⋆h+1 (s, a ) ≥ [ℓh + PhV ⋆h+1 ]( s, a ) − 1.7
+
+r
+
+βkh (s, a ) Var 
+
+> s,a,h
+
+(Lh + V ⋆h+1 (sh+1 )) − 9Hβ kh (s, a )
+
+(7) 
+
+ˆP k,b h (s′ | s, a ) ≤
+
+
+
+1 + 13H
+
+
+
+Ph(s′ | s, a ) + 2 .2Hκβ kh (s, a ) (8) 
+
+ˆP k,b h (s′ | s, a ) ≥
+
+
+
+1 − 13H
+
+
+
+Ph(s′ | s, a ) − 2.2Hκβ kh (s, a ) (9) 
+
+X
+
+> k∈[K]
+
+Eπk ,P 
+
+X
+
+> h∈[H]
+
+βkh (sh, a h) ≤ 2BHSAκ. (10) These conditions capture the essential statistical properties needed to bound the regret. Equation (6) establishes optimism, ensuring the QoM estimator does not overestimate the loss of the optimal action. Equation (7) bounds the algorithm’s bias by limiting how much the estimator can underestimate the true Bellman target for any action. Equations (8) and (9) ensure the empirical transition probabilities concentrate around the true dynamics. Notice that the error here scales multiplicatively with the true transition probabilities, which is a strict requirement for achieving variance-dependent bounds. Finally, Equation (10) bounds the cumulative sum of the statistical errors (the inverse counts) encountered by the agent across all episodes. The following two lemmas establish that E holds with high probability, and that under E, the cumulative bias is bounded by the problem’s structural variance (proofs in Sections 6.1 and 6.2). 
+
+Lemma 7 (Good Event). If α = 1 /65 and B ≥ 26 log(5 SAHKδ −1) then Pr( E) ≥ 1 − δ. 
+
+Lemma 8 (Bias). Suppose that the good event (Eqs. (6) to (10) ) holds, then for any η > 0
+
+V πk
+
+(s1) − ˆV k(s1) ≤ min {Q⋆, HV ⋆}
+
+η + (8 .5η + 37 H2Sκ )EP,π k
+
+ X
+
+> h∈[H]
+
+βkh (sh, a h)
+
+.
+
+With these tools, the proof of our main result (Theorem 4) follows by conditioning on the good event, bounding the optimism term by 0, summing the bias term over all K episodes, using Eq. (10) and optimizing the free parameter η = pmin {Q⋆, HV ⋆}K/ 17 BHSAκ .
+
+6.1 Proof of Lemma 8 (Bias Bound) 
+
+To ease notation, let ˆV k,b h (s) = [ ˆℓk,b h + ˆP k,b h ˆV kh+1 ]( s, π kh(s)) be the predicted value of batch b ∈ [B]
+
+at step h ∈ [H] of episode k ∈ [K]. Then, for any s ∈ S , h ∈ [H], k ∈ [K], b ∈ [B], we decompose 7the error using the Bellman equations: 
+
+V πk 
+
+> h
+
+(s) − ˆV k,b h (s) = [( ℓh − ˆℓk,b h ) + PhV πk 
+
+> h+1
+
+− ˆP k,b h ˆV kh+1 ]( s, π kh(s)) (11) 
+
+= [( ℓh − ˆℓk,b h ) + ( Ph − ˆP k,b h )V ⋆h+1 + ( Ph − ˆP k,b h )( V πk 
+
+> h+1
+
+− V ⋆h+1 ) + ˆP k,b h (V πk 
+
+> h+1
+
+− ˆV kh+1 )]( s, π kh(s)) .
+
+We bound the terms involving V πk 
+
+> h+1
+
+using our transition bounds. Using optimism (Lemma 6) and bounded loss Assumption 3, we have 0 ≤ V πk 
+
+> h+1
+
+− ˆV kh+1 ≤ H. Thus, the good event (Eq. (8)) gives: 
+
+ˆP k,b h (V πk 
+
+> h+1
+
+− ˆV kh+1 ) ≤
+
+
+
+1 + 13H
+
+
+
+Ph(V πk 
+
+> h+1
+
+− ˆV kh+1 ) + 2 .2H2Sκβ kh .
+
+Similarly, 0 ≤ V πk 
+
+> h+1
+
+− V ⋆h+1 ≤ H, so applying Eq. (9) and the optimism property yields: 
+
+(Ph − ˆP k,b h )( V πk 
+
+> h+1
+
+− V ⋆h+1 ) ≤ 13H Ph(V πk 
+
+> h+1
+
+− V ⋆h+1 ) + 2 .2H2Sκβ kh
+
+≤ 13H Ph(V πk 
+
+> h+1
+
+− ˆV kh+1 ) + 2 .2H2Sκβ kh .
+
+Plugging the last two inequalities into Eq. (11) gives 
+
+V πk 
+
+> h
+
+(s) − ˆV k,b h (s) ≤ [( ℓh − ˆℓk,b h ) + ( Ph − ˆP k,b h )V ⋆h+1 ]( s, π kh(s)) + [4 .4H2Sκβ kh + (1 + 2 /(3 H)) Ph(V πk 
+
+> h+1
+
+− ˆV kh+1 )]( s, π kh(s)) .
+
+Now, notice that ˆV kh = qα( ˆV k,b h , b ∈ [B]) (see Algorithm 1) and that the quantile (Eq. (1)) is equivariant to shifts, i.e., qα(μb + c, b ∈ [B]) = qα(μb, b ∈ [B]) + c. Applying this with the good event’s Eq. (7), and noticing that κ ≥ log 40 we get the step-wise recursion: 
+
+V πk 
+
+> h
+
+(s) − ˆV kh (s) ≤ 1.7
+
+r
+
+βkh (s, π kh(s)) Var 
+
+> s,π kh(s),h
+
+(Lh + V ⋆h+1 (sh+1 )) + 7 H2Sκβ kh (s, π k(s)) + (1 + 2 /(3 H)) Ph(V πk 
+
+> h+1
+
+− ˆV kh+1 )( s, π kh(s)) .
+
+(12) Recalling that Var s,π kh(s),h (Lh + V ⋆h+1 (sh+1 )) ≤ Q⋆h (see Eq. (4)), and unrolling the recursion, we get that for any η > 0
+
+V πk 
+
+> 1
+
+(s1) − ˆV k 
+
+> 1
+
+(s1) ≤ EP,π k
+
+X
+
+> h∈[H]
+
+(1 + 1 /H )h−1
+
+
+
+1.7
+
+q
+
+Q⋆hβkh (sh, a h) + 7 H2Sκβ kh (sh, a h)
+
+
+
+≤ η−1Q⋆ + (5 .5η + 20 H2Sκ )EP,π k
+
+X
+
+> h∈[H]
+
+βkh (sh, a h),
+
+where the second inequality used (1 + 1 /H )h ≤ e for all h ∈ [H], and the AM-GM inequality (2√ab ≤ a + b). This completes the first part of the lemma. Next, by optimism (Lemma 6) and the definition of V ⋆, we have ˆV kh+1 ≤ V ⋆h+1 ≤ V πk
+
+. Thus, plugging Lemma 10 into Eq. (12), we get that for any η > 0
+
+V πk 
+
+> h
+
+(s) − ˆV kh (s) ≤ η−1 Var 
+
+> s,π kh(s),h
+
+(Lh + V πk
+
+> h+1
+
+(sh+1 )) + ((2 /e )η + 8 H2Sκ )βkh (s, π k(s)) + (1 + 1 /H )Ph(V πk 
+
+> h+1
+
+− ˆV kh+1 )( s, π k(s)) .
+
+Choosing η ≥ 5eH 2 and similarly unrolling the recursion, we have 
+
+V πk 
+
+> 1
+
+(s1) − ˆV k 
+
+> 1
+
+(s1)
+
+≤ EP,π k
+
+X
+
+> h∈[H]
+
+(1 + 1 /H )h−1
+
+"
+
+η−1 Var 
+
+> s,π kh(s),h
+
+(Lh + V πk
+
+> h+1
+
+(sh+1 )) + ((2 /e )η + 8 H2Sκ )βkh (s, π k(s)) 
+
+#
+
+≤ eη −1HV πk 
+
+> 1
+
+(s1) + (2 η + 22 H2Sκ )EP,π k
+
+X
+
+> h∈[H]
+
+βkh (sh, a h) (Lemma 12) 
+
+≤ (V πk 
+
+> 1
+
+(s1) − V ⋆)/5 + eη −1HV ⋆ + (2 η + 22 H2Sκ )EP,π k
+
+X
+
+> h∈[H]
+
+βkh (sh, a h),
+
+8where Lemma 12 is an application of the Law of Total Variance [Azar et al., 2017] together with the bounded total loss assumption. Using that ˆV k 
+
+> 1
+
+(s1) ≤ V ⋆ (Lemma 6) and rearranging, we have 
+
+V πk 
+
+> 1
+
+(s1) − ˆV k 
+
+> 1
+
+(s1) ≤ 3.4η−1HV ⋆ + (2 .5η + 27 .5H2Sκ )EP,π k
+
+X
+
+> h∈[H]
+
+βkh (sh, a h).
+
+Replacing η with 3.4η + 5 eH 2 and using κ ≥ log 40 ≈ 3.68 concludes the proof. ■
+
+6.2 Proof of Lemma 7 (Good Event) 
+
+Because of the round-robin schedule (Eq. (3)), the samples from each state-action pair are (nearly) uniformly distributed between the datasets. Thus, we can relate the size of each dataset with the global counts as |Dk,b h (s, a )| ≥ N kh (s, a )/B . Therefore, for all s ∈ S , a ∈ A , h ∈ [H], k ∈ [K],
+
+and b ∈ [B] we have 
+
+|Dk,b h (s, a )| + 1 ≥ B−1 max {1, N kh (s, a )}. (13) Now, we show that each of Eqs. (6) to (10) hold with probability at least 1 − δ/ 5; thus, taking a union bound concludes the proof of Lemma 7. 
+
+(Eq. (6)): Follows from Lemma 5. 
+
+(Eq. (7)): As shown in Lemma 5, ˆT kh V ⋆h+1 (s, a ) satisfies the basic conditions of Lemma 1. To satisfy the additional conditions in the second claim of Lemma 1, we use the bounded total loss assumption to bound each sample by H, and Eq. (13) to bound the size of the datasets. Thus, the proof is concluded via a union bound on s ∈ S , a ∈ A , h ∈ [H], and the (at most K) dataset configurations 2.
+
+(Eqs. (8) and (9)): Fix s′, s ∈ S , a ∈ A , h ∈ [H], b ∈ [B], |D k,b h (s, a )| ∈ [K/B ]. For the first inequality, we apply Lemma 14 with Xt = 1{s+ = s′} − ph(s′ | s, a ), for s+ ∈ D k,b h (s, a ) and 
+
+λ = 1 /3( e − 2) H. Notice that R = 1 and 
+
+E[X2 
+
+> t
+
+| X1, . . . , X t−1] = Ph(s′ | s, a )(1 − Ph(s′ | s, a )) ≤ Ph(s′ | s, a ),
+
+where the last inequality holds since Ph ∈ [0 , 1] . Thus, by Lemma 14, with probability at least 1 − δ
+
+X 
+
+> s+∈D k,b h(s,a )
+
+1{s+ = s′} − Ph(s′ | s, a ) ≤ 13H |D k,b h (s, a )|ph(s′ | s, a ) + 3( e − 2) H log 1
+
+δ .
+
+Recalling the definition of ˆP in Algorithm 1, rearranging the inequality and dividing by |D k,b h (s, a )|+1 
+
+gives 
+
+ˆP k,b h (s′ | s, a ) −
+
+
+
+1 + 13H
+
+
+
+Ph(s′ | s, a ) ≤ 3( e − 2) H log δ−1
+
+|D k,b h (s, a )| + 1 ≤ 3( e − 2) HB log δ−1
+
+max {1, N kh (s, a )} , (14) where the last inequality used Eq. (13). For the second inequality, we apply Lemma 14 with 
+
+Xt = Ph(s′ | s, a ) − 1{s+ = s′} to get that with probability at least 1 − δ
+
+X 
+
+> s+∈D k,b h(s,a )
+
+Ph(s′ | s, a ) − 1{s+ = s′} ≤ 13H |D k,b h (s, a )|ph(s′ | s, a ) + 3( e − 2) H log 1
+
+δ .
+
+Adding Ph(s′ | s, a ) to both sides, rearranging and dividing by |D k,b h (s, a )| + 1 gives 
+
+
+
+1 − 13H
+
+
+
+Ph(s′ | s, a ) − ˆP k,b h (s′ | s, a ) ≤ 3( e − 2) H log eδ −1
+
+|D k,b h (s, a )| + 1 ≤ 3( e − 2) HB log eδ −1
+
+max {1, N kh (s, a )} , (15) where the last inequality used Eq. (13). Setting δ in Eqs. (14) and (15) appropriately and performing a union bound over s′, s ∈ S , a ∈ A , h ∈ [H], b ∈ [B], |D k,b h (s, a )| ∈ [K/B ] concludes the proof. 
+
+(Eq. (10)): First, applying Lemma 15 with Xt = P 
+
+> h∈[H]
+
+βkh (sh, a h) ≤ HB gives that with probability at least 1 − δ/ 5
+
+X
+
+> k∈[K]
+
+Eπk ,P 
+
+X
+
+> h∈[H]
+
+βkh (sh, a h) ≤ 2 X
+
+> k∈[K]
+
+X
+
+> h∈[H]
+
+βkh (skh, a kh) + 4 HB log 5 δ−1.
+
+The proof is concluded by applying Lemma 9, a standard algebraic argument on the harmonic sum of the state-action counts, together with the observation that the regret is non-zero only if A ≥ 2. ■
+
+> 2See explanation in the proof of Lemma 5
+
+9References 
+
+S. Agrawal and R. Jia. Optimistic posterior sampling for reinforcement learning: worst-case regret bounds. Advances in neural information processing systems , 30, 2017. M. G. Azar, I. Osband, and R. Munos. Minimax regret bounds for reinforcement learning. In 
+
+International conference on machine learning , pages 263–272. PMLR, 2017. A. Beygelzimer, J. Langford, L. Li, L. Reyzin, and R. Schapire. Contextual bandit algorithms with supervised learning guarantees. In Proceedings of the Fourteenth International Conference on Artificial Intelligence and Statistics , pages 19–26. JMLR Workshop and Conference Proceedings, 2011. A. Cassel, O. Levy, and Y. Mansour. Batch ensemble for variance dependent regret in stochastic bandits. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, pages 15678–15685, 2025. R. Y. Chen, S. Sidor, P. Abbeel, and J. Schulman. Ucb exploration via q-ensembles. arXiv preprint arXiv:1706.01502 , 2017. X. Chen, C. Wang, Z. Zhou, and K. W. Ross. Randomized ensembled double q-learning: Learning fast without a model. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Austria, May 3-7, 2021 . OpenReview.net, 2021. C. Dann, T. Lattimore, and E. Brunskill. Unifying pac and regret: Uniform pac bounds for episodic reinforcement learning. Advances in Neural Information Processing Systems , 30, 2017. O. D. Domingues, P. Ménard, E. Kaufmann, and M. Valko. Episodic reinforcement learning in finite mdps: Minimax lower bounds revisited. In V. Feldman, K. Ligett, and S. Sabato, editors, 
+
+Proceedings of the 32nd International Conference on Algorithmic Learning Theory , volume 132 of Proceedings of Machine Learning Research , pages 578–598. PMLR, 16–19 Mar 2021. U. Feige. On sums of independent random variables with unbounded variance, and estimating the average degree in a graph. In Proceedings of the thirty-sixth annual ACM symposium on Theory of computing , pages 594–603, 2004. D. A. Freedman. On tail probabilities for martingales. The Annals of Probability , 3(1):100–118, 1975. ISSN 00911798, 2168894X. T. Haarnoja, A. Zhou, P. Abbeel, and S. Levine. Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor. In International Conference on Machine Learning ,pages 1861–1870. PMLR, 2018. B. Hao, Y. Abbasi Yadkori, Z. Wen, and G. Cheng. Bootstrapping upper confidence bound. In H. Wallach, H. Larochelle, A. Beygelzimer, F. d'Alché-Buc, E. Fox, and R. Garnett, editors, 
+
+Advances in Neural Information Processing Systems , volume 32. Curran Associates, Inc., 2019. C. Jin, Z. Allen-Zhu, S. Bubeck, and M. I. Jordan. Is q-learning provably efficient? Advances in neural information processing systems , 31, 2018. E. Kaufmann, O. Cappe, and A. Garivier. On bayesian upper confidence bounds for bandit problems. In N. D. Lawrence and M. Girolami, editors, Proceedings of the Fifteenth International Conference on Artificial Intelligence and Statistics , volume 22 of Proceedings of Machine Learning Research ,pages 592–600, La Palma, Canary Islands, 21–23 Apr 2012. PMLR. B. Kveton, C. Szepesvári, S. Vaswani, Z. Wen, T. Lattimore, and M. Ghavamzadeh. Garbage in, reward out: Bootstrapping exploration in multi-armed bandits. In K. Chaudhuri and R. Salakhutdi-nov, editors, Proceedings of the 36th International Conference on Machine Learning, ICML 2019, 9-15 June 2019, Long Beach, California, USA , volume 97 of Proceedings of Machine Learning Research , pages 3601–3610. PMLR, 2019. H. Lee and M.-h. Oh. Improved regret of linear ensemble sampling. In A. Globerson, L. Mackey, D. Belgrave, A. Fan, U. Paquet, J. Tomczak, and C. Zhang, editors, Advances in Neural Information Processing Systems , volume 37, pages 92803–92831. Curran Associates, Inc., 2024. doi: 10. 52202/079017-2947. 10 K. Lee, M. Laskin, A. Srinivas, and P. Abbeel. Sunrise: A simple unified framework for ensemble learning in deep reinforcement learning. In International conference on machine learning , pages 6131–6141. PMLR, 2021. X. Lu and B. Van Roy. Ensemble sampling. Advances in neural information processing systems , 30, 2017. N. Merlis. Reinforcement learning with lookahead information. In A. Globerson, L. Mackey, D. Belgrave, A. Fan, U. Paquet, J. Tomczak, and C. Zhang, editors, Advances in Neural Information Processing Systems , volume 37, pages 64523–64581. Curran Associates, Inc., 2024. V. Mnih, K. Kavukcuoglu, D. Silver, A. A. Rusu, J. Veness, M. G. Bellemare, A. Graves, M. Ried-miller, A. K. Fidjeland, G. Ostrovski, et al. Human-level control through deep reinforcement learning. nature , 518(7540):529–533, 2015. I. Osband, D. Russo, and B. Van Roy. (more) efficient reinforcement learning via posterior sampling. 
+
+Advances in Neural Information Processing Systems , 26, 2013. I. Osband, C. Blundell, A. Pritzel, and B. Van Roy. Deep exploration via bootstrapped dqn. Advances in neural information processing systems , 29, 2016a. I. Osband, B. Van Roy, and Z. Wen. Generalization and exploration via randomized value functions. In International Conference on Machine Learning , pages 2377–2386. PMLR, 2016b. L. Ouyang, J. Wu, X. Jiang, D. Almeida, C. Wainwright, P. Mishkin, C. Zhang, S. Agarwal, K. Slama, A. Ray, et al. Training language models to follow instructions with human feedback. Advances in Neural Information Processing Systems , 35:27730–27744, 2022. D. Pathak, D. Gandhi, and A. Gupta. Self-supervised exploration via disagreement. In International conference on machine learning , pages 5062–5071. PMLR, 2019. O. Peer, C. Tessler, N. Merlis, and R. Meir. Ensemble bootstrapping for q-learning. In International Conference on Machine Learning , pages 8454–8463. PMLR, 2021. A. Rosenberg, A. Cohen, Y. Mansour, and H. Kaplan. Near-optimal regret bounds for stochastic shortest path. In International Conference on Machine Learning , pages 8210–8219. PMLR, 2020. D. Russo. Worst-case regret bounds for exploration via randomized value functions. Advances in neural information processing systems , 32, 2019. J. Schulman, S. Levine, P. Abbeel, M. Jordan, and P. Moritz. Trust region policy optimization. In 
+
+International conference on machine learning , pages 1889–1897. PMLR, 2015. J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 , 2017. N. Stiennon, L. Ouyang, J. Wu, D. Ziegler, R. Lowe, C. Voss, A. Radford, D. Amodei, and P. F. Christiano. Learning to summarize with human feedback. Advances in Neural Information Processing Systems , 33:3008–3021, 2020. D. Tiapkin, D. Belomestny, D. Calandriello, E. Moulines, R. Munos, A. Naumov, M. Rowland, M. Valko, and P. Ménard. Optimistic posterior sampling for reinforcement learning with few samples and tight guarantees. In S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh, editors, Advances in Neural Information Processing Systems , volume 35, pages 10737–10751. Curran Associates, Inc., 2022a. D. Tiapkin, D. Belomestny, E. Moulines, A. Naumov, S. Samsonov, Y. Tang, M. Valko, and P. Menard. From Dirichlet to rubin: Optimistic exploration in RL without bonuses. In K. Chaudhuri, S. Jegelka, L. Song, C. Szepesvari, G. Niu, and S. Sabato, editors, Proceedings of the 39th International Conference on Machine Learning , volume 162 of Proceedings of Machine Learning Research ,pages 21380–21431. PMLR, 17–23 Jul 2022b. 11 S. Viel, L. Viano, and V. Cevher. IL-SOAR : Imitation learning with soft optimistic actor cRitic. In A. Singh, M. Fazel, D. Hsu, S. Lacoste-Julien, F. Berkenkamp, T. Maharaj, K. Wagstaff, and J. Zhu, editors, Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 61444–61479. PMLR, 13–19 Jul 2025. A. Zanette and E. Brunskill. Tighter problem-dependent regret bounds in reinforcement learning without domain knowledge using value function bounds. In K. Chaudhuri and R. Salakhutdinov, editors, Proceedings of the 36th International Conference on Machine Learning , volume 97 of 
+
+Proceedings of Machine Learning Research , pages 7304–7312. PMLR, 09–15 Jun 2019. R. Zhou, Z. Zihan, and S. S. Du. Sharp variance-dependent bounds in reinforcement learning: Best of both worlds in stochastic and deterministic environments. In A. Krause, E. Brunskill, K. Cho, B. Engelhardt, S. Sabato, and J. Scarlett, editors, Proceedings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research ,pages 42878–42914. PMLR, 23–29 Jul 2023. 
+
+## A Additional Proofs 
+
+A.1 Proof of Lemma 1 (QoM) 
+
+For the first part, notice that the event holds when at least ⌈αB ⌉ batches yield an estimate less than or equal to μ. By Corollary 2, each batch satisfies this with probability at least 1/13 . Because the subsets Db are fixed and disjoint, they are independent. Letting Bin( n, p ) be the binomial distribution with n trails and success probability p, we conclude that 
+
+Pr(ˆ μα ≤ μ) ≥ Pr(Bin( B, 1/13) ≥ ⌈ B/ 65 ⌉) ≥ Pr(Bin( B, 1/13) > B/ 65) = 1 − Pr(Bin( B, 1/13) ≤ B/ 65) 
+
+≥ 1 − exp( −B · DKL (1 /65 || 1/13)) 
+
+≥ 1 − exp( −B/ 26) 
+
+≥ 1 − δ, 
+
+where the fourth transition used a standard Chernoff bound for Binomial random variables, and DKL 
+
+is the Kullback–Leibler divergence. The second part of the proof follows similar logic. Denoting the mean estimate of batch b in Eq. (2) as ˆμb, we use Lemma 14 (Freedman’s inequality) to get 
+
+Pr 
+
+ X
+
+> X∈D b
+
+X ≥ |D b|μ − 1.7
+
+q
+
+|D b|σ2 − 8R
+
+ ≥ 0.99953 .
+
+Rearranging the inner term, dividing by |D b| + 1 ≥ B−1 max {1, n } we get 
+
+Pr ˆμb ≥ μ − 1.7
+
+s
+
+σ2B
+
+max {1, n } − 9RB 
+
+max {1, n }
+
+!
+
+≥ 0.99953 .
+
+For the event to hold, at least B + 1 − ⌈ B/ 65 ⌉ batches need to satisfy the above. As before, this occurs with probability at least 
+
+Pr(Bin( B, 0.99953) ≥ B + 1 − ⌈ B/ 65 ⌉) ≥ Pr(Bin( B, 0.99953) > 64 B/ 65) = 1 − Pr(Bin( B, 0.99953) ≤ 64 B/ 65) 
+
+≥ 1 − exp( −B · DKL (64 /65 || 0.99953)) 
+
+≥ 1 − exp( −B/ 26) 
+
+≥ 1 − δ. (■)12 A.2 Existing Results A.2.1 Summing the counts Lemma 9. Recall the state-action counts N kh (s, a ) = P 
+
+> k′∈[k−1]
+
+1
+
+n
+
+(s, a ) = ( sk′ 
+
+> h
+
+, a k′ 
+
+> h
+
+)
+
+o
+
+. We have that 
+
+X
+
+> k∈[K]
+
+X
+
+> h∈[H]
+
+1max {1, N kh (skh, a kh)} ≤ SAH log 8 K. 
+
+Proof (for sake of completeness). Recall that N kh (s, a ) = P 
+
+> k′∈[k−1]
+
+1
+
+n
+
+(sk′ 
+
+> h
+
+, a k′ 
+
+> h
+
+) = ( s, a )
+
+o
+
+, i.e., the counts are incremented every time a state-action pair is visited. Thus, we have 
+
+X
+
+> k∈[K]
+
+X
+
+> h∈[H]
+
+1max {1, N kh (skh, a kh)} = X
+
+> h∈[H]
+
+X
+
+> s∈S
+
+X
+
+> a∈A
+
+X
+
+> k∈[K]
+
+1(skh, a kh) = ( s, a )
+
+max {1, N kh (skh, a kh)}
+
+= X
+
+> h∈[H]
+
+X
+
+> s∈S
+
+X  
+
+> a∈A
+> NKh(s,a )
+
+X
+
+> i=0
+
+1max {1, i }≤ X
+
+> h∈[H]
+
+X
+
+> s∈S
+
+X
+
+> a∈A
+> K
+
+X
+
+> i=0
+
+1max {1, i }≤ X
+
+> h∈[H]
+
+X
+
+> s∈S
+
+X
+
+> a∈A
+
+log 8 K
+
+= SAH log 8 K, 
+
+where the first inequality used that N kh (s, a ) ≤ K for all k ∈ [K]. ■
+
+A.2.2 Variance Manipulation 
+
+The following result is a variant of Lemma 21 in Merlis [2024]. 
+
+Lemma 10. Let V, V , V ∈ [0 , H ]S be value functions such that V (s) ≤ V (s) ≤ V (s) for all s ∈ S .Then for any h ∈ [H], s ∈ S , a ∈ A , β, η > 0
+
+r
+
+β Var 
+
+> s,a,h
+
+(Lh + V (sh+1 )) ≤ η−1 Var 
+
+> s,a,h
+
+(Lh + V (sh+1 )) + 13H Ph(V − V )( sh, a h) + (3 H2 + η)β
+
+4 .
+
+Proof. Recall that the standard deviation satisfies a triangle inequality (see Zanette and Brunskill [2019] Eqs. 48-51), i.e., for σ(X) = pVar( X) we have σ(X + Y ) ≤ σ(X) + σ(Y ). Thus, we have 
+
+r
+
+β Var 
+
+> s,a,h
+
+(Lh + V (sh+1 )) ≤
+
+r
+
+β Var 
+
+> s,a,h
+
+(Lh + V (sh+1 )) + 
+
+r
+
+β Var 
+
+> s,a,h
+
+(( V − V )( sh+1 )) .
+
+Now, using our assumption on the value functions, we have 
+
+r
+
+β Var 
+
+> s,a,h
+
+(( V − V )( sh+1 )) ≤
+
+q
+
+βHP h(V − V )( s, a ) ≤
+
+q
+
+βHP h(V − V )( s, a )
+
+≤ (1 /3H)Ph(V − V )( s, a ) + (3 /4) H2β, 
+
+where the last step also used the AM-GM inequality ( √ab ≤ (a2 + b2)/2). Plugging this into the previous inequality and using AM-GM on the first term concludes the proof. ■
+
+Next, we state the well-known Law of Total Variance (LTV), originally due to Azar et al. [2017]. 
+
+Lemma 11 (Zanette and Brunskill [2019], Lemma 15). For any policy π, it holds that 
+
+EP,π 
+
+ X
+
+> h∈[H]
+
+Var 
+
+> sh,a h,h
+
+(V π (sh+1 )) 
+
+ = EP,π 
+
+ X
+
+> h∈[H]
+
+ℓh(sh, a h) − V π 
+
+> 1
+
+(s1)
+
+
+
+> 2
+
+13 Lemma 12 (Variance Bound). For any policy π : S → A we have 
+
+EP,π 
+
+X
+
+> h∈[H]
+
+Var 
+
+> sh,a h,h
+
+(Lh + V πh+1 (sh+1 )) = EP,π,L 
+
+ X
+
+> h∈[H]
+
+Lh − V π 
+
+> 1
+
+(s1)
+
+
+
+> 2
+
+≤ HV π 
+
+> 1
+
+(s1).
+
+Proof. Recall the bounded total loss assumption, 0 ≤ P 
+
+> h∈[H]
+
+Lh ≤ H. Thus, we have 
+
+EP,π,L 
+
+ X
+
+> h∈[H]
+
+Lh − V π 
+
+> 1
+
+(s1)
+
+
+
+> 2
+
+≤ EP,π,L 
+
+ X
+
+> h∈[H]
+
+Lh
+
+
+
+> 2
+
+≤ HEP,π,L 
+
+ X
+
+> h∈[H]
+
+Lh
+
+ = HV π 
+
+> 1
+
+(s1).
+
+Next, notice that sh+1 and Lh are conditionally independent on sh, a h, thus 
+
+EP,π 
+
+X
+
+> h∈[H]
+
+Var 
+
+> sh,a h,h
+
+(Lh+V πh+1 (sh+1 )) = EP,π 
+
+X
+
+> h∈[H]
+
+Var 
+
+> sh,a h,h
+
+(Lh) + Var 
+
+> sh,a h,h
+
+(V πh+1 (sh+1 )) = EP,π 
+
+ X
+
+> h∈[H]
+
+Var 
+
+> sh,a h,h
+
+(Lh)
+
+ +
+
+ X
+
+> h∈[H]
+
+ℓh(sh, a h) − V π 
+
+> 1
+
+(s1)
+
+
+
+> 2
+
+,
+
+where the second equality used Lemma 11 (LTV). Now, let ι = (( sh, a h)h∈[H] be a trajec-tory. Because π does not depend on the losses Lh, h ∈ [H] we have Var sh,a h,h (Lh) =
+
+EL[( Lh − ℓh(sh, a h)) 2 | ι] . Furthermore, conditioned on ι, the losses are independent, thus 
+
+EP,π 
+
+P 
+
+> h∈[H]
+
+Var sh,a h,h (Lh) = EP,π,L 
+
+P 
+
+> h∈[H]
+
+Lh − ℓh(sh, a h)
+
+2
+
+. Plugging into the above and showing that the two terms are uncorrelated concludes the proof. To see the latter, notice that 
+
+EP,π,L 
+
+ X
+
+> h∈[H]
+
+Lh − ℓh(sh, a h)
+
+ X
+
+> h∈[H]
+
+ℓh(sh, a h) − V π 
+
+> 1
+
+(s1)
+
+
+
+= Eι∼P,π EL
+
+ X
+
+> h∈[H]
+
+Lh − ℓh(sh, a h)
+
+ ι
+
+ X
+
+> h∈[H]
+
+ℓh(sh, a h) − V π 
+
+> 1
+
+(s1)
+
+ = 0 . ■
+
+A.2.3 Statistical Inequalities Lemma 13 (Feige [2004], Theorem 1). Let X1, . . . , X n be arbitrary nonnegative independent random variables, with expectations μ1, . . . , μ n respectively, where μi ≤ 1 for every i. Let X =Pni=1 Xi, and let μ denote the expectation of X (hence, μ = Pni=1 μi). Then for every δ > 0Pr( X < μ + δ) ≥ min {δ/ (1 + δ), 1/13 }.
+
+The following is a Freedman-type inequality Freedman [1975] derived by Beygelzimer et al. [2011]. 
+
+Lemma 14 (Beygelzimer et al. [2011], Theorem 1). Let X1, X 2, . . . , X T be a sequence of real-valued random variables. Assume for all t ∈ [T ], Xt ≤ R and E[Xt | X1, . . . , X t−1] = 0 . Then for any δ ∈ (0 , 1) and λ ∈ [0 , 1/R ], with probability at least 1 − δ
+
+X 
+
+> t∈[T]
+
+Xt ≤ (e − 2) λ X 
+
+> t∈[T]
+
+E[X2 
+
+> t
+
+| X1, . . . , X t−1] + λ−1 log 1
+
+δ .
+
+If E[X2 
+
+> t
+
+| X1, . . . , X t−1] = σ2 then, setting λ = min {R−1, p(( e − 2) σ2T )−1 log δ−1}, gives 
+
+X 
+
+> t∈[T]
+
+Xt ≤ 2p(e − 2) σ2T + R log 1
+
+δ
+
+Next, we state the following Bernstein-type tail bound (e.g.,Rosenberg et al. [2020], Lemma D.4). 
+
+Lemma 15. Let {Xt}t≥1 be a sequence of random variables with expectation adapted to a filtration 
+
+Ft. Suppose that 0 ≤ Xt ≤ 1 almost surely. Then with probability at least 1 − δ
+
+> T
+
+X
+
+> t=1
+
+E[Xt | F t−1] ≤ 2
+
+> T
+
+X
+
+> t=1
+
+Xt + 4 log 1
+
+δ
+
+14 B Extension to Heavy-Tailed Losses 
+
+In this section we discuss how Theorem 4 extends to losses with heavy tails. Specifically, we can replace Assumption 3 with the weaker requirement that the random losses Lh are non-negative, satisfy E
+
+hP 
+
+> h∈[H]
+
+Lh
+
+i
+
+≤ H for all policies, and each Lh(s, a ) has finite (but unknown) variance. The key observation enabling this extension is that Lemma 1 applies to non-negative random vari-ables with finite variance, without requiring boundedness (as discussed following its statement). Consequently, the QoM estimator remains optimistic and its bias increases by at most a constant multiplicative factor in this setting. Given this, the good event used in the proof of Theorem 4 holds essentially unchanged, and the remainder of the regret decomposition follows straightforwardly, yielding the same regret bound up to constants. We note, however, that the min {Q⋆, HV ⋆} term appearing in Theorem 4 reduces to Q⋆ alone in the heavy-tailed setting. The HV ⋆ term arises from bounding the variance of the value function under the optimal policy, which relies on the losses being almost surely bounded. Since no such bound is assumed in the heavy-tailed setting, this refinement does not apply, and we cannot expect the HV ⋆
+
+term to appear in the regret bound. 
+
+## C Multi-Armed Bandits 
+
+Problem setup. A stochastic multi-armed bandit is an MDP with a single state and horizon one, i.e., S = H = 1 (see Section 3). Thus, we simplify the notation as follows. In each episode, k ∈ [K]
+
+the agent chooses an arm ak ∈ A and observes a stochastic loss Lk ∈ [0 , 1] sampled independently from a distribution L(ak) whose mean and variance are denoted ℓ(ak), σ 2(ak). Denoting the optimal action and value as a⋆ ∈ arg min a∈A ℓ(a) and ℓ⋆ = μ(a⋆), the (pseudo) regret can be rewritten as 
+
+regret K = X
+
+> k∈[K]
+
+[ℓ(ak) − ℓ⋆] = X
+
+> k∈[K]
+
+∆( ak),
+
+where ∆( a) = ℓ(a) − ℓ⋆ is known as the sub-optimality gap of arm a ∈ A .
+
+C.1 Algorithm and Main Results 
+
+We present Algorithm 2, which is identical to Algorithm 1 but with a simplified notation. 
+
+Algorithm 2 Quantile of Mean for MAB  
+
+> 1:
+
+input : Number of batches B, quantile level α. 
+
+> 2:
+
+initialize : N 1(a) = 0 , D1,b (a) = ∅ for all a ∈ A. 
+
+> 3:
+
+for episode k = 1 , 2, . . . , K do 
+
+ˆℓk,b (a) = X
+
+> L∈D k,b (a)
+
+L
+
+|D k,b (a)| + 1 ˆℓk(a) = qα
+
+ˆℓk,b (a), b ∈ [B]
+
+
+
+. 
+
+> 4:
+
+Play ak ∈ arg min a∈A ˆℓk(a) and observe loss Lk. 
+
+> 5:
+
+Update global counts: N k+1 (a) = N k(a) + 1a = ak 
+
+> 6:
+
+Calculate batch index: bk = 1 + ( N k(ak) mod B) and update datasets: 
+
+Dk+1 ,b (a) = Dk,b (a) [ Lk, if (a, b ) = ( ak, b k)
+
+∅, otherwise .
+
+The following is our main result for multi-armed bandits (proof in Section C.2). 15 Theorem 16. Suppose we run Algorithm 2 with number of batches B = 26 log(2 KAδ −1), and quantile level α = 1 /65 . With probability at least 1 − δ, the following hold simultaneously 
+
+regret K ≤
+
+s
+
+76 K X
+
+> a̸=a⋆
+
+σ2(a) log(6 KAδ −1) + 469 A log(2 KAδ −1)regret K ≤ X
+
+> a̸=a⋆
+
+ 76 σ2(a)∆( a) + 469 
+
+
+
+log(2 KAδ −1).
+
+We note that Feige [2004] conjecture that their result, stated here as Lemma 13, holds with a constant of 1/e . If true, this would change the numerical constant in the batch size to 5.5, and a better choice of α would be 1/10 . Overall, this would decrease the constants in our bounds. Finally, we note that this result does not require the losses to be bounded in [0 , 1] . In fact, it holds even for nonnegative losses with finite variance, albeit with significantly larger numerical constants. To see this, replace the use of Freedman’s inequality in the proof of Lemma 1 with Chebyshev’s inequality. 
+
+C.2 Proof of Theorem 16 
+
+Recall that the pseudo-regret may be written as 
+
+regret K = X
+
+> a̸=a⋆
+
+N K+1 (a)∆( a), (16) where N k(a) is defined in Algorithm 2. Thus, our goal is to bound N K+1 (a) for each sub-optimal arm. We begin with a standard “good event” over which the regret is bounded deterministically. Suppose that for all k ∈ [K] and a̸ = a⋆ we have 
+
+ˆℓk(a⋆) ≤ ℓ⋆ (17) 
+
+ˆℓk(a) ≥ ℓ(a) − 9BN k(a) − 1.7
+
+s
+
+σ2(a)BN k(a) . (18) Taking a union bound over Lemma 1 with δ/ 2KA , the above holds with probability at least 1 − δ.Now, suppose that arm a with ∆( a) > 0 was played at episode k. Then, by the decision rule in Algorithm 2, we have ˆℓk(a⋆) ≥ ˆℓk(a), and thus 
+
+ℓ⋆ ≥ ˆℓk(a⋆) (Eq. (17)) 
+
+≥ ˆℓk(a)
+
+≥ ℓ(a) − 9BN k(a) − 1.7
+
+s
+
+σ2(a)BN k(a) . (Eq. (18)) Solving this quadratic inequality for N k(a), we have 
+
+N k(a) ≤ B
+
+ 2.9σ2(a)∆2(a) + 18 ∆( a)
+
+
+
+,
+
+Now, let ka be the last episode when arm a was chosen. Then we have 
+
+N K+1 (a) = N ka (a) + 1 ≤
+
+ 76 σ2(a)∆2(a) + 469 ∆( a)
+
+
+
+log(2 KAδ −1),
+
+where the inequality also used our choice of B = 26 log(2 KAδ −1). Plugging this into Eq. (16) concludes the instance-dependent regret bounds. Next, to obtain the instance-independent bounds, notice that 
+
+N K+1 (a)∆( a) ≤ min 
+
+
+
+N K+1 (a)∆( a), 76 σ2(a)∆( a) log(2 KAδ −1)
+
+
+
++ 469 log(2 KAδ −1)
+
+≤
+
+q
+
+76 N K+1 (a)σ2(a) log(2 KAδ −1) + 469 log(2 KAδ −1),
+
+where the second inequality used min {c1, c 2} ≤ √c1c2. Plugging this into Eq. (16) and applying the Cauchy-Schwarz inequality concludes the proof. ■
+
+16
