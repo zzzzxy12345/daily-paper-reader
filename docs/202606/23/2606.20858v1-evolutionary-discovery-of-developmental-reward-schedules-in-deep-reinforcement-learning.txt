@@ -1,0 +1,254 @@
+Title: Evolutionary Discovery of Developmental Reward Schedules in Deep Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2606.20858v1
+
+Published Time: Tue, 23 Jun 2026 00:12:55 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Evolutionary Discovery of Developmental Reward Schedules in Deep Reinforcement Learning 
+
+Alan Nadelsticher Ruvalcaba 1
+
+Abstract — The temporal structure of reward composition in reinforcement learning (RL) is typically hand-designed and held fixed throughout training, leaving the progression of motivational priorities largely unexplored. In this work, we pro-pose an evolutionary framework for discovering developmental reward schedules, in which three distinct biologically inspired motivational components — agency, novelty, and reactivity — are combined through time-varying weights that dynamically shift over the course of training. Evaluated on two sparse-reward MiniGrid tasks: DoorKey-6x6 and KeyCorridorS3R1, our framework compares the generalizability of four evolution-ary algorithms: CMA-ES, xNES, DE, and L-SHADE against an extrinsically motivated baseline (our main comparison point), and three additional hand-designed methods. On DoorKey-6x6, all evolved methods outperform the non-evolved baselines, with L-SHADE achieving the best performance — an approximate relative mean improvement of 11.4% over the extrinsic only baseline. On KeyCorridorS3R1, CMA-ES achieves the best overall performance, with the remaining evolved methods show-ing weaker and less reliable generalization capability compared to the extrinsic only baseline. Interestingly, the discovered schedules diverge from our defined developmental ordering, with novelty consistently emerging as the dominant early signal during training, across both tasks. Collectively, our results position evolutionary optimization as a promising approach for developmental reward schedule discovery in deep reinforcement learning, and suggest that what evolution finds to be optimal in computational settings may differ from what it finds to be optimal in biology. The code for this project can be found at: https://github.com/alannadels/Evolutionary_ RL.git .
+
+I. I NTRODUCTION 
+
+In humans, and other mammals alike [1], the dopaminergic reward system is driven by a shifting ensemble of non-arbitrary, extrinsic and intrinsic motivational signals through-out development: neonates first discover behavior-event con-tingency [2], infants then develop novelty preferences for stimuli of intermediate complexity [3], adolescents exhibit a hyper-responsive striatal reward system that peaks before prefrontal control matures [4], [5], [6] and, finally, mature goal-directed behavior emerges only once corticostriatal con-nectivity develops in early adulthood [7]. This progression reflects a functionally optimal strategy for motivational de-velopment — one that evolution itself discovered over time.  
+
+> © 2026 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future media, including reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in other works.
+> 1Alan Nadelsticher Ruvalcaba is with the College of Computing at the Georgia Institute of Technology, Georgia, USA; and with the School of Engineering and Applied Science at the University of Pennsylvania, Pennsylvania, USA. Email:
+
+alan.nadelsticher@gatech.edu 
+
+Yet, most reinforcement learning (RL) systems treat the temporal structure of reward composition as a fixed design choice, leaving its biologically and evolutionarily grounded dynamics underexplored. In this work, we propose an evolutionary approach to developmental reward schedule discovery in RL that directly addresses this gap. Specifically, we seek to discover the functionally optimal developmental reward schedule for an RL agent, given a certain task, and we let evolution discover it — as it did with biological organisms. In our method, we define a composite reward function, inspired by motivational-cognitive development, comprising three biologically grounded components, each corresponding to a documented stage of maturation: agency [2], [8], novelty [3], [9], and reactivity [4], [5], [6]. The time-varying weights on these components are parameterized and optimized by an evolutionary outer loop, while agents are trained in an inner loop using Proximal Policy Optimization (PPO) [10] on MiniGrid [11] environments. Namely, we evaluate four evolutionary algorithms: Covariance Matrix Adaptation Evolution Strategy (CMA-ES) [12], Exponential Natural Evolution Strategy (xNES) [13], Differential Evolution (DE) [14], and Linear Population Size Reduction Success-History Based Adaptive Differential Evolution (L-SHADE) [15], against an extrinsically motivated baseline (which serves as our main comparison point) and three additional hand-designed baselines. Critically, the evolutionary optimization receives no prior bias toward any particular developmental ordering. This research offers a distinct perspective on RL reward schedule design, conveying that biologically grounded moti-vational architectures, when discovered through evolutionary optimization rather than prescribed by hand, can offer a prin-cipled and effective foundation for reward function design in deep reinforcement learning. II. R ELATED WORK 
+
+Our work sits at the intersection of three research threads: computational accounts of developmental learning, intrinsic motivation in RL, and evolutionary methods for RL design — each offering an important contribution towards the problem we address. Thus, we explore the related work across each of these three areas, and discuss how the identified gaps in the current literature are addressed by our proposed approach. 
+
+A. Developmental Learning in Reinforcement Learning 
+
+The RL community has begun translating developmen-tal psychology and neuroscience knowledge into computa-
+
+> Accepted at the 2026 IEEE International Conference on Development and Learning (ICDL)
+> arXiv:2606.20858v1 [cs.LG] 18 Jun 2026
+
+tional designs. An example of this can be visualized with Nussenbaum and Hartley’s work [16], which demonstrates that, when RL models are fit to human behavioral data, the best-fitting parameters differ systematically across age groups. In their findings, Nussenbaum and Hartley discuss that children’s behavior is best captured by RL models with higher exploration temperatures and different learning rates; this differs from the lower exploration temperatures and more efficient outcome weighting that best captures adult behavior. Such findings suggest that staging the learning process of an RL agent may carry functional significance, an idea which Arditi et al. explore in their work on perceptual development emulation [17]. By progressively expanding what the agent can observe during training, they show that a staged observation curriculum accelerates learning and improves final policy quality. In addition to the body of work discussed, curriculum learning, though conceptually distinct, similarly recognizes that the sequence of experiences matters. By ordering tasks or training samples from simple to complex, Narvekar et al. [18] show that structuring what an agent trains on substan-tially improves learning efficiency and agent performance. However, none of these works address what the agent is motivated by, and how that motivation should evolve across training — which our method intends to uncover. 
+
+B. Intrinsic Motivation in Reinforcement Learning 
+
+If developmental work tells us that the timing of learning matters, the intrinsic motivation literature offers a natural set of building blocks, suggesting what to vary over time. For instance, researchers have developed intrinsic reward signals — self-generated bonuses that encourage exploration independent of task success — which take on several distinct forms: count-based visitation bonuses that reward visita-tion of less-frequent states [19], novelty-based exploration bonuses measured through state-action pair discrepancy [20] or state discrepancy in learned latent spaces [21], and self-attention curiosity that generates temporary bonuses, which fade as the agent masters a state [22]. Although each of these works captures a distinct facet of intrinsic motivation, none fully address how the weighting between intrinsic and extrinsic components should evolve across training — a gap our work attempts to address through evolutionary optimization. 
+
+C. Evolutionary Methods in Reinforcement Learning 
+
+If evolutionary optimization is to serve as a motivational schedule discovery mechanism, a natural question is: Can it be successful in doing so? Prior work suggests it can be. Across a range of deep learning (DL) applications and tasks, including deep RL, evolutionary algorithms have demonstrated their ability to find compelling solutions. One such example comes from Okada’s work, which compares multiple classes of evolutionary methods and demonstrates that DE outperforms Genetic Algorithms and Evolution Strategies in neuroevolution (as it pertains to RL tasks), at-tributing DE’s advantage to its adaptive balance between ex-ploration and exploitation [23]. Moreover, Segal and Sipper demonstrate that dynamically combining genetic algorithms with novelty search outperforms either of these two strate-gies when taken alone, in deceptive reward environments [24]. The Proximal Evolutionary Strategy [25] additionally shows that combining CMA-ES with surrogate models and gradient-based local search reduces sample complexity, while remaining competitive with gradient-based deep RL meth-ods. Beyond policy optimization, Oh et al. [26] demonstrate that evolutionary meta-learning can surpass hand-designed RL algorithms, including PPO, on held-out benchmarks. Their research discovers the learning rule itself, while our proposed work applies the same principle, but to a different target; we seek to discover not how the agent learns, but what it is motivated by, and across what developmental arc. To our knowledge, no prior work has applied evolution-ary optimization to the discovery of developmental reward schedules, nor has any computational study directly com-pared evolved motivational trajectories to the sequence that biological development itself favors. III. M ETHOD 
+
+As we have established, a major challenge in reward schedule design is determining how the relative weights of motivational components should evolve across training. To address this challenge we propose a developmental-based, optimal reward schedule discovery framework comprising two distinct phases. The framework and its phases, as il-lustrated in Figure 1, are described in the subsections that follow.                      
+
+> Phase 1: Evolutionary Search
+> Evolutionary Algorithm
+> CMA-ES, xNES, DE, L-SHADE
+> Build Schedule
+> θ∈R15 →α(t), β (t), γ (t)
+> Train (PPO)
+> candidate θ, fixed seed
+> Fitness Evaluation
+> 50 episodes, sparse reward only
+> r(t) = rtask +λ[α(t)ra+β(t)rn+γ(t)rr]
+> Phase 2: Schedule Generalization
+> Evolved Schedule
+> fixed θ∗
+> Train (PPO)
+> 10 seeds
+> Final Evaluation
+> 50 episodes per seed, sparse reward only
+> Performance
+> mean ±std across seeds
+> best θ=θ∗
+> α
+> β
+> γ
+> Agent (MLP) Env
+> r(t)
+> Fig. 1. Evolutionary reward schedule discovery framework
+
+A. Composite Reward Function 
+
+We define a composite reward function comprising four components, three of which are grounded in distinct stages of biological motivational development, plus a fourth account-ing for the sparse task reward: 
+
+r(t) = rtask + λα(t) · ragency + β(t) · rnovelty + γ(t) · rreactivity 
+
+.
+
+(1) Here, rtask is the sparse environment reward computed as 
+
+rtask =
+
+
+
+1 − 0.9 · steps steps max 
+
+on success 
+
+0 otherwise 
+
+, (2) where steps is the number of steps taken by the agent within the episode and steps max is the maximum number of steps allowed per episode, λ = 0 .003 is a fixed intrinsic scale factor applied at every step, and α(t), β(t), γ(t) are time-varying, non-negative weights corresponding to agency, novelty, and reactivity, respectively. These weights govern the relative contribution of each motivational component over the course of training. Furthermore, the task reward is always present at full strength; evolution shapes only the relative contribution of the three developmental signals. 
+
+Agency ( ragency ): Inspired by effectance motivation — the earliest documented motivational drive [2], [8] — this component rewards the agent whenever its action produces an observable state change: 
+
+ragency =
+
+(
+
+1 if st+1 ̸ = st
+
+0 otherwise , (3) where st is the agent’s state at timestep t and st+1 is the state following the agent’s action. Specifically, the state s is the tuple: (agent position, facing direction, carrying status) , and the reward fires whenever any of these three factors changes between consecutive steps. This binary signal captures the fundamental satisfaction of causing effects in the environment, independent of what those effects may be. From the RL agent’s perspective, it asks and answers the question: Can I make something happen? Which maps to the sensorimotor question an early-stage infant faces: Can my actions produce consequences in the world? Moreover, the signal is non-decaying (it remains available throughout training) — what changes is its weight in the composite reward function. 
+
+Novelty ( rnovelty ): Inspired by mid-to-late-stage infants’ documented attraction to novel stimuli, which diminishes as those stimuli become well-known [3], [9], this component provides a count-based visitation bonus that decays with familiarity: 
+
+rnovelty = 1
+
+pN (st) , (4) where N (st) is the number of times state st has been visited. For novelty, the state s additionally includes the status of each door (open or closed). From the RL agent’s perspective, it asks and answers the question: Have I been here before? — which maps to the curiosity-driven question a growing infant faces: Is there more to discover beyond what I already know? This signal is self-decaying by construction: as the agent revisits states, the bonus diminishes, naturally redirecting exploration toward less familiar regions of the state space. 
+
+Reactivity ( rreactivity ): Motivated by a period of heightened reward sensitivity, namely the adolescent peak in striatal responsiveness preceding the maturation of the prefrontal cortex [1], [4], [5], [6], this component provides a dense, proximity-based signal that draws the agent toward the goal: 
+
+rreactivity = 1 − d(st, g )
+
+dmax 
+
+, (5) where d(st, g ) is the Manhattan distance from the agent to the goal and dmax is the maximum possible distance between any two cells in the grid. From the RL agent’s perspective, it asks and answers the question: How much continuous reward signal am I receiv-ing? Which maps to the appetitive question an adolescent faces: How quickly can I obtain the reward I desire? Counter to agency and novelty, this signal is goal-directed by design. However, unlike the sparse task reward, which is received only upon goal completion, the reactivity signal provides continuous feedback at every timestep, drawing the agent closer to the goal but shaping the reward landscape throughout the episode rather than only at its conclusion. This design attempts to capture the impulsive pull an ado-lescent feels when pursuing a sought-after reward, and their strong preference for immediate over delayed gratification [4], [6]. 
+
+B. Weight Schedule Parameterization 
+
+With the three motivational components outlined, we now address how their relative contributions should shift over the course of training. Rather than prescribing a fixed schedule, we parameterize each of the previously defined weight func-tions α(t), β(t), γ(t) as a piecewise linear function over 
+
+K evenly spaced control points. Here, K = 5 , and each control point is defined by one unconstrained scalar param-eter passed through a softplus activation function to enforce non-negativity. This parameterization yields a vector θ ∈
+
+R15 , which serves as the search target for the evolutionary algorithm. Critically, the weights are not normalized during training — the evolutionary algorithm is free to discover both the relative proportions and absolute magnitudes of each signal. Normalization summing to one is applied after training for visualization and reporting purposes. 
+
+C. Phase 1: Evolutionary Search 
+
+Phase one is responsible for optimal reward weight sched-ule discovery. Specifically, the question we are trying to solve with phase one is: Which schedule θ∗ ∈ R15 maximizes task performance, when used to train an agent from scratch? To answer this question, we evaluate four evolutionary algorithms — CMA-ES [12], xNES [13], DE [14], and L-SHADE [15] — each of which evolves a population of candidate schedule vectors across successive generations. For each candidate θ, a PPO agent [10] is trained from scratch, under the previously defined composite reward function 
+
+r(t), using a fixed training seed of 42 and an MLP policy with two hidden layers of 128 units. Upon completion, the agent is evaluated under the sparse task reward alone over 50 episodes, using a fixed evaluation seed of 123. The resulting mean episodic return is returned to the evolutionary algorithm as the fitness signal — which the algorithm uses to update the population and propose new candidate schedules in the next generation. The loop repeats across 15 generations, after which the best-performing schedule θ∗ is retained. This design was formulated as so to ensure that evolution optimizes for task performance rather than for developmental signal maximization. 
+
+D. Phase 2: Schedule Generalization 
+
+Phase two determines whether what was found in phase one is genuinely useful and generalizable, or merely a lucky artifact of a particular, random initialization. In this phase, the best schedule θ∗ resulting from the evolu-tionary search is held constant, and is evaluated by repeating PPO training independently across 10 seeds (seeds 42–51). Importantly, phase two follows the same per-run training and final evaluation protocol as phase one. Performance is reported as the mean ± the standard deviation of the final episodic return across seeds, as evaluated under the sparse task reward only. IV. E XPERIMENTS 
+
+Our experimental setup and results compare evolved reward schedules against an extrinsically motivated base-line (serving as our principal comparison point) and three additional hand-designed baselines, across two structured, goal-directed tasks, evaluating two criteria in particular: (1) whether evolution discovers more effective schedules than its non-evolved counterparts, and (2) whether these sched-ules mirror the motivational arc that biological development follows. 
+
+A. Setup Environments: We evaluate our framework on two Mini-Grid [11] environments of varying complexity, both featuring sparse task rewards and procedurally randomized layouts across episodes:  
+
+> •
+
+MiniGrid-DoorKey-6x6-v0: In a 6 × 6 fully observable grid, the agent must navigate the map, pick up a key, unlock the locked door, and reach the target square.  
+
+> •
+
+MiniGrid-KeyCorridorS3R1-v0: In a fully observable corridor layout (three rooms joined by two doors), the agent must navigate the map, open an unlocked door, pick up a key, unlock the locked door, and pick up the target object (a ball). 
+
+Conditions: We compare four evolved conditions, two of which are Evolution Strategies (CMA-ES and xNES) and the remaining two which are Differential Evolution methods (DE and L-SHADE), against four baselines, for a total of eight distinct conditions: 1) CMA-ES: Weights optimized by CMA-ES 2) xNES: Weights optimized by xNES 3) DE: Weights optimized by DE 4) L-SHADE: Weights optimized by L-SHADE 5) Extrinsic Only: Uses the task reward alone with no added developmental signal 6) Fixed Equal: All three developmental weights are held equal throughout training 7) Developmental: Weights follow the biologically es-tablished developmental sequence: from agency, to novelty, to reactivity 8) Reversed: The developmental schedule is applied in reverse order: from reactivity, to novelty, to agency 
+
+Hyperparameters: The shared and algorithm-specific hy-perparameters, used across all experiments, are summarized in Tables I and II, respectively.                                                            
+
+> TABLE I SHARED HYPERPARAMETERS
+> Component Parameter Value
+> PPO Policy network MLP [128, 128] Learning rate 3×10 −4
+> Steps per update 512 Batch size 64 Epochs per update 4Discount γ0.99 Evolution Control points K5Parameter dim 15 Parameter bounds [−10 ,10]
+> Population size 12 Max generations 15 Seeds Phase 1 (search) 1 seed (seed 42) Phase 2 (generalization) 10 seeds (42–51) Reward Intrinsic scale λ0.003 Eval episodes 50 Eval seed 123 Tasks DoorKey-6x6 2,000,000 timesteps KeyCorridorS3R1 500,000 timesteps TABLE II ALGORITHM -S PECIFIC HYPERPARAMETERS
+> Algorithm Parameter Value
+> CMA-ES Initial step size σ02.0 xNES Initial step size σ02.0 Mean learning rate ημ1.0 Step-size learning rate ησ,B †0.295 DE Strategy ‡best/1/bin Mutation factor F0.5 Crossover rate CR 0.7 L-SHADE History size H6Min population Nmin 4Top fraction p0.1
+> †Computed as (3 + ln d)/(5 √d), where d= 15 .
+> ‡best/1/bin denotes best-candidate base vector, one difference vector, and the binomial crossover, respectively.
+
+Hardware: All experiments were run on a single Apple M3 Max chip (14-core CPU, 36 GB of unified memory); evolutionary fitness evaluations were parallelized across CPU cores. 
+
+B. Findings Search Convergence: Across all runs, the evolutionary search settled well within its 15-generation budget. On DoorKey-6x6, the best-so-far fitness improved over the first several generations before plateauing by generation 7 at the latest, and on KeyCorridorS3R1, the fitness plateau occurred within the initial population (generation 0). Performance: On DoorKey-6x6, all four evolutionary algorithms outperform the extrinsic only baseline, which achieves a mean return of 0.668 , with L-SHADE achieving the highest mean return of 0.744 , followed by DE ( 0.730 ), then CMA-ES ( 0.714 ), and lastly xNES ( 0.672 ). On KeyCorridorS3R1, the results differ considerably. For this task, CMA-ES achieves the highest mean return of 
+
+0.902 , with the extrinsic only baseline following closely behind, achieving a competitive mean return of 0.871 . In third place, xNES achieves a moderate mean return of 0.755 .DE and L-SHADE, by contrast, show high variance and overall poor performance, with both methods obtaining the same mean return of 0.266 . Notably, for seven of the ten evaluated seeds, these two algorithms converged to degener-ate schedules (episodic returns of 0). All of these performance results are summarized in Fig-ure 2 and Table III.                                                  
+
+> Fig. 2. Performance comparison across all evolved conditions, plus the extrinsic only baseline, on both tasks. (a) Mean episodic return ±1 SD, across 10 seeds, for DoorKey-6x6. (b) Mean episodic return ±1 SD, across 10 seeds, for KeyCorridorS3R1. (c) Per-seed returns with mean lines for DoorKey-6x6. (d) Per-seed returns with mean lines for KeyCorridorS3R1. TABLE III MEAN EPISODIC RETURN ±STD — E VOLVED CONDITIONS
+> Condition DoorKey-6x6 KeyCorridorS3R1
+> L-SHADE 0.744 ±0.083 0.266 ±0.408
+> DE 0.730 ±0.119 0.266 ±0.408
+> CMA-ES 0.714 ±0.139 0.902 ±0.105
+> xNES 0.672 ±0.139 0.755 ±0.223
+> Extrinsic only 0.668 ±0.135 0.871 ±0.094
+
+Evolved Weight Schedules: The evolved weight schedules varied substantially across tasks and algorithms, as shown in Figure 3. Notably, for both tasks, all algorithms begin their training with novelty as the dominant signal, reflecting an early emphasis on exploration. Past these initial stages, distinct behavior emerges. On DoorKey-6x6, CMA-ES, xNES, and DE follow com-plex trajectories that all end with novelty as the highest-weighted component. L-SHADE is the exception, transition-ing from novelty-dominant to reactivity-dominant weighting in the final third of training. This divergence is particularly interesting, given that L-SHADE is the best performing condition for this task. On KeyCorridorS3R1, CMA-ES and xNES converge to identical schedules: novelty dominates early before giving way to reactivity. DE and L-SHADE likewise converge to equivalent schedules, where novelty rises rapidly early and maintains this dominant behavior for the remainder of training.      
+
+> Fig. 3. Evolved weight schedules for the four evolutionary algorithms, across both tasks. Rows: CMA-ES (a–b), xNES (c–d), DE (e–f), L-SHADE (g–h). Columns: DoorKey-6x6 (left), KeyCorridorS3R1 (right). Plotted weights are normalized to sum to one at each timestep, rendering the underlying piecewise-linear weights as smooth curves.
+
+Learning Dynamics: As part of our experimental frame-work, we tracked learning dynamics across training, which allowed us to better understand why certain algorithms fail to generalize. Figure 4 shows these learning dynamics. On DoorKey-6x6, CMA-ES, xNES, DE, and L-SHADE all exhibit stable, increasing learning curves that converge within the training budget. As for KeyCorridorS3R1, CMA-ES and xNES converge reliably, while DE and L-SHADE display unusually high inter-seed variance, with their mean curves being pulled downward by the seven seeds, per algorithm, that converged to degenerate solutions.      
+
+> Fig. 4. Learning curves for all evolved conditions plus the extrinsic only baseline, across both tasks. Mean evaluation return ±1 SD (shaded) over 10 seeds, plotted against training episode. (a) DoorKey-6x6. (b)
+> KeyCorridorS3R1. The x-axis spans the longest training run across all methods for each task; methods with shorter training horizons terminate earlier.
+
+Agent Behavior: The best evolved agent, for each respec-tive task, demonstrates that the discovered schedules produce coherent, goal-directed behavior, as visualized in Figure 5 (DoorKey-6x6) and Figure 6 (KeyCorridorS3R1).       
+
+> Fig. 5. Best evolved agent (L-SHADE, seed 46) solving DoorKey-6x6. Three representative episodes (rows) across five evenly sampled timesteps
+> (columns) .
+> Fig. 6. Best evolved agent (CMA-ES, seed 42) solving KeyCorridorS3R1. Three representative episodes (rows) across five evenly sampled timesteps
+> (columns) .
+
+C. Ablations 
+
+The ablation conditions tested are designed to isolate the factors that make the evolved schedules effective. Three competing hypotheses are tested:  
+
+> •
+
+Fixed Equal 
+
+– Setup: Asks whether the advantage comes simply from having multiple simultaneous developmental signals, rather than from their temporal ordering. 
+
+– Findings: Its zero return on both tasks rules this out — schedule dynamics matter, not just signal diversity.  
+
+> •
+
+Developmental 
+
+– Setup: Asks whether the biologically motivated ordering, applied as a fixed linear schedule, is sufficient on its own (and computationally optimal). 
+
+– Findings: Its failure on both tasks shows it is not sufficient nor computationally optimal — per-task adaptation is necessary.  
+
+> •
+
+Reversed 
+
+– Setup: Asks whether the direction of the develop-mental sequence matters, or whether any ordered transition between motivational components is ben-eficial. 
+
+– Findings: It achieves zero on DoorKey-6x6 and only partial generalization on KeyCorridorS3R1 (0.628 ± 0.407 ), showing that the ordering of mo-tivational components matters during learning. These results are summarized in Table IV and illustrated, across all conditions and seeds, in Figure 7.                                 
+
+> TABLE IV MEAN EPISODIC RETURN ±STD — B ASELINE CONDITIONS
+> Condition DoorKey-6x6 KeyCorridorS3R1
+> Developmental 0.000 ±0.000 0.000 ±0.000
+> Reversed 0.000 ±0.000 0.628 ±0.407
+> Fixed Equal 0.000 ±0.000 0.000 ±0.000
+> Extrinsic Only 0.668 ±0.135 0.871 ±0.094
+
+V. D ISCUSSION 
+
+Returning to the two core criteria outlined in the exper-iments, the results demonstrate that evolved schedules are effective, though on some tasks more than others, but do not necessarily mirror the biological motivational arc. Regarding the effectiveness of evolved schedules, we can confidently assert their outperformance compared to all non-evolved alternatives on DoorKey-6x6. On KeyCorridorS3R1, CMA-ES similarly outperforms all baselines, though the other algorithms fall short of the extrinsic only method, with DE and L-SHADE being additionally surpassed by the reversed baseline condition. We hypothesize that the observed performance difference stems from: (1) how task difficulty shapes the search, and (2) the type of evolutionary algorithm family being evaluated. On DoorKey-6x6 (the harder task), the extrinsic Fig. 7. Performance of all baseline conditions (including ablations). (a)         
+
+> Mean episodic return ±1 SD, across 10 seeds, for DoorKey-6x6. (b) Mean episodic return ±1 SD, across 10 seeds, for KeyCorridorS3R1. (c) Per-seed returns with mean lines for DoorKey-6x6. (d) Per-seed returns with mean lines for KeyCorridorS3R1.
+
+reward alone is insufficient, so performance depends more heavily on the evolved schedule; here, the fitness landscape is informative, fitness improves over generations for all four methods, and the resulting schedules generalize across seeds (with the best performers being L-SHADE and DE). On KeyCorridorS3R1, however, the extrinsic reward alone already performs strongly across seeds. Thus, schedules attributing higher weights to developmental components risk converging to a niche or seed-specific solution which fails to generalize well — as was the case with L-SHADE and DE. Conversely, CMA-ES and xNES attributed lower weights to the three developmental components, and as a result were able to generalize better across seeds, relative to the two other evolutionary methods. Interestingly, CMA-ES and xNES both fall within the Evolution Strategies family of evolutionary algorithms, while L-SHADE and DE fall within the Differential Evolution family. Our findings, thus, support the framing that the Evolution Strategies family is better suited for easier tasks, while the Differential Evolution family performs better on harder ones, and suggest that evolutionary optimization, as applied to developmental-based RL schedule discovery, can be an effective method depending on the task at-hand. As it pertains to biological alignment, the discovered schedules appear to be distinct to the biological ideal ob-served throughout mammalian development. The biological developmental sequence: effectance motivation in the neona-tal period [2], [8], curiosity and novelty-seeking behavior in mid-to-late infancy [3], and heightened reward sensitivity in adolescence [4], [5] predicts an agency-to-novelty-to-reactivity ordering. Yet, all four evolved algorithms begin training with novelty, across both tasks, as the dominant signal — and notably none recover or substantially align with the full biological sequence. Although this finding suggests that, in terms of optimal developmental-based reward system discovery, biological evolution and computational evolution do not speak the same language, it is important to consider that this experimental setting represents a vastly simplified interpretation of both motivational-cognitive development and evolutionary biol-ogy, and thus the observed divergence may be specific to the proposed tasks and reward formulations. 
+
+A. Limitations 
+
+We note the following limitations, each of which, if addressed, could strengthen this research. Furthermore, these limitations provide future directions for this work. First, the intrinsic scale λ = 0.003 was fixed rather than evolved; allowing the scale to vary may result in distinct, improved schedules. Second, we only evaluated our method on two grid-world tasks with discrete action spaces; continuous-control, partially observable, or other more complex environments may result in different evolved schedules and results. Third, the reward components are hand-designed proxies of biological drives; strict derivations from computational neuroscience models could yield more principled and potentially better results. Fourth, statistical significance is omitted, as the current sample size of n = 10 
+
+seeds may be insufficient to reliably detect it, given the effect sizes observed; a larger sample would provide more accurate hypothesis testing. Fifth, phase one identifies a single optimal schedule, which is then utilized to test the effect of generalization; optimal schedules may vary across seeds, with individual schedule discovery potentially yielding stronger per-seed evaluation performance compared to our tested approach. Sixth, removing each developmental signal individually would further isolate their unique contributions toward the evolved schedule’s effectiveness; an additional ablation experiment could provide this insight. Finally, each fitness evaluation requires a full PPO training run; more sample-efficient meta-learning approaches [26] could make our framework more broadly applicable. 
+
+B. Future Work 
+
+Several directions follow naturally from these findings and the outlined limitations. As a first approach, per-seed schedule discovery in phase one would allow us to examine whether optimal schedules vary across random initializations, and whether evolved schedules consistently outperform base-lines when the seed used for training is dynamic rather than fixed. Moreover, evolving the intrinsic scale λ jointly with the weight schedule offers an interesting yet simple way to potentially increase the performance of our agent, and discover different reward schedules. Lastly, evaluating the framework on a broader range of environments with distinct settings and varying degrees of complexity would allow us to test the extent to which our framework is task-dependent. VI. C ONCLUSION 
+
+We presented a framework for discovering developmental reward schedules via evolutionary optimization, and demon-strated that evolved schedules can outperform fixed-weight and other hand-designed alternatives across two structured, goal-directed tasks. On DoorKey-6x6, all four tested algo-rithms favor novelty as the dominant early signal and outper-form all baselines, with L-SHADE standing out as the best performer. On KeyCorridorS3R1, CMA-ES surpassed all other conditions, though the other three evolved methods fell short, underperforming the extrinsic only baseline. Here, DE and L-SHADE frequently converge to degenerate solutions. Critically, fixed developmental schedules — despite similarly being biologically motivated — actively interfere with task learning, underscoring the importance of per-task adaptation, which evolutionary optimization facilitates. Moreover, our findings reveal that, within the bounds of our tasks and framework, computational and biological evolution do not discover the same motivational sequence. In summary, this work positions evolutionary optimization as a promising method for developmental reward schedule discovery, and contributes a novel perspective on how devel-opmental principles can inform, and be challenged by, reward design in deep reinforcement learning. ACKNOWLEDGMENT The author declares no funding sources for this research. AI tools were used to assist with the ideation and brain-storming, coding, and manuscript preparation processes. All AI-generated content was screened and verified by the author prior to inclusion in the manuscript. REFERENCES [1] M. Luciana, D. Wahlstrom, J. N. Porter, and P. F. Collins, “Dopamin-ergic modulation of incentive motivation in adolescence: age-related changes in signaling, individual differences, and implications for the development of self-regulation,” Dev. Psychol. , vol. 48, no. 3, pp. 844– 861, May 2012, doi: 10.1037/a0027432. [2] J. Heckhausen, C. Wrosch, and R. Schulz, “A motivational theory of life-span development,” Psychol. Rev. , vol. 117, no. 1, pp. 32–60, Jan. 2010, doi: 10.1037/a0017668. [3] C. Kidd, S. T. Piantadosi, and R. N. Aslin, “The Goldilocks effect: Human infants allocate attention to visual sequences that are neither too simple nor too complex,” PLOS One , vol. 7, no. 5, e36399, May 2012, doi: 10.1371/journal.pone.0036399. [4] A. Galvan, “Adolescent development of the reward system,” 
+
+Front. Hum. Neurosci. , vol. 4, art. 6, Feb. 2010, doi: 10.3389/neuro.09.006.2010. [5] J. R. Cohen, R. F. Asarnow, F. W. Sabb, R. M. Bilder, S. Y. Bookheimer, B. J. Knowlton, and R. A. Poldrack, “A unique adolescent response to reward prediction errors,” Nat. Neurosci. , vol. 13, no. 6, pp. 669–671, Jun. 2010, doi: 10.1038/nn.2558. [6] B. J. Casey, R. M. Jones, and T. A. Hare, “The adolescent brain,” Ann. N.Y. Acad. Sci. , vol. 1124, pp. 111–126, Mar. 2008, doi: 10.1196/an-nals.1440.010. [7] C. Insel, E. K. Kastman, C. R. Glenn, and L. H. Somerville, “Develop-ment of corticostriatal connectivity constrains goal-directed behavior during adolescence,” Nat. Commun. , vol. 8, no. 1, art. 1605, Nov. 2017, doi: 10.1038/s41467-017-01369-8. [8] R. W. White, “Motivation reconsidered: The concept of compe-tence,” Psychol. Rev. , vol. 66, no. 5, pp. 297–333, Sep. 1959, doi: 10.1037/h0040934. [9] C. Kidd and B. Y. Hayden, “The psychology and neuroscience of curiosity,” Neuron , vol. 88, no. 3, pp. 449–460, Nov. 2015, doi: 10.1016/j.neuron.2015.09.010. [10] J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov, “Proximal Policy Optimization algorithms,” arXiv , Jul. 2017, arXiv:1707.06347. [11] M. Chevalier-Boisvert, B. Dai, M. Towers, R. de Lazcano, L. Willems, S. Lahlou, S. Pal, P. S. Castro, and J. Terry, “Minigrid & Miniworld: Modular & customizable reinforcement learning environments for goal-oriented tasks,” in Proc. 37th Conf. on Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks Track , pp. 73383–73394, Dec. 2023. [12] N. Hansen, “The CMA Evolution Strategy: A tutorial,” arXiv , Mar. 2023, arXiv:1604.00772. [13] T. Glasmachers, T. Schaul, S. Yi, D. Wierstra, and J. Schmidhuber, “Exponential Natural Evolution Strategies,” in Proc. 12th Annual Conf. on Genetic and Evolutionary Computation (GECCO) , pp. 393–400, Jul. 2010, doi: 10.1145/1830483.1830557. [14] R. Storn and K. Price, “Differential Evolution – A simple and efficient heuristic for global optimization over continuous spaces,” 
+
+J. Global Optim. , vol. 11, no. 4, pp. 341–359, Dec. 1997, doi: 10.1023/A:1008202821328. [15] R. Tanabe and A. S. Fukunaga, “Improving the search performance of SHADE using linear population size reduction,” in Proc. IEEE Congress on Evol. Computation (CEC) , pp. 1658–1665, Jul. 2014, doi: 10.1109/CEC.2014.6900380. [16] K. Nussenbaum and C. A. Hartley, “Reinforcement learning across development: What insights can we draw from a decade of re-search?,” Dev. Cogn. Neurosci. , vol. 40, art. 100733, Dec. 2019, doi: 10.1016/j.dcn.2019.100733. [17] E. Arditi, Y. Nagai, E. Ugur, M. Asada, and E. Oztop, “Emulating perceptual development in deep reinforcement learning,” in Proc. IEEE Int. Conf. on Development and Learning (ICDL) , Sep. 2025, doi: 10.1109/ICDL63968.2025.11204434. [18] S. Narvekar, B. Peng, M. Leonetti, J. Sinapov, M. E. Taylor, and P. Stone, “Curriculum learning for reinforcement learning domains: A framework and survey,” J. Mach. Learn. Res. , vol. 21, no. 1, art. 181, Jan. 2020. [19] H. Tang, R. Houthooft, D. Foote, A. Stooke, X. Chen, Y. Duan, J. Schulman, F. De Turck, and P. Abbeel, “#Exploration: A study of count-based exploration for deep reinforcement learning,” in Proc. 31st Conf. on Neural Information Processing Systems (NeurIPS) , pp. 2750– 2759, Dec. 2017. [20] Z. Yang, H. Du, Y. Wu, Z. Jiang, and H. Qu, “Intrinsic mo-tivation exploration via self-supervised prediction in reinforce-ment learning,” in Proc. 6th Int. Conf. on Data-driven Op-tim. of Complex Systems (DOCS) , pp. 79–84, Aug. 2024, doi: 10.1109/DOCS63458.2024.10704242. [21] Y. Wang, K. Zhao, F. Liu, and L. H. U, “Rethinking exploration in rein-forcement learning with effective metric-based exploration bonus,” in 
+
+Proc. 38th Conf. on Neural Information Processing Systems (NeurIPS) ,pp. 57765–57792, Dec. 2024. [22] H. Hu, S. Song, and G. Huang, “Self-attention-based temporary cu-riosity in reinforcement learning exploration,” IEEE Trans. on Systems, Man, and Cybernetics: Systems , vol. 51, no. 9, pp. 5773–5784, Sep. 2021, doi: 10.1109/TSMC.2019.2957051. [23] H. Okada, “A comparative study of DE, GA and ES for evo-lutionary reinforcement learning of neural networks in pendulum task,” in Proc. Congress in Comp. Science, Comp. Engineer-ing, & Applied Computing (CSCE) , pp. 426–428, Jul. 2023, doi: 10.1109/CSCE60160.2023.00076. [24] E. Segal and M. Sipper, “Adaptive combination of a Genetic Algorithm and Novelty Search for deep neuroevolution,” in Proc. 14th Int. Joint Conf. on Computational Intelligence (IJCCI) , pp. 143–150, Oct. 2022, doi: 10.5220/0011550200003332. [25] Y. Peng, G. Chen, M. Zhang, and B. Xue, “Proximal Evolutionary Strategy: Improving deep reinforcement learning through evolutionary policy optimization,” Memetic Computing , vol. 16, no. 3, pp. 445–466, Sep. 2024, doi: 10.1007/s12293-024-00419-1. [26] J. Oh, G. Farquhar, I. Kemaev, D. A. Calian, M. Hessel, L. Zintgraf, S. Singh, H. van Hasselt, and D. Silver, “Discovering state-of-the-art reinforcement learning algorithms,” Nature , vol. 648, no. 8093, pp. 312–319, Dec. 2025, doi: 10.1038/s41586-025-09761-x.
