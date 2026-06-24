@@ -1,0 +1,1559 @@
+Title: Hybrid Open-Ended Tri-Evolution Makes Better Deep Researcher
+
+URL Source: https://arxiv.org/pdf/2606.13710v1
+
+Published Time: Mon, 15 Jun 2026 00:01:32 GMT
+
+Number of Pages: 33
+
+Markdown Content:
+## Hybrid Open-Ended Tri-Evolution Makes Better Deep Researcher 
+
+Hongming Piao 1* Chi Liu 1* Mengzhuo Chen 1 Yan Shu 1
+
+Derek Li 1 Ying Wei 2 Bryan Dai 1†
+
+> 1
+
+IQuest Research 2Zhejiang University 
+
+{cxiao, cliu04, cbdai}@iquestlab.com https://github.com/UBI-Agent/ote.git 
+
+Abstract 
+
+Deep research and agent evolution serve as de-facto tasks for AI agents in real-world applica-tions toward artificial general intelligence. The former enables autonomous retrieval and inte-gration of information in open-ended environ-ments to tackle open-ended research tasks, yet it is constrained by the static parametric deep research capabilities of agent systems. The latter allows agents to autonomously interact with the environment to gain experiences that evolve model capabilities. However, its effec-tiveness has been widely validated only on ver-ifiable tasks with standard answers, leaving a gap with open-ended research tasks. To bridge these two critical tasks, we propose the Hybrid Open-Ended Tri-Evolution (HOTE) framework, which leverages hybrid-mode reinforcement learning to facilitate the collaborative evolution of a proposer, solver and judge based on web-scale knowledge, moving toward autonomous evolving agents in open-ended tasks and en-vironments. Extensive experiments on three long-form deep research benchmarks demon-strate that the 8B model trained via HOTE sur-passes the strongest static open 8-32B models as well as those trained by state-of-the-art deep research training methods with less time over-head, and further verify that the evolution of all three modules in HOTE is indispensable. 
+
+1 Introduction 
+
+Deep research, which emphasizes autonomous han-dling of open-ended, long-cycle, and highly com-plex information retrieval and integration, has be-come a de-facto task for AI agents in real-world ap-plications and a step toward artificial general intel-ligence (Hu et al., 2025a; OpenAI, 2025). Closed-source proprietary systems such as OpenAI Deep Research (OpenAI, 2025), Claude Research (An-thropic, 2025), Kimi-Researcher (Moonshot AI, 
+
+> *Equal contribution
+> †Corresponding author
+
+2025), and Grok DeepSearch (xAI, 2025) have demonstrated near-human research capabilities. Meanwhile, the open-source community has also made significant progress in building more compre-hensive research workflows and end-to-end train-ing of deep researchers capable of autonomously planning workflows (Schmidgall et al., 2025; Li et al., 2025a; Jin et al., 2025; Team et al., 2025b; Shao et al., 2025; Fang et al., 2025; Zheng et al., 2025b; Wu et al., 2025a; Yao et al., 2026; Song et al., 2025). Although deep researchers can tackle highly complex research questions by autonomously seek-ing web-scale knowledge, their parameterized re-search capabilities are upper bounded by fixed train-ing sets and training strategies. Autonomous inter-action with the environment and evolution through experience are regarded as a path toward artificial general intelligence (Liu et al., 2025a), with self-play offering a promising paradigm for agent evo-lution, where an agent system learns from feedback acquired through competition with itself. For ex-ample, Huang et al. (2025); Zhao et al. (2025); Wang et al. (2025); Chen et al. (2025) proposed agent systems that act as both query proposer and solver, achieving significant results beyond the original training set or even in zero-data scenar-ios in domains such as mathematics, coding, or general reasoning. To address the limitation that such evolution is constrained by the agent system’s own knowledge, SPICE (Liu et al., 2025a) and Dr. Zero (Yue et al., 2026) equipped the proposer with a pretrained-scale corpus (Mahabadi et al., 2025; Yuan et al., 2025) and a search engine, respectively, taking a step forward toward evolution in open-ended environments. However, they remain limited to tasks that can be verified with deterministic an-swers. Given that deep researchers in real-world applications often face long-form report generation tasks without clear standard answers (Shao et al., 2025), constructing an agent evolution framework 1
+
+> arXiv:2606.13710v1 [cs.AI] 10 Jun 2026
+
+for open-ended tasks and environments is crucial. To fill the aforementioned gaps, we propose the Hybrid Open-ended Tri-Evolution (HOTE) frame-work, which consists of three co-evolving modules: proposer, solver, and judge. The solver is respon-sible for receiving a query, generating a research plan, conducting multi-turn information seeking, integrating information and producing a referenced research report. The judge is responsible for dy-namically generating rubrics (Gunjal et al., 2025; Viswanathan et al., 2025; Shao et al., 2025) that capture the strengths and weaknesses of the solver by comparing multiple solver responses sampled for the same query, and providing rewards for the responses based on these rubrics, thereby remov-ing the dependency on verifiable answers. The proposer is responsible for performing informa-tion seeking based on the model weaknesses iden-tified by the judge and proposing challenging yet learnable queries. HOTE uses GRPO (Shao et al., 2024) to encourage a game between the solver and proposer, continuously improving response qual-ity and query difficulty. Simultaneously, it em-ploys the judge to dynamically evolve evaluation rubrics, preventing reward hacking, maintaining the learnability of difficult queries, and enabling the proposer to uncover the solver’s weaknesses. Additionally, we propose a dual-mode hybrid train-ing strategy that includes both tool-use and no-tool modes, which achieves mutual benefit between the two modes and significantly improves training effi-ciency. HOTE effectively maintains the difficulty of synthetic queries during training (Figure 1(a-b)) and outperforms approaches using only the origi-nal training set within the same number of training steps (Figure 1(c)). As shown in Figure 4(a), HOTE also facilitates the collaborative progress of both the no-tool and tool-use modes. In conclusion, our contributions are as follows: • We propose Hybrid Open-ended Tri-Evolution (HOTE), the first deep researcher evolution framework designed for open-ended environ-ments and open-ended tasks, bridging two paths toward artificial general intelligence: deep research and agent evolution. • We design a co-evolution strategy for pro-poser, solver and judge based on reinforce-ment learning with hybrid modes. The strat-egy maintains the challenge and learnability of research tasks for the solver while avoid-ing reward hacking and achieving the mutual benefit between tool-use mode and no-tool mode. • Experimental results on three long-form deep research benchmarks demonstrate that an 8B model trained with HOTE outperforms the strongest open 8-32B models and state-of-the-art deep research training methods with less time overhead, with the co-evolution of all three modules being indispensable. 
+
+2 Method 
+
+2.1 Problem Formulation 
+
+Following (Li et al., 2025a), we build our agent on top of a concise and general ReAct framework, which provides a clear baseline for evaluating the model’s intrinsic capabilities and training strategies. The deep research model is a language model (LM) augmented with search tools. Each tool accepts a query along with its arguments and returns textual resources that can be cited in the model’s final an-swer. Formally, let T = {T1, T 2, . . . } represent the set of available tools. Each tool Tk accepts a query 
+
+q together with an optional argument string α, and returns an observation o = Tk(q; α). The model follows a policy πθ, parameterized by θ, which gen-erates a sequence of text s autoregressively. The sequence is initialized as s0 = x, where x contains the system prompt and the task description. The model’s action space is defined as 
+
+{think , tool , answer , cite },
+
+with each action associated with a correspond-ing protocol token. think (<think> ... </think> )leverages the language model’s internal reason-ing capability to plan subsequent steps based on the current state and available information. tool 
+
+(<call_tool name= ... >... </call_tool> ) triggers the invocation of one of several search-related tools. The specific tool is selected via the name attribute, together with tool-dependent arguments omitted here. The textual output produced by the tool is appended to the context for use in later steps. 
+
+answer (<answer> ... </answer> ) generates the fi-nal response and terminates the interaction. cite 
+
+(<cite id= ... >... </cite> ) is embedded within the final answer to annotate claims with citation tags that reference supporting sources. At each step i, the model samples both an action ai and its associated content or argu-ments ζi, (ai, ζ i) ∼ πθ(· | si). If ai ∈
+
+2(a)  
+
+> Training Step
+> (b) (c)
+> Healthbenc h
+> Training Step
+> Origina l Task  Scor e
+> Training Step
+> Synthetic  Task  Scor e
+
+Figure 1: During the training of HOTE, (a) the scores for synthetic research tasks remain at the same level; (b) the scores for research tasks from the original training set continuously increase; (c) the scores on Healthbench surpass the baselines and maintain an upward trend. thin k tool thin k … thin k 
+
+> research report
+> research task
+> Solver
+> Proposer
+> research tas k
+> no-tool
+> tool -use
+> tool <cite>
+
+Figure 2: The inference paradigm of the solver and the proposer under tool-use and no-tool modes in HOTE. 
+
+{think , answer , cite }, the generated output ζi is appended to the context, yielding si+1 = si ⊕⟨ai, ζ i⟩. If ai = tool , the model executes the corresponding tool call, receives the observation 
+
+oi = Tk(qi; αi), where ζi = ( qi, α i), and updates the state as si+1 = si ⊕ ⟨ ai, ζ i, o i⟩. This iterative procedure continues until aτ = answer , at which point ζτ contains the final answer. As shown in Figure 2, within HOTE, both the proposer and the solver perform inference under the same paradigm described above. Formulating challenging re-search tasks for the solver constitutes a research task for the proposer itself . The key difference is that the proposer does not include the cite action, since proposing research tasks does not require the presentation of citations. In HOTE, both the pro-poser and the solver operate under two modes: tool-use and no-tool. In the tool-use mode, the model follows the aforementioned inference paradigm. In the no-tool mode, after receiving the initial state 
+
+s0, the model performs a single think action and then directly produces an answer action. All infer-ence paradigms described above can be controlled through the system prompt. 
+
+2.2 Hybrid Open-ended Tri-evolution 
+
+HOTE is primarily divided into four parts: Solver Evolution , Judge Evolution , Proposer Evolu-tion and Dual-mode Hybrid Training Strategy .Please refer to Figure 3 and Algorithm 1 for the overall framework and training pipeline. 
+
+Solver Evolution . The solver πθs takes a re-search task s0 as input and, after performing think -
+
+tool interleaved reasoning, generates a long-form research report answer with cite represented by o.Thus, the objective of solver evolution is to make the answer better align with the research report requirements r, which also serves as the reward in the reinforcement learning and will be further discussed in the judge evolution section. We uti-lize GRPO (Shao et al., 2024) with token-level loss aggregation (Yu et al., 2025) to achieve solver evo-lution, with the goal of: 
+
+JGRPO (θs) = E(s0,Rs0 )∼D , {oi}Gi=1 ∼πθold  
+
+> s(·| s0)
+
+"
+
+1
+
+PGi=1 |oi|
+
+> G
+
+X
+
+> i=1
+> |oi|
+
+X
+
+> t=1
+
+
+
+min  ri,t (θs) ˆAi,t ,
+
+clip( ri,t (θs), ϵ ) ˆAi,t 
+
+ − β D KL 
+
+
+
+πθs ∥ πθref 
+
+> s
+
+  #
+
+,
+
+where ri,t (θ) = πθ(oi,t | q, o i,<t )
+
+πθold (oi,t | q, o i,<t ) ,
+
+ˆAi,t = ri − mean  {ri}Gi=1 
+
+
+
+std  {ri}Gi=1 
+
+ .
+
+(1) 
+
+{oi}Gi=1 represents a group of responses to the re-search task s0. ri denotes the reward obtained by 
+
+oi. Rs0 represents the rubric set corresponding to 
+
+s0, which will be explained in detail in the judge evaluation section. The solver continuously pro-gresses toward better long-form research reports based on the reward. We omit the descriptions of other symbols that can be found in Yu et al. (2025). 
+
+Judge Evolution . The judge πθj receives a group of responses {oi}Gi=1 for s0 from the solver as input and assigns reward ri to each response oi
+
+according to the rubric set Rs0 as follows: 3Hybrid Data Hybrid Modes  
+
+> Tool -use No -tool
+
+Solver 
+
+!!!
+
+Proposer 
+
+!!"
+
+Judge 
+
+!!#   
+
+> Rubric Update
+> Rubric -based Eval
+> Meta Rubrics Gen
+> GRPO Update
+> GRPO Update
+> Diverse Proposing
+> Meta Rubrics
+> Real Tasks Rubrics
+> Meta
+> Rubrics Syntheti cTasks
+> Rubrics & Meta Rubrics
+> Responses
+> Responses
+> Combination s
+
+Figure 3: The overall training framework of HOTE. At each training step, we utilize hybrid data consisting of both real tasks and synthetic tasks with their corresponding persistent rubrics. Half of the tasks are configured in tool -use 
+
+mode and the other half in no - tool mode. The Solver generates responses in hybrid mode. Based on each task’s existing rubrics and the generated responses, the Judge updates the rubrics, evaluates the responses and generates meta rubrics. The assessment generated by the Judge is used to update the Solver , while the portion corresponding to synthetic tasks is used to update the Proposer . The Proposer performs diverse proposing according to the meta rubrics and different combinations of tasks from the previous step, thereby generating synthetic tasks which use the meta rubrics as persistent rubrics for the next step. (b) (c) (a)  
+
+> Training Step Training Step
+> Healthbench
+> DRB
+> Score
+
+Figure 4: (a) The hybrid mode of HOTE outperforms the tool-use mode of HOTE as well as DR Tulu in both no-tool and tool-use modes; (b) Models trained with no-tool mode HOTE and DR Tulu evaluated in no-tool mode on Healthbench achieve higher scores than when evaluated in tool-use mode; (c) When trained with HOTE in no-tool mode, the scores on DRB under tool-use mode decrease after a certain number of steps. 
+
+ri =
+
+P
+
+> (R,w )∈R s0
+
+w · Judge πθj
+
+(oi, R )
+
+P
+
+> (R,w )∈R s0
+
+|w| , (2) where R represents a rubric in Rs0 and w repre-sents its corresponding weight. The judge’s reward for each rubric has only 0 or ±1. Therefore, the evolutionary objective of the judge is to provide more well-founded and discriminative rewards for the responses, ensuring the learning of the solver. As can be seen from Equation 2, the judge requires extensive inference at each step, so for training ef-ficiency considerations, the judge in HOTE uses a fixed instruction model. In this case, the key to judge evolution shifts to how to drive the evolu-tion of the rubric set Rs0 for s0. Inspired by (Shao et al., 2025), given Rs0 = Rpersi.  
+
+> s0
+
+∪ R active  
+
+> s0
+
+where 
+
+Rpersi. contains persistent rubrics of s0 and Ractive 
+
+> s0
+
+contains active rubrics of s0 that can be deleted or added, HOTE prompts the judge to update Ractive 
+
+> s0
+
+based on {oi}Gi=1 at each step before assigning re-wards as follows: 
+
+Ractive  
+
+> s0
+
+= Update πθj
+
+(s0, {oi}Gi=1 , Ractive  
+
+> s0
+
+). (3) The judge will generate two types of rubrics: 
+
+positive rubrics that capture strengths or new, rel-evant knowledge explored by πθs in {oi}Gi=1 but not yet reflected in Rs0 , and negative rubrics that summarize common undesirable behaviors such as reward hacking observed across {oi}Gi=1 . By observing the responses, the judge continuously tracks and uncovers weaknesses in both the rubric set and solver. 
+
+Proposer Evolution . The objective of proposer 
+
+πθp evolution is to enhance the capability to search 4for materials and propose research tasks that can expose the weaknesses of the solver, based on the judge’s assessment. Similar to solver evolution, HOTE uses GRPO to achieve the evolution of the proposer as shown in Equation 1, with the distinc-tion that s0 becomes proposing research tasks based on the judge’s assessment A represented by sp
+
+> 0
+
+, and {oi}Gi=1 becomes a group of research tasks proposed by the proposer {opi }G′
+
+> i=1
+
+. How-ever, there are two key issues left: • The assessment from judge 
+
+A ={Judge πθj
+
+(oi, R ) | (R, w ) ∈ R s0 , 1 ≤
+
+i ≤ G} includes rewards for each rubric of every response, thus using all of them as input to the proposer results in excessive length, slowing down training speed. • {opi }G′ 
+
+> i=1
+
+proposed by the proposer lacks shared rubrics, making it difficult to evaluate their relative strengths and weaknesses. Therefore, we propose meta rubrics , allowing the judge to summarize assessments into multiple meta rubrics, uncovering common model weaknesses among the solver’s responses as follows: 
+
+Rmeta  
+
+> {opi}G′
+> i=1
+
+= Meta πθj (A, Rs0 , {oi}Gi=1 ). (4) These meta rubrics serve as the proposer input and persistent rubrics shared across {opi }G′
+
+> i=1
+
+. On one hand, they are used for solver evolution; on the other hand, they leverage the reward of solver responses to compute the reward rpi of research task opi as follows: 
+
+rpi = 1
+
+M
+
+P 
+
+> (R,w )∈R meta
+> {opi}G′
+> i=1
+
+I · (1 − E{oj }Gj=1 ∼πθs (·| opi )[Judge πθj
+
+(oj , R )]) 
+
+(5) where M = Rmeta  
+
+> {opi}G′
+> i=1
+
+. I represents whether there is an oj that passes the rubric R. ‘1’ represents the max average reward the solver πθs can obtain given the judge’s reward for each rubric is limited to 0 or ±1. Through Equation 5, we encourage the proposer to generate challenging but solvable research tasks for the solver. 
+
+2.3 Dual-mode Hybrid Training Strategy 
+
+The independent evolution of the three modules mentioned above is insufficient. They should com-plement one another to form an evolution pipeline where a stronger solver stimulates a more refined judge, and a stronger proposer and judge inspire the proposer to formulate more challenging problems, which in turn train a stronger solver. As shown in Figure 3, our proposed dual-mode hybrid training strategy primarily encompasses three key features. 
+
+Hybrid Data . Except for the first step, the train-ing data for each step (comprising a batch size of 
+
+B research tasks) consists of B 
+
+> 2
+
+research tasks from the original training set and B 
+
+> 2
+
+synthetic research tasks proposed by the proposer based on evalua-tions from the previous step. Beyond leveraging existing data resources and facilitating agent evo-lution, this design allows synthetic research tasks generated by the proposer to be immediately solved by the solver and evaluated by the judge. The eval-uation results can then be used to optimize both the proposer and the judge simultaneously, avoiding the need for repeated sampling. 
+
+Diverse Proposing . We found when the pro-poser generates research tasks based solely on the judge’s evaluation and all research tasks from the previous step, they tend to concentrate on the same topic, which can undermine the balance and diver-sity of the training data. Therefore, at each step, we prompt the proposer to generate N groups of research problems based on the judge’s evaluation and N distinct combinations of research tasks from the previous step. 
+
+Hybrid Modes . As illustrated in Figure 4(b), we found that for DR Tulu-8B-SFT, DR Tulu-8B-RL and HOTE trained solely in no-tool mode, their per-formance on Healthbench under no-tool mode ex-ceeds that under tool-use mode. This phenomenon can be attributed to factors such as noise in the search tool and it is acceptable in practical applica-tions to trade evaluation metrics for research reports with clear references. Intuitively, we think it is eas-ier to learn research report generation techniques excluding reference searching and understanding in a no-tool training mode than a tool-use training mode. Meanwhile, as shown in Figure 4(c), for HOTE trained in no-tool mode, its performance on DRB under tool-use mode exhibits a clear pattern of initial improvement followed by decline, sug-gesting that no-tool training leads the model to rely excessively on parametric knowledge. Therefore, we randomly assign half of the training data in each step to no-tool mode and the other half to tool-use mode (to ensure fairness in judging synthetic re-search tasks, this assignment is randomized across the N groups), thereby enhancing research report 5generation techniques and avoiding over-reliance on parameterized knowledge. In actual training, we trained 600 steps using no-tool mode and then trained 700 steps using hybrid mode. Besides, we theoretically prove that the hybrid mode results in a lower expected maximum generation time in Appendix B. 
+
+3 Experiment 
+
+Our experiments aim to address five research ques-tions. RQ1: Does HOTE demonstrate stronger capabilities in handling open-ended research tasks with less time overhead? RQ2: Are the three mod-ules indispensable for HOTE evolution? RQ3: 
+
+Does HOTE facilitate the collaborative progress of dual modes? RQ4: Is HOTE effective with dif-ferent base models? RQ5: Does HOTE evolve more sustainably? We additionally provide the case study, the effect of judge models, prompts and diverse proposing in Appendix C and E. 
+
+3.1 Evaluations Benchmark . We evaluated HOTE and baseline models across three long-form, open-ended bench-marks: HealthBench (Arora et al., 2025) for health-care deep research, ResearchQA (Yifei et al., 2025) for assessing synthesis over scientific literature, the DeepResearchBench (Du et al., 2025) (DRB) for evaluating general-domain deep research tasks. For DRB, we additionally provide detailed per-formance across diverse aspects of the responses. DRB includes the following aspects: Comprehen-siveness, Insight, Instruction Following, and Read-ability. In Table 1, we followed (Shao et al., 2025) by using HealthBench with 1,000 samples and Re-searchQA with 776 samples. For other experimen-tal results, we sampled 100 instances each from HealthBench and ResearchQA respectively. Please refer to Appendix F for the benchmark details. 
+
+Baselines . We compared four categories of deep researchers: Open Deep Research Models ,including Qwen3-8B (Yang et al., 2025), Qwen3-235B-A22B (Yang et al., 2025), Search-R1-7B (Jin et al., 2025), ASearcher-Web-7B (Gao et al., 2025), WebExplorer-8B (Liu et al., 2025b), WebThinker-32B-DPO (Li et al., 2025b), Tongyi DeepResearch-30B-A3B (Team et al., 2025b); Open Deep Re-search , including DR Tulu-8B-SFT and DR Tulu-8B-RL (Shao et al., 2025); RL Method , including GRPO (Shao et al., 2024), GSPO (Zheng et al., 
+
+> 1We use the 1900-step checkpoint of DR Tulu.
+
+2025a) and REINFORCE++ (Hu et al., 2025b); 
+
+Evolving Method , including SPICE (Liu et al., 2025a) and Dr. Zero (Yue et al., 2026). We also provided Closed Deep Research , including Gem-ini 3 Pro, GPT-5, and OpenAI Deep Research; 
+
+Fixed Pipeline Deep Research , including Web-Thinker QwQ-32B, WebThinker-32B-DPO, and Ai2 ScholarQA-Claude Sonnet (Singh et al., 2025) for reference. Please refer to Appendix F for im-plementation details. 
+
+3.2 Training Details 
+
+We utilized Qwen3-8B to initialize the checkpoint of the proposer and DR Tulu-8B-SFT to initialize the checkpoint of the solver. For Open Deep Re-search, RL Methods, Evolving Methods and Open Evolving Deep Research, we used the same origi-nal RL training set in DR Tulu (Shao et al., 2025) licensed under ODC-BY with 9K samples to en-sure fairness. We employed Qwen3-235B-A22B-Instruct-FP8 as the judge. The batch size B was set to 48 , the group size of solver G to 8, the group size of proposer G′ to 6, the learning rate to 5e − 7, the maximum number of tool uses per response T to 
+
+10 , the temperature to 1, and the response length to 
+
+16384 . For the performance in Table 1, RL Meth-ods and Evolving Methods were trained for 1300 steps until they converged on a held-out validation set while HOTE-8B was trained in no-tool mode for 600 steps and hybrid mode for 700 steps. We provide hyperparameter analysis in Appendix G. 
+
+3.3 RQ1: Does HOTE demonstrate stronger capabilities in handling open-ended research tasks with less time overhead? 
+
+As shown in Table 1, the HOTE-8B model sur-passes the open-source solution DR Tulu on Health-Bench, ResearchQA and DRB. It also outperforms Open Deep Research Models including Tongyi DeepResearch-30B-A3B. As illustrated in Figure 5, HOTE also leads existing rl and agent evolution methods. Additionally, due to the presence of hy-brid mode, only half of the research tasks in the lat-ter 700 steps out of the total 1300 steps require tool-use. Given that the maximum number of tool-use per response is T , the batch size is B and the group size is G, the maximum number of tool-use re-quired for HOTE training is 350 BT G +175 B(term 1 for solver, term 2 for proposer). In contrast, for DR Tulu it is 1900 BT G while for RL Methods and Evolving Methods it is 1300 BT G . Furthermore, as indicated in Table 2, even with the addition of 6Table 1: Performance comparison across long-form deep research benchmarks. HOTE-8B outperforms existing 
+
+Open Deep Research Models , Open Deep Research , RL Methods and Evolving Methods .                                                                                                                                                                                
+
+> Method HealthBench ResearchQA DRB Average Overall Comp Insight Instruction Readability
+> Closed Deep Research
+> Gemini 3 Pro + Search 38.0 74.3 46.3 43.4 44.9 49.8 49.0 52.9 GPT-5 + Search 59.5 78.2 50.7 26.7 21.3 41.0 29.4 62.8 OpenAI Deep Research 53.8 79.2 46.9 46.8 45.2 49.2 47.1 60.0
+> Open Deep Research Models
+> Qwen3-8B 5.9 46.3 18.2 14.3 8.7 29.5 24.4 23.5 Qwen3-235B-A22B 21.3 50.7 22.5 19.1 17.3 30.6 25.1 31.5 Search-R1-7B -0.1 27.9 9.5 5.2 2.1 18.6 16.8 12.4 ASearcher-Web-7B -13.0 19.4 7.8 5.1 1.7 15.2 11.8 4.7 WebExplorer-8B 33.7 64.8 36.7 33.7 28.5 45.7 42.2 45.1 WebThinker-32B-DPO 11.1 48.6 23.3 19.7 12.3 36.8 26.3 27.7 Tongyi DeepResearch-30B-A3B 46.2 66.7 40.6 39.1 34.3 46.8 45.4 51.2
+> Fixed Pipeline Deep Research
+> WebThinker QwQ-32B (report) 36.5 72.8 37.9 36.2 32.6 43.2 42.9 49.1 WebThinker-32B-DPO (report) 39.4 74.2 40.6 39.4 35.4 46.0 43.5 51.4 Ai2 ScholarQA-Claude Sonnet (report) 32.0 75.0 36.1 35.1 32.0 40.5 38.9 47.7
+> Open Deep Research
+> DR Tulu-8B-SFT 38.1 68.5 39.0 36.3 35.3 45.5 39.5 48.5 DR Tulu-8B-RL 150.2 74.3 43.4 41.7 41.8 48.2 41.3 56.0
+> RL Methods
+> GRPO 49.6 73.5 43.1 40.8 42.1 46.9 42.6 55.4 GSPO 51.0 75.1 43.6 42.5 40.9 47.3 43.7 56.6 REINFORCE++ 50.8 74.8 43.1 41.2 42.7 46.1 42.4 56.2
+> Evolving Methods
+> SPICE-8B 50.2 73.9 42.1 40.6 40.9 46.1 40.8 55.4 Dr. Zero-8B 52.1 73.2 43.7 41.5 42.1 46.5 44.7 56.3
+> Open Evolving Deep Research
+> HOTE-8B 54.4 76.9 45.9 44.9 45.4 47.8 45.8 59.1
+
+Table 2: Average training time per step for baselines, no-tool mode and hybrid mode of HOTE. 
+
+Method Wall-clock (s/step) GPU (h/step) 
+
+DR Tulu 1136.8 3.8 GRPO 1024.2 3.5 GSPO 1011.3 3.4 REINFORCE++ 979.6 3.3 SPICE 1313.7 4.0 Dr. Zero 1301.0 4.0 HOTE no-tool 382.0 1.5 
+
+hybrid 753.3 2.6 
+
+proposer evolution, both the no-tool mode in the first 600 steps and the hybrid mode in the latter 700 
+
+steps contribute to improvements in training speed. 
+
+3.4 RQ2: Are the three modules indispensable for HOTE evolution? 
+
+We compared HOTE, SPICE, the HOTE version without judge evolution (HOTE w/o je, equivalent to Dr. Zero using rubric-based reward and GRPO), and the HOTE version without proposer evolu-tion (HOTE w/o pe, the proposer’s parameters are fixed) in the no-tool mode. As shown in Figure 5, when training in the no-tool mode using HOTE, although HOTE initially performed slightly worse on the benchmark compared to SPICE, HOTE w/o je and HOTE w/o pe, it gradually achieved overall superiority as training progressed. More importantly, while HOTE w/o je, HOTE w/o pe and SPICE approached convergence, HOTE main-tained a stronger upward trend. Moreover, as can be seen from Figure 6, with proposer evolution enabled, the scores of synthetic research tasks are more stable compared to fixed proposer parame-ters, which indicates that proposer evolution helps maintain the difficulty of research tasks. 
+
+3.5 RQ3: Does HOTE facilitate the collaborative progress of dual modes? 
+
+Figure 4(a) shows the performance of HOTE, the open-source training approach DR Tulu, as well as HOTE trained exclusively in tool-use mode, eval-uated on HealthBench, ResearchQA, and DRB under both no-tool and tool-use modes. HOTE outperforms both DR Tulu and the single-mode version across both no-tool and tool-use evalua-tion modes, achieving collaborative progress in the dual modes by enhancing research report gener-ation techniques while avoiding over-reliance on parameterized knowledge. 7(a)  
+
+> Training Step
+> (b) (c)
+> Training Step Training Step
+> Healthbenc h
+> ResearchQ A
+> DR B
+
+Figure 5: In HealthBench (a), ResearchQA (b), and DeepResearchBench (c), after 600 steps of training in no-tool mode, HOTE outperforms SPICE, HOTE w/o je and HOTE w/o pe while demonstrating an upward trend. (a) w/ pe (b) w/o pe 
+
+> Training Step
+> Synthetic Task Score
+> Synthetic Task Score
+> Training Step
+
+Figure 6: (a) During the training in no-tool mode with proposer evolution enabled, the solver’s synthetic task score remains stable, indicating that proposer evolu-tion maintains the challenge of the tasks for the evolv-ing solver; (b) After disabling proposer evolution, the solver’s synthetic task score gradually increases. Table 3: Performance comparison with Llama3.1-8B-Instruct supervised fine-tuned by dr-tulu-sft-data as the base model.                         
+
+> Method HealthBench ResearchQA DRB
+> DR Tulu 28.8 60.0 32.3 GRPO 27.2 59.8 31.0 GSPO 27.8 59.0 31.5 REINFORCE++ 27.2 59.3 32.6 SPICE 29.2 62.0 32.9 Dr. Zero 28.4 61.0 31.5 HOTE 33.1 64.2 35.1
+
+3.6 RQ4: Is HOTE effective with different base models? 
+
+As shown in Table 3, we also provided the per-formance comparison on Llama3.1-8B-Instruct su-pervised fine-tuned by dr-tulu-sft-data (Shao et al., 2025) for 5 epochs. HOTE maintains its lead across three benchmarks and over baselines that we can train by ourselves including Open Deep Research ,
+
+RL Methods and Evolving Methods . The absolute scores are lower than using DR Tulu-8B-SFT fine-tuned from Qwen3-8B due to the lower capability of the base model. 
+
+3.7 RQ5: Does HOTE evolve more sustainably than baselines? 
+
+We compared the performance of HOTE and the baselines during training from 1200 to 1500 to-
+
+Table 4: Average performance comparison across three benchmarks between HOTE and baselines from 1200 steps to 1500 steps in total. HOTE evolves more sus-tainably than baselines.                             
+
+> Method 1200 1300 1400 1500
+> GRPO 55.4 55.4 55.2 55.2 GSPO 56.4 56.6 56.6 56.4 REINFORCE++ 56.2 56.2 55.7 56.0 SPICE 55.5 55.4 55.2 55.4 Dr. Zero 56.3 56.3 56.5 56.1 HOTE 58.0 59.1 59.6 59.9
+
+tal steps. We use the average performance on the three benchmarks. As shown in Table 4, the base-lines have already converged, whereas HOTE not only outperforms the baselines but also continues to exhibit an upward trend. HOTE can sustain con-tinuous evolution for at least 252 hours (1500 steps) of wall-clock time. 
+
+4 Conclusion 
+
+We propose Hybrid Open-Ended Tri-Evolution (HOTE), aiming to develop a deep researcher ca-pable of autonomous evolution in open-ended en-vironments for open-ended tasks with less time overhead. Through a well-designed reinforcement learning with hybrid modes, HOTE achieves syn-ergistic evolution among the proposer, solver and judge as well as the mutual benefit between no-tool and tool-use modes. On three long-form deep research benchmarks, HOTE-8B outperforms the strongest open 8-32B models and state-of-the-art deep research training methods with less time over-head. In future work, we will continue to explore how to handle noise in real-world search tools dur-ing the evolutionary process, how to break free from dependence on original training dataset and how to scale HOTE to larger MoE models. 8Limitations 
+
+The evolution gradually slows down as training progresses and is difficult to obtain perfect scores, suggesting that the upper bound of evolution may still be constrained by model scale. Investigating the scaling capability of HOTE will be a major direction of our future work. The proposed method still relies on the initial training data, but we believe that transcending the limitations of existing training data through evolution is inherently valuable. 
+
+References 
+
+Anthropic. 2025. Claude takes research to new places. 
+
+https://www.anthropic.com/news/research .Accessed: 2025-04. Rahul K Arora, Jason Wei, Rebecca Soskin Hicks, Pre-ston Bowman, Joaquin Quiñonero-Candela, Foivos Tsimpourlas, Michael Sharman, Meghan Shah, An-drea Vallone, Alex Beutel, and 1 others. 2025. Healthbench: Evaluating large language models towards improved human health. arXiv preprint arXiv:2505.08775 .Lili Chen, Mihir Prabhudesai, Katerina Fragkiadaki, Hao Liu, and Deepak Pathak. 2025. Self-questioning language models. arXiv preprint arXiv:2508.03682 .Zixiang Chen, Yihe Deng, Huizhuo Yuan, Kaixuan Ji, and Quanquan Gu. 2024. Self-play fine-tuning con-verts weak language models to strong language mod-els. arXiv preprint arXiv:2401.01335 .Mingxuan Du, Benfeng Xu, Chiwei Zhu, Xiaorui Wang, and Zhendong Mao. 2025. Deepresearch bench: A comprehensive benchmark for deep research agents. 
+
+arXiv preprint arXiv:2506.11763 .FAIR, Anton Bakhtin, Noam Brown, Emily Dinan, Gabriele Farina, Colin Flaherty, Daniel Fried, An-drew Goff, Jonathan Gray, Hengyuan Hu, and 1 oth-ers. 2022. Human-level play in the game of diplo-macy by combining language models with strategic reasoning. Science , 378(6624):1067–1074. Tianqing Fang, Zhisong Zhang, Xiaoyang Wang, Rui Wang, Can Qin, Yuxuan Wan, Jun-Yu Ma, Ce Zhang, Jiaqi Chen, Xiyun Li, and 1 others. 2025. Cognitive kernel-pro: A framework for deep research agents and agent foundation models training. arXiv preprint arXiv:2508.00414 .Jiaxuan Gao, Wei Fu, Minyang Xie, Shusheng Xu, Chuyi He, Zhiyu Mei, Banghua Zhu, and Yi Wu. 2025. Beyond ten turns: Unlocking long-horizon agentic search with large-scale asynchronous rl. 
+
+arXiv preprint arXiv:2508.07976 .Anisha Gunjal, Anthony Wang, Elaine Lau, Vaskar Nath, Yunzhong He, Bing Liu, and Sean Hendryx. 2025. Rubrics as rewards: Reinforcement learn-ing beyond verifiable domains. arXiv preprint arXiv:2507.17746 .Xanh Ho, Anh-Khoa Duong Nguyen, Saku Sugawara, and Akiko Aizawa. 2020. Constructing a multi-hop qa dataset for comprehensive evaluation of reasoning steps. arXiv preprint arXiv:2011.01060 .Chen Hu, Haikuo Du, Heng Wang, Lin Lin, Mingrui Chen, Peng Liu, Ruihang Miao, Tianchi Yue, Wang You, Wei Ji, and 1 others. 2025a. Step-deepresearch technical report. arXiv preprint arXiv:2512.20491 .Jian Hu, Jason Klein Liu, Haotian Xu, and Wei Shen. 2025b. Reinforce++: Stabilizing critic-free policy optimization with global advantage normalization. 
+
+arXiv preprint arXiv:2501.03262 .Chengsong Huang, Wenhao Yu, Xiaoyang Wang, Hong-ming Zhang, Zongxia Li, Ruosen Li, Jiaxin Huang, Haitao Mi, and Dong Yu. 2025. R-zero: Self-evolving reasoning llm from zero data. arXiv preprint arXiv:2508.05004 .Bowen Jin, Hansi Zeng, Zhenrui Yue, Jinsung Yoon, Sercan Arik, Dong Wang, Hamed Zamani, and Jiawei Han. 2025. Search-r1: Training llms to reason and leverage search engines with reinforcement learning. 
+
+arXiv preprint arXiv:2503.09516 .Kuan Li, Zhongwang Zhang, Huifeng Yin, Rui Ye, Yida Zhao, Liwen Zhang, Litu Ou, Dingchu Zhang, Xixi Wu, Jialong Wu, and 1 others. 2025a. Websailor-v2: Bridging the chasm to proprietary agents via synthetic data and scalable reinforcement learning. 
+
+arXiv preprint arXiv:2509.13305 .Xiaoxi Li, Jiajie Jin, Guanting Dong, Hongjin Qian, Yongkang Wu, Ji-Rong Wen, Yutao Zhu, and Zhicheng Dou. 2025b. Webthinker: Empowering large reasoning models with deep research capability. 
+
+arXiv preprint arXiv:2504.21776 .Bo Liu, Chuanyang Jin, Seungone Kim, Weizhe Yuan, Wenting Zhao, Ilia Kulikov, Xian Li, Sainbayar Sukhbaatar, Jack Lanchantin, and Jason Weston. 2025a. Spice: Self-play in corpus environments im-proves reasoning. arXiv preprint arXiv:2510.24684 .Junteng Liu, Yunji Li, Chi Zhang, Jingyang Li, Aili Chen, Ke Ji, Weiyu Cheng, Zijia Wu, Chengyu Du, Qidi Xu, and 1 others. 2025b. Webexplorer: Ex-plore and evolve for training long-horizon web agents. 
+
+arXiv preprint arXiv:2509.06501 .Rabeeh Karimi Mahabadi, Sanjeev Satheesh, Shrimai Prabhumoye, Mostofa Patwary, Mohammad Shoeybi, and Bryan Catanzaro. 2025. Nemotron-cc-math: A 133 billion-token-scale high quality math pretraining dataset. arXiv preprint arXiv:2508.15096 .Moonshot AI. 2025. Kimi-researcher: End-to-end rl training for emerging agentic capabilities. https: //moonshotai.github.io/Kimi-Researcher/ .
+
+9OpenAI. 2025. Introducing deep re-search. https://openai.com/index/ introducing-deep-research/ . Accessed: 2025-02. Tianrui Qin, Qianben Chen, Sinuo Wang, He Xing, King Zhu, He Zhu, Dingfeng Shi, Xinxin Liu, Ge Zhang, Jiaheng Liu, and 1 others. 2025. Flash-searcher: Fast and effective web agents via dag-based parallel exe-cution. arXiv preprint arXiv:2509.25301 .Samuel Schmidgall, Yusheng Su, Ze Wang, Ximeng Sun, Jialian Wu, Xiaodong Yu, Jiang Liu, Zicheng Liu, and Emad Barsoum. 2025. Agent labora-tory: Using llm agents as research assistants. arXiv preprint arXiv:2501.04227 .Rulin Shao, Akari Asai, Shannon Zejiang Shen, Hamish Ivison, Varsha Kishore, Jingming Zhuo, Xinran Zhao, Molly Park, Samuel G Finlayson, David Sontag, and 1 others. 2025. Dr tulu: Reinforcement learning with evolving rubrics for deep research. arXiv preprint arXiv:2511.19399 .Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, YK Li, Yang Wu, and 1 others. 2024. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 .David Silver, Thomas Hubert, Julian Schrittwieser, Ioan-nis Antonoglou, Matthew Lai, Arthur Guez, Marc Lanctot, Laurent Sifre, Dharshan Kumaran, Thore Graepel, and 1 others. 2017. Mastering chess and shogi by self-play with a general reinforcement learn-ing algorithm. arXiv preprint arXiv:1712.01815 .Amanpreet Singh, Joseph Chee Chang, Chloe Anastasi-ades, Dany Haddad, Aakanksha Naik, Amber Tanaka, Angele Zamarron, Cecile Nguyen, Jena D Hwang, Jason Dunkleberger, and 1 others. 2025. Ai2 scholar qa: Organized literature synthesis with attribution. 
+
+arXiv preprint arXiv:2504.10861 .Huatong Song, Jinhao Jiang, Yingqian Min, Jie Chen, Zhipeng Chen, Wayne Xin Zhao, Lei Fang, and Ji-Rong Wen. 2025. R1-searcher: Incentivizing the search capability in llms via reinforcement learning. 
+
+arXiv preprint arXiv:2503.05592 .MiroMind Team, Song Bai, Lidong Bing, Carson Chen, Guanzheng Chen, Yuntao Chen, Zhe Chen, Ziyi Chen, Jifeng Dai, Xuan Dong, and 1 oth-ers. 2025a. Mirothinker: Pushing the performance boundaries of open-source research agents via model, context, and interactive scaling. arXiv preprint arXiv:2511.11793 .Tongyi DeepResearch Team, Baixuan Li, Bo Zhang, Dingchu Zhang, Fei Huang, Guangyu Li, Guoxin Chen, Huifeng Yin, Jialong Wu, Jingren Zhou, and 1 others. 2025b. Tongyi deepresearch technical report. 
+
+arXiv preprint arXiv:2510.24701 .Gerald Tesauro and 1 others. 1995. Temporal difference learning and td-gammon. Communications of the ACM , 38(3):58–68. Vijay Viswanathan, Yanchao Sun, Shuang Ma, Xiang Kong, Meng Cao, Graham Neubig, and Tongshuang Wu. 2025. Checklists are better than reward mod-els for aligning language models. arXiv preprint arXiv:2507.18624 .Yuxuan Wan, Tianqing Fang, Zaitang Li, Yintong Huo, Wenxuan Wang, Haitao Mi, Dong Yu, and Michael R Lyu. 2026. Inference-time scaling of verification: Self-evolving deep research agents via test-time rubric-guided verification. arXiv preprint arXiv:2601.15808 .Yinjie Wang, Ling Yang, Ye Tian, Ke Shen, and Mengdi Wang. 2025. Cure: Co-evolving coders and unit testers via reinforcement learning. In The Thirty-ninth Annual Conference on Neural Information Pro-cessing Systems .Jason Wei, Nguyen Karina, Hyung Won Chung, Yunxin Joy Jiao, Spencer Papay, Amelia Glaese, John Schulman, and William Fedus. 2024. Measuring short-form factuality in large language models. arXiv preprint arXiv:2411.04368 .Jialong Wu, Baixuan Li, Runnan Fang, Wenbiao Yin, Liwen Zhang, Zhengwei Tao, Dingchu Zhang, Zekun Xi, Gang Fu, Yong Jiang, and 1 others. 2025a. Web-dancer: Towards autonomous information seeking agency. arXiv preprint arXiv:2505.22648 .Jialong Wu, Wenbiao Yin, Yong Jiang, Zhenglin Wang, Zekun Xi, Runnan Fang, Linhai Zhang, Yulan He, Deyu Zhou, Pengjun Xie, and 1 others. 2025b. Web-walker: Benchmarking llms in web traversal. arXiv preprint arXiv:2501.07572 .Junde Wu, Jiayuan Zhu, Yuyuan Liu, Min Xu, and Yueming Jin. 2025c. Agentic reasoning: A stream-lined framework for enhancing llm reasoning with agentic tools. arXiv preprint arXiv:2502.04644 .Yue Wu, Zhiqing Sun, Huizhuo Yuan, Kaixuan Ji, Yim-ing Yang, and Quanquan Gu. 2024. Self-play pref-erence optimization for language model alignment. 
+
+arXiv preprint arXiv:2405.00675 .xAI. 2025. Grok 3 beta — the age of reasoning agents. 
+
+https://x.ai/news/grok-3 .An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, and 1 others. 2025. Qwen3 technical report. arXiv preprint arXiv:2505.09388 .Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. 2022. React: Synergizing reasoning and acting in language models. In The eleventh international conference on learning representations .
+
+10 Yi Yao, He Zhu, Piaohong Wang, Jincheng Ren, Xin-long Yang, Qianben Chen, Xiaowan Li, Dingfeng Shi, Jiaxian Li, Qiexiang Wang, and 1 others. 2026. O-researcher: An open ended deep research model via multi-agent distillation and agentic rl. arXiv preprint arXiv:2601.03743 .Li S Yifei, Allen Chang, Chaitanya Malaviya, and Mark Yatskar. 2025. Researchqa: Evaluating scholarly question answering at scale across 75 fields with survey-mined questions and rubrics. arXiv preprint arXiv:2509.00496 .Qiying Yu, Zheng Zhang, Ruofei Zhu, Yufeng Yuan, Xiaochen Zuo, Yu Yue, Weinan Dai, Tiantian Fan, Gaohong Liu, Lingjun Liu, and 1 others. 2025. Dapo: An open-source llm reinforcement learning system at scale. arXiv preprint arXiv:2503.14476 .Weizhe Yuan, Richard Yuanzhe Pang, Kyunghyun Cho, Xian Li, Sainbayar Sukhbaatar, Jing Xu, and Ja-son E Weston. 2024. Self-rewarding language mod-els. In Forty-first International Conference on Ma-chine Learning .Weizhe Yuan, Jane Yu, Song Jiang, Karthik Padthe, Yang Li, Ilia Kulikov, Kyunghyun Cho, Dong Wang, Yuandong Tian, Jason E Weston, and 1 others. 2025. Naturalreasoning: Reasoning in the wild with 2.8 m challenging questions. arXiv preprint arXiv:2502.13124 .Zhenrui Yue, Kartikeya Upasani, Xianjun Yang, Suyu Ge, Shaoliang Nie, Yuning Mao, Zhe Liu, and Dong Wang. 2026. Dr. zero: Self-evolving search agents without training data. arXiv preprint arXiv:2601.07055 .Andrew Zhao, Yiran Wu, Yang Yue, Tong Wu, Quentin Xu, Matthieu Lin, Shenzhi Wang, Qingyun Wu, Zi-long Zheng, and Gao Huang. 2025. Absolute zero: Reinforced self-play reasoning with zero data. arXiv preprint arXiv:2505.03335 .Chujie Zheng, Shixuan Liu, Mingze Li, Xiong-Hui Chen, Bowen Yu, Chang Gao, Kai Dang, Yuqiong Liu, Rui Men, An Yang, and 1 others. 2025a. Group sequence policy optimization. arXiv preprint arXiv:2507.18071 .Yuxiang Zheng, Dayuan Fu, Xiangkun Hu, Xiaojie Cai, Lyumanshan Ye, Pengrui Lu, and Pengfei Liu. 2025b. Deepresearcher: Scaling deep research via reinforce-ment learning in real-world environments. arXiv preprint arXiv:2504.03160 .
+
+11 A Related Work 
+
+We summarize the contribution of HOTE in Ta-ble 5. 
+
+A.1 Deep Research Agents 
+
+Deep research, defined as AI agents’ capability to handle open-ended, long-term, and highly complex information retrieval and integration, has become key for AI agents to move beyond conversational interaction toward general autonomy (Hu et al., 2025a; OpenAI, 2025). On the inference front, Wu et al. (2025c); Qin et al. (2025); Schmidgall et al. (2025) have shown that constructing complex workflows and context management can lead to substantial performance improvements. However, such methods rely on manual prompting, lack generality and flexibil-ity, and make it difficult to evaluate the inherent autonomous agent capabilities of the model (Li et al., 2025a). On the training front, research has primarily focused on how to end-to-end train au-tonomous deep research agents based on flexible reasoning paradigms similar to ReAct (Yao et al., 2022), enabling them to self-plan, acquire knowl-edge and summarize. Search-R1 (Jin et al., 2025) applies reinforcement learning with verifiable re-wards (RLVR) to enhance search capabilities and is trained mainly on short-form question answer-ing (Wei et al., 2024; Wu et al., 2025b; Ho et al., 2020). This approach has been explored in many re-cent follow-up studies, including WebExplorer (Liu et al., 2025b), Tongyi Deep Research (Team et al., 2025b) and WebSailor-V2 (Li et al., 2025a). Web-Thinker (Li et al., 2025b) and MiroThinker (Team et al., 2025a) extend training to longer report gen-eration and more rounds of tool usage. To address the lack of clearly defined evaluation metrics for long-form deep research responses, DR Tulu (Shao et al., 2025) proposes Reinforcement Learning via Evolving Rubrics (RLER), which dynamically up-dates evaluation rubrics based on sampled policy re-sponses. Although the above studies enable agents to autonomously conduct research based on user queries, they lack a process for autonomous ex-ploration and improvement of deep research ca-pabilities. Dr. Zero (Yue et al., 2026) designs a framework based on search-based proposer–solver self-play, enabling the two to co-evolve without exposure to any training data, but it is limited to short-form and easily verifiable question answer-ing. Therefore, we propose the first deep research agent evolution framework that supports open-ended long-form report generation tasks, aiming to achieve both practicality and autonomy simultane-ously. 
+
+A.2 Agent Evolving with Self-play 
+
+Agent evolution has long been regarded as a path-way toward achieving artificial general intelligence, signifying the capability of agents to autonomously interact with the environment and continuously learn (Liu et al., 2025a). Self-play offers a highly promising paradigm for agent evolution, wherein an agent system learns from feedback automati-cally generated through competition with itself. In the domain of games, self-play has led to achieve-ments such as TD-Gammon’s backgammon mas-tery (Tesauro et al., 1995), AlphaGo’s superhuman performance in Go (Silver et al., 2017), and CI-CERO’s capability to understand cooperative strate-gies (FAIR et al., 2022). In the field of large lan-guage models, some approaches enable models to serve dual roles as solver and judge, optimiz-ing strategies without the need for human annota-tion (Chen et al., 2024; Wu et al., 2024; Yuan et al., 2024; Wan et al., 2026). However, such evolution is constrained by the queries in the training set, lim-iting the model’s ability to autonomously explore new knowledge and skills. By assigning the agent system the roles of both query proposer and solver, significant improvements have been achieved in areas such as mathematics, coding, and general rea-soning, surpassing the limitations of the original training set and even demonstrating zero-data ef-fectiveness (Huang et al., 2025; Zhao et al., 2025; Wang et al., 2025; Chen et al., 2025). To further overcome the inherent limitations of agent capabili-ties, methods such as SPICE (Liu et al., 2025a) and Dr. Zero (Yue et al., 2026) provide proposers with large-scale corpora and search engines, facilitating the evolution of agent systems in open-ended en-vironments. However, existing approaches remain confined to verifiable tasks, falling short of address-ing the reality of numerous open-ended tasks with ambiguous or undefined boundaries encountered in real-world applications. Therefore, we propose an open-ended agent evo-lution framework tailored to open-ended tasks that are difficult to verify. Through mutual play among proposer, solver and judge, the framework enables collaborative evolution with web-scale knowledge. 12 Table 5: The contribution of HOTE.                                   
+
+> Method Proposer Solver Judge Open-ended Open-ended Evolve Evolve Evolve Task Environment
+> Dr. zero (Yue et al., 2026) (Meta) ✓✓✗✗✓
+> DR Tulu (Shao et al., 2025) (Ai2) ✗✓✓✓✗
+> Spice (Liu et al., 2025a) (ICLR 2026) ✓✓✗✗✗
+> R-zero (Huang et al., 2025) (ICLR 2026) ✓✓✗✗✗
+> HOTE ✓✓✓✓✓
+
+B Proof of Expected Maximum Generation Time Comparison 
+
+We formally derive the inequality between the ex-pected maximum generation time of a tool-use 
+
+strategy and a hybrid-mode strategy. 
+
+B.1 Problem Setup 
+
+Let X denote the random variable representing the generation time for the tool-use mode, and Y
+
+denote the generation time for the no-tool mode. We assume these follow normal distributions with identical variances σ2 but distinct means: 
+
+X ∼ N (μT , σ 2), (6) 
+
+Y ∼ N (μN , σ 2), (7) where μT > μ N . Let FX (t) and FY (t) denote the cumulative distribution functions (CDFs) of 
+
+X and Y , respectively. Since μT > μ N and the variances are equal, we have the strict inequality for the CDFs: 
+
+FX (t) < F Y (t), ∀t ∈ R. (8) We consider the number of generations of the solver as K.• Strategy A (tool-use): The maximum gen-eration time MA is defined as the maximum of K independent and identically distributed (i.i.d.) variables X1, . . . , X K ∼ X:
+
+MA = max {X1, . . . , X K }. (9) • Strategy B (hybrid mode): The maximum generation time MB is defined as the maxi-mum of K/ 2 variables of type X and K/ 2
+
+variables of type Y , all mutually independent: 
+
+MB = max {X1, . . . , X K/ 2, Y 1, . . . , Y K/ 2}.
+
+(10) 
+
+Theorem B.1. The expected maximum generation time of Strategy A is strictly greater than that of Strategy B, i.e., E[MA] > E [MB ].Proof. First, we derive the cumulative distribution functions for the random variables MA and MB .For any t ∈ R, the probability that the maximum of a set of independent variables is less than or equal to t is the product of their individual probabilities. For Strategy A: 
+
+P (MA ≤ t) = 
+
+> K
+
+Y
+
+> i=1
+
+P (Xi ≤ t) = [ FX (t)] K .
+
+(11) For Strategy B: 
+
+P (MB ≤ t) = 
+
+
+
+> K/ 2
+
+Y
+
+> i=1
+
+P (Xi ≤ t)
+
+ ·
+
+
+
+> K/ 2
+
+Y
+
+> j=1
+
+P (Yj ≤ t)
+
+ = [ FX (t)] K/ 2[FY (t)] K/ 2.
+
+(12) Using the inequality from Eq. (8) , where 
+
+FX (t) < F Y (t) for all t, and noting that FX (t) >
+
+0 for sufficiently large t, we compare the two prob-abilities: 
+
+P (MB ≤ t) = [ FX (t)] K/ 2[FY (t)] K/ 2
+
+> [FX (t)] K/ 2[FX (t)] K/ 2
+
+= [ FX (t)] K
+
+= P (MA ≤ t). (13) Thus, P (MB ≤ t) > P (MA ≤ t) for all t where 
+
+FX (t) > 0. This implies that MA stochastically dominates MB (first-order stochastic dominance). In terms of the survival function (tail probabil-ity), this inequality is reversed: 
+
+P (MA > t ) = 1 − P (MA ≤ t) (14) 
+
+> 1 − P (MB ≤ t) (15) 
+
+= P (MB > t ). (16) The expected value of a random variable Z can be expressed as the integral of its survival function 13 over its support. Assuming the support covers the real line: 
+
+E[Z] = 
+
+Z ∞−∞ 
+
+tf Z (t)dt (17) 
+
+=
+
+Z ∞
+
+> 0
+
+P (Z > t )dt −
+
+Z 0
+
+> −∞
+
+P (Z ≤ t)dt. 
+
+(18) Given the stochastic dominance established above, the strict inequality holds for the expectation: 
+
+E[MA] > E [MB ]. (19) 
+
+C Case Study 
+
+We conducted case studies on HOTE-8B and DR Tulu-8B to illustrate the advantages of HOTE. We omit the think and tool because of they are too long. In practical applications, the final re-search report will be additionally appended with the searched references. In Case 1, as shown in Figure 7-8, HOTE demonstrates: (a) more compre-hensive information: the response from HOTE-8B provides detailed citations from EACS guidelines, including baseline examination items (viral load, CD4 count, complete blood count, metabolic in-dicators, TB screening, opportunistic infection as-sessment, etc.); (b) better structure: the answer is clearly organized into sections such as "Sum-mary", "Baseline workup" and "Virologic check points"; (c) stronger contextual awareness: it cor-rectly identifies that this is a question for medical professionals, offering detailed guidelines suitable for their level. In contrast, DR Tulu offers a more concise response, presenting only "Bottom line" recommendations and lacking a complete moni-toring timeline and baseline examination details. In Case 2, as shown in Figure 10-14, HOTE (a) correctly identifies an emergency: clearly states that "acute angle -closure glaucoma is a true oph-thalmic emergency" requiring "immediate evalu-ation and treatment to prevent rapid, irreversible vision loss"; (b) provides specific action advice: explains what the patient should do (seek evalua-tion by an ophthalmologist) and what examinations the doctor will perform; (c) offers complete clini-cal information: including symptom descriptions (severe eye pain, blurred vision, halos, headache, nausea) and treatment methods (laser peripheral iridotomy). DR Tulu, while providing background medical knowledge, fails to clearly inform the pa-tient that this is an emergency requiring immediate medical attention. 
+
+D Algorithm 
+
+We provide the complete training process of HOTE in Algorithm 1. 
+
+E The effect of judge models for training, prompts and diverse proposing 
+
+We further trained with Qwen3-235BA22B-Think and Qwen3-30BA3B-Instruct as the judge model (2507-FP8 version), along with the average wall-clock time per step. The results in Table 6 show that: (i) a smaller-scale judge model leads to a moderate performance degradation; (ii) a thinking model achieves nearly identical performance but substantially reduces training efficiency. Therefore, we recommend using large-scale open-source in-struct models to strike a balance between effec-tiveness and computational overhead. We con-sistently set: temperature=0, max_tokens=16384, top_p=1.0. The prompts are role-defining system instruc-tions for the proposer, solver, and judge modules, designed to specify each module’s task and output format. The samples are minimal format demon-strations and are not part of the evaluation bench-marks. To test sensitivity, we replaced samples and rephrased role-defining instructions with three different sets on HOTE and three baselines. We observed negligible impact on final performance in Table 9, suggesting that the method is not ma-terially dependent on a particular prompt/sample choice. As shown in Table 7, the diverse proposing ef-fectively improve the performance on three bench-marks, illustrating its importance in ensuring the quality of proposed research tasks. 
+
+F Details 
+
+F.1 Implementation details 
+
+For RL Methods and Evolving Methods that we can fully control the training process, since long-form deep research tasks do not have standard reference answers, we consistently adapted them from RLVR to rubric-based reward following (Shao et al., 2025) without judge evolution. For Evolv-ing Methods including SPICE and Dr. Zero, we also consistently adapted them in the same man-ner as HOTE by utilizing Qwen3-8B to initialize 14 Table 6: Performance and training efficiency under different judge models.                         
+
+> Judge Model HealthBench ResearchQA DRB Avg. Wall-clock Second/Step
+> Qwen3-235BA22B-Think 54.6 76.9 45.5 1065.5 Qwen3-30BA3B-Instruct 50.2 72.2 42.0 723.7 Qwen3-235BA22B-Instruct 54.4 76.9 45.9 753.3
+> Table 7: The effect of diverse proposing.
+> Benchmark w/ diverse proposing w/o diverse proposing
+> HealthBench 54.4 50.2 ResearchQA 76.9 74.1 DRB 45.9 42.2
+
+the proposer checkpoint and DR Tulu-8B-SFT to initialize the solver checkpoint. For Open Deep Re-search Models , Open Deep Research , RL Methods ,
+
+Evolving Methods and HOTE that we can fully con-trol the inference process, we use Serper API for google_search, Jina API for web_browse and Se-mantic Scholar API for paper_search. We ensured that no data from the benchmark was added to the training set, and we also blocked search tools from accessing the benchmark website. For Closed Deep Research that we cannot fully control the training and inference process, we also provide their results for reference following (Shao et al., 2025) but not for a strict comparison with them. We plan to fully release our models and codes upon acceptance. 
+
+F.2 Benchmark details Judge . To avoid the model simply using the bi-ases of the judge during training, and also to fol-low the official evaluation of HealthBench (Arora et al., 2025), DRB (Du et al., 2025) and Re-searchQA (Yifei et al., 2025), different judge mod-els were employed for different benchmarks: GPT-4.1 was used for Healthbench; Gemini-2.5-flash for DRB; and GPT-4.1-mini for ResearchQA. Higher scores consistently indicate better quality across all benchmarks. HealthBench calculates a nor-malized score based on physician-created rubrics that reward desired behaviors and penalize unde-sirable ones; ResearchQA measures the thorough-ness of addressing literature-derived criteria on a 0-100% scale; and DRB computes a macro-average score across four quality dimensions via compari-son against high-quality reference reports. Please refer to the references for specific implementation. 
+
+Reliability . We run the evaluation of HOTE on all three benchmarks three times. As shown in Ta-ble 8, the standard deviations are small and HOTE consistently maintains its lead. LLM-as-a-judge can provide a stable evaluation for the three bench-marks. Besides, human experts are substantially involved in rubric design across all three bench-marks to ensure the reliability: HealthBench uses conversation-specific rubrics written by 262 physi-cians, with consensus criteria added only when a majority of reviewing physicians agree they are rel-evant; ResearchQA derives query-specific rubrics from expert-written survey sections and further validates them with 31 Ph.D. annotators across 8 fields; and DRB builds on tasks crafted and itera-tively refined by domain experts, while its adaptive criteria are anchored in four top-level dimensions established from domain expertise: comprehensive-ness, insight, instruction-following, and readability. 
+
+The choice of benchmark . The chosen bench-marks are for a complementary evaluation in differ-ent domains: they evaluate distinct aspects of long-form deep research quality including (Healthbench) health-related safety and communication quality, (Researchqa) scholarly synthesis across 7 research domains (Life & Earth Sciences, Engineering & Computer Science, Physical Sciences, Health Sci-ences & Medicine, Social Sciences, Humanities, Economics), and (DRB) end-to-end deep-research report quality across 22 domains (Science & Tech-nology, Finance & Business, Software Develop-ment, Education & Jobs, Health, Literature, His-tory, Hardware, Industrial, Art & Design, Games, Crime & Law, Entertainment, Sports & Fitness, Software, Transportation, Religion, Home & Hob-bies, Travel, Food & Dining, Fashion & Beauty, Social Life) rather than a single narrow criterion. 
+
+G Hyperparameter analysis 
+
+We used HealthBench, ResearchQA and DRB to analyze the impact of different batch sizes B, solver 15 Table 8: Performance statistics across three evaluation runs.     
+
+> Benchmark Mean ±Std
+> HealthBench 54.5 ±0.1 ResearchQA 76.7 ±0.2 DRB 45.9 ±0.0
+
+Table 9: Performance comparison across different samples and role-defining instructions.                             
+
+> Exp Method HealthBench ResearchQA DRB
+> Different samples Search-R1-7B 0.0 ±0.0 28.0 ±0.2 9.5 ±0.0 WebExplorer-8B 33.7 ±0.1 64.8 ±0.2 36.7 ±0.0 Tongyi DeepResearch-30B-A3B 46.2 ±0.4 66.7 ±0.1 40.6 ±0.1 HOTE-8B 54.4 ±0.2 76.6 ±0.2 46.3 ±0.3
+> Different role-defining instructions Search-R1-7B 0.0 ±0.0 27.9 ±0.2 9.5 ±0.0 WebExplorer-8B 33.8 ±0.1 64.8 ±0.1 36.7 ±0.0 Tongyi DeepResearch-30B-A3B 46.2 ±0.1 66.6 ±0.2 40.6 ±0.0 HOTE-8B 54.4 ±0.1 76.7 ±0.2 45.9 ±0.1
+
+group sizes G, proposer group sizes G′, and the numbers of training steps in no-tool mode and tool-use mode. As shown in Table 10, increasing B, G,and G′ first improves performance and then leads to a plateau. Therefore, we select B = 48 , G = 8 ,and G′ = 6 . We further conduct the tool-use train-ing until convergence after different steps of no-tool training to explore the effect of no-tool steps. As shown in Table 10, increasing the number of no-tool training steps first improves performance and then causes a decline, possibly because the model becomes overly reliant on parametric knowl-edge as training progresses. Therefore, we train the no-tool mode for 600 steps. For the learning rate, maximum number of tool uses per response, temperature, and response length, we reused the hy-perparameter settings ablated in (Shao et al., 2025). 
+
+H Specific prompts 
+
+Figure 15 and Figure 16 show the system prompts for the solver in tool-use mode. Figure 17 shows the system prompt for the solver in no-tool mode. Figure 18 and Figure 19 show the system prompts for the proposer in tool-use mode. Figure 20 shows the user prompt for the proposer in tool-use mode. Figure 21 and Figure 22 show the system prompt and user prompt for the proposer in no-tool mode, respectively. Figure 23 and Figure 24 show the system prompts for the judge updating rubrics ac-cording to Equation 3. Figure 25 shows the system prompt for the judge assigning rewards based on rubrics. Figure 26 and Figure 27 show the system prompts for the judge generating meta rubrics. 16 Table 10: Hyperparameter analysis on ResearchQA, HealthBench, and DRB. 
+
+B G G′ No-tool Steps Tool-use Steps ResearchQA HealthBench DRB 24 6 4 600 700 72.8 50.8 41.7 40 7 5 600 700 74.5 53.1 44.3 48 8 6 600 700 76.9 54.4 45.9 64 10 8 600 700 76.9 54.5 45.5 48 8 6 400 700 74.2 52.7 43.6 48 8 6 800 700 72.3 51.4 42.1 
+
+17 Algorithm 1 Dual-mode Hybrid Training Strategy for HOTE 
+
+Require: Solver πθs , Proposer πθp , Judge πθj .
+
+Require: Training dataset Dtrain .
+
+Require: Hyperparameters: Batch size B, Group size G, Number of diverse proposing groups N . 
+
+> 1:
+
+Initialize: Set initial synthetic tasks Dsyn = ∅. 
+
+> 2:
+
+while not converged do  
+
+> 3:
+
+// 1. Hybrid Data Preparation  
+
+> 4:
+
+Sample real tasks Dreal of size B/ 2 from Dtrain . 
+
+> 5:
+
+Construct current batch S ← D real ∪ D syn . 
+
+> 6:
+
+// 2. Hybrid Mode Assignment  
+
+> 7:
+
+Randomly assign inference mode m ∈ { tool-use , no-tool } to each task in S (50% each).  
+
+> 8:
+
+// 3. Solver Rollout  
+
+> 9:
+
+For each task s0 ∈ S , sample G responses {oi}Gi=1 ∼ πθs (· | s0) under assigned mode m. 
+
+> 10:
+
+// 4. Judge Evolution & Evaluation  
+
+> 11:
+
+for each task s0 ∈ S do  
+
+> 12:
+
+Update active rubrics: Ractive  
+
+> s0
+
+← Update πθj
+
+(s0, {oi}Gi=1 , Ractive  
+
+> s0
+
+) (Equation 3).  
+
+> 13:
+
+Calculate rewards ri for each response oi using Rs0 (Equation 2).  
+
+> 14:
+
+end for  
+
+> 15:
+
+Collect assessments A containing all rubrics and rewards.  
+
+> 16:
+
+Generate meta rubrics Rmeta summarizing weaknesses from A, {oi}Gi=1 and Rs0 (Equation 4).  
+
+> 17:
+
+// 5. Solver Evolution  
+
+> 18:
+
+Update solver parameters θs via GRPO (Equation 1) using rewards {ri}. 
+
+> 19:
+
+// 6. Proposer Evolution  
+
+> 20:
+
+if Dsyn ̸ = ∅ then  
+
+> 21:
+
+Calculate proposer rewards {rpi }G′ 
+
+> i=1
+
+for tasks in Dsyn (Eq. 5).  
+
+> 22:
+
+Update proposer parameters θp via GRPO using rewards {rpi }G′
+
+> i=1
+
+. 
+
+> 23:
+
+end if  
+
+> 24:
+
+// 7. Diverse Proposing (Next Step Synthetic Data)  
+
+> 25:
+
+Sample N combinations of tasks and corresponding assessments from S. 
+
+> 26:
+
+Proposer generates new synthetic tasks D′ 
+
+> syn
+
+= {opi }G′ 
+
+> i=1
+
+conditioned on combinations and Rmeta . 
+
+> 27:
+
+Update Dsyn ← D ′ 
+
+> syn
+
+for the next iteration.  
+
+> 28:
+
+end while 
+
+18 Figure 7: Case 1 (Part 1) 
+
+19 Figure 8: Case 1 (Part 2) 
+
+20 Figure 9: Case 1 (Part 3) 
+
+21 Figure 10: Case 2 (Part 1) 
+
+22 Figure 11: Case 2 (Part 2) 
+
+23 Figure 12: Case 2 (Part 3) 
+
+24 Figure 13: Case 2 (Part 4) 
+
+Figure 14: Case 2 (Part 5) 
+
+25 System prompt of solver under tool -use mode (Part 1) 
+
+You are a research assistant who answers questions through iterative reasoning and research. 
+
+## Process 
+
+- Use <think></think> tags to show your reasoning at any point. 
+
+- Use < call_tool name="...">query</ call_tool > when you need information (see tools below). 
+
+- You can alternate between thinking and searching multiple times. 
+
+- Only provide <answer></answer> tags when you have enough information for a complete response. If the problem asks 
+
+for a specific, short -form answer, you can also put the answer string in the \boxed{} format. 
+
+- Support every non -trivial claim with retrieved evidence. Wrap the exact claim span in <cite id="ID1,ID2">...</cite>, 
+
+where id are snippet IDs from searched results (comma -separated if multiple). Use only returned snippets; never invent 
+
+IDs. Avoid citing filler text - cite just the factual claim. 
+
+## Calling Tools (< call_tool name="...">query</ call_tool >) 
+
+- You can use the following tools: 
+
+1. google_search 
+
+- Purpose: general web search. 
+
+- Input via: < call_tool name=" google_search ">your query</ call_tool >
+
+- Output: web search snippets (see SEARCH RESULTS). 
+
+- Optional parameters 
+
+- gl : geolocation 
+
+- hl: host language 
+
+2. browse_webpage 
+
+- Purpose: open a specific URL (typically one returned by google_search ) and extract readable page text as snippets. 
+
+- Input via: < call_tool name=" browse_webpage ">https:// example.com /article</ call_tool >
+
+- Output : webpage (see SEARCH RESULTS). 
+
+3. snippet_search 
+
+- Purpose: focused snippet retrieval from scientific papers 
+
+- Input via: < call_tool name=" snippet_search ">your query</ call_tool >
+
+- Output: snippets from existing papers (see SEARCH RESULTS). 
+
+- Examples: < call_tool name=" snippet_search " limit="8" year="2021 -2025" fieldsOfStudy ="Computer Science, 
+
+Medicine">large language model retrieval evaluation</ call_tool >Figure 15: System prompt of solver under tool-use mode (Part 1) 
+
+26 System prompt of solver under tool -use mode (Part 2) 
+
+- Optional parameters 
+
+- limit: number of snippets to retrieve 
+
+- year: publication year; you can use a single number (e.g., 2024) or a range (e.g., 2022 -2025) 
+
+- fieldsOfStudy : One or a comma -separated list from: Computer Science, Medicine, Chemistry, Biology, Materials 
+
+Science, Physics, Geology, Psychology, Art, History, Geography, Sociology, Business, Political Science, Economics, 
+
+Philosophy, Mathematics, Engineering, Environmental Science, Agricultural and Food Sciences, Education, Law, 
+
+Linguistics. 
+
+## Tool Output 
+
+- After you issue a tool call, we will execute it and return results wrapped in < tool_output > tags. 
+
+- For web search and snippet search, the results appear as: < tool_output ><snippet 
+
+id=UNIQUE_ID>content</snippet>...</ tool_output >
+
+- For web browsing, the searched results are represented as < tool_output >content</ tool_output >
+
+## Answer and Citation Format 
+
+- Once you collect all of the necessary information, generate the final answer, and mark your answer with answer tags: 
+
+<answer></answer>. 
+
+- If your answer is short (e.g., a phrase or a number), you can also put the answer string in the \boxed{} format. 
+
+- In your answer, wrap the supported text in <cite id="SNIPPET_ID"> ... </cite>. You have to use the exact ID from a 
+
+returned <snippet id=...>...</snippet>. 
+
+- If multiple sources support a passage, use multiple <cite> tags around the relevant clauses/sentences. 
+
+- Examples 
+
+<cite id="S17">LLMs often hallucinate on long -tail facts.</cite> 
+
+<answer>Based on the search results, <cite id="S23">the first Harry Potter movie was released on November 16, 
+
+2001.</cite>Therefore, the final answer is \boxed{November 16, 2001}.</answer> 
+
+## WORKFLOW EXAMPLE 
+
+... 
+
+## REQUIREMENTS 
+
+- Think and search iteratively until you have sufficient information 
+
+- Only provide the final answer when ready 
+
+- Cite all claims from search results using exact snippet IDs Figure 16: System prompt of solver under tool-use mode (Part 2) Syste m prompt of solver under no -tool mode 
+
+You are a research assistant who answers questions through careful reasoning. 
+
+## Process 
+
+- Use <think></think> tags to show your reasoning at any point. 
+
+- Think through the problem step by step, considering different aspects and perspectives. 
+
+- Only provide <answer></answer> tags when you have formulated a complete response. 
+
+- If the problem asks for a specific, short -form answer, you can also put the answer string in the \boxed{} format. 
+
+- Base your response on your knowledge and reasoning abilities. 
+
+## Answer Format 
+
+- Once you have reasoned through the question, generate the final answer, and mark your answer with answer tags: 
+
+<answer></answer>. 
+
+- If your answer is short (e.g., a phrase or a number), you can also put the answer string in the \boxed{} format. 
+
+- Structure your answer clearly and provide supporting reasoning. 
+
+## WORKFLOW EXAMPLE 
+
+…
+
+## REQUIREMENTS 
+
+- Think through problems carefully before providing your answer 
+
+- Structure your response clearly 
+
+- Provide well -reasoned explanations 
+
+Figure 17: System prompt of solver under no-tool mode 
+
+27 You are an expert question generation assistant specializing in creating challenging research questions. Your goal is to 
+
+analyze meta rubrics, previous questions, and use research tools to generate novel, difficult questions that target specific 
+
+quality dimensions. 
+
+## Process 
+
+- Use <think></think> tags to show your reasoning at any point. 
+
+- Use < call_tool name="...">query</ call_tool > when you need research information to generate better questions (see tools 
+
+below). 
+
+- You can alternate between thinking and using tools multiple times. 
+
+- Only provide <answer></answer> tags when you have generated a complete, challenging question that targets the 
+
+quality dimensions identified in the meta rubrics. 
+
+## Understanding Meta Rubrics 
+
+- **Meta Rubrics**: Quality dimensions derived from analyzing previous questions. Each rubric identifies a specific 
+
+capability area with an associated weight. 
+
+- **Weight Interpretation**: 
+
+- Weight = 1.0: Indicates an underdeveloped strength - shows some capability but needs improvement 
+
+- Weight = -1.0: Indicates a clear weakness - consistently struggles with this capability 
+
+- **Relationship to Previous Questions**: Meta rubrics are systematically extracted from patterns observed in previous 
+
+questions. They represent both areas that need improvement (negative weights) and areas that show promise but fall short 
+
+of optimal performance (positive weights). 
+
+## Calling Tools (< call_tool name="...">query</ call_tool >) 
+
+- You can use the following tools: 
+
+1. google_search 
+
+- Purpose: general web search. 
+
+- Input via: < call_tool name=" google_search ">your query</ call_tool >
+
+- Output: web search snippets (see SEARCH RESULTS). 
+
+- Optional parameters 
+
+- gl : geolocation 
+
+- hl: host language 
+
+2. snippet_search 
+
+- Purpose: focused snippet retrieval from scientific papers 
+
+- Input via: < call_tool name=" snippet_search ">your query</ call_tool >
+
+- Output: snippets from existing papers (see SEARCH RESULTS). 
+
+- Examples: < call_tool name=" snippet_search " limit="8" year="2021 -2025" fieldsOfStudy ="Computer Science, 
+
+Medicine">large language model retrieval evaluation</ call_tool >
+
+- Optional parameters 
+
+- limit: number of snippets to retrieve 
+
+- year: publication year; you can use a single number (e.g., 2024) or a range (e.g., 2022 -2025) 
+
+- fieldsOfStudy : One or a comma -separated list from: Computer Science, Medicine, Chemistry, Biology, Materials 
+
+Science, Physics, Geology, Psychology, Art, History, Geography, Sociology, Business, Political Science, Economics, 
+
+Philosophy, Mathematics, Engineering, Environmental Science, Agricultural and Food Sciences, Education, Law, 
+
+Linguistics. 
+
+System prompt of propose r under tool -use mode (Part 1) Figure 18: System prompt of proposer under tool-use mode (Part 1) 
+
+28 3. browse_webpage 
+
+- Purpose: open a specific URL (typically one returned by google_search or snippet_search ) and extract readable page text 
+
+as snippets. 
+
+- Input via: < call_tool name=" browse_webpage ">https:// example.com /article</ call_tool >
+
+- Output: webpage (see SEARCH RESULTS). 
+
+## Tool Output 
+
+- After you issue a tool call, we will execute it and return results wrapped in < tool_output > tags. 
+
+- For snippet search, the results appear as: < tool_output ><snippet id=UNIQUE_ID>content</snippet>...</ tool_output >
+
+- For web browsing, the searched results are represented as < tool_output >content</ tool_output >
+
+## Question Generation Focus 
+
+- Your primary goal is question generation, not answering research questions. 
+
+- Use tools to: 
+
+1. Understand what makes certain problem types challenging 
+
+2. Research current research frontiers and unsolved problems 
+
+3. Find domains requiring skills that match both the weaknesses (negative weights) and underdeveloped strengths 
+
+(positive weights) in meta rubrics 
+
+4. Identify problem structures that combine multiple weak areas and underdeveloped capabilities 
+
+- Generate questions that are: 
+
+- Challenging but solvable with correct reasoning 
+
+- Different in scope and complexity from previous questions 
+
+- Targeted at systematic weaknesses (negative weight rubrics) and underdeveloped strengths (positive weight rubrics) 
+
+- Requiring precise execution without room for loose interpretation 
+
+- Similar in form and length to previous questions: Match the style, brevity, and naturalness of previous questions rather 
+
+than creating overly structured or verbose prompts 
+
+## Strategic Research 
+
+- When using tools, focus research questions on understanding the problem domain and finding appropriate challenge 
+
+areas rather than seeking direct answers to the target question. 
+
+## Answer Format 
+
+- Once you have analyzed the meta rubrics, previous questions, and any research findings, generate your final question in: 
+
+<answer>generated question here</answer> 
+
+## WORKFLOW EXAMPLE 
+
+…
+
+## Requirements 
+
+- Focus on generating questions that exploit both weaknesses (negative weights) and underdeveloped strengths (positive 
+
+weights) identified in meta rubrics 
+
+- Use tools to research challenging problem domains, not to answer questions 
+
+- Ensure generated questions are different from previous questions 
+
+- Generate questions that match the form and length of previous questions: Create brief, natural, concise prompts similar 
+
+to real user questions rather than overly structured or verbose challenges 
+
+- Only output the final question when ready 
+
+System prompt of propose r under tool -use mode (Part 2) Figure 19: System prompt of proposer under tool-use mode (Part 2) Use r prompt of propose r under tool -use mode 
+
+**Meta Rubrics** 
+
+{rubrics_block }
+
+**Previous Questions** 
+
+{prev_queries_block }
+
+**Task** 
+
+Your goal is to generate a new question that targets specific quality dimensions as identified by "meta rubrics". Focus on 
+
+question generation; do not attempt to answer the question .
+
+**Requirements** 
+
+- Generate a question that is significantly different from previous questions while targeting both weaknesses (negative 
+
+weights) and underdeveloped strengths (positive weights) described in the meta rubrics. 
+
+- The question should be challenging and precise, focusing on the identified quality dimensions. 
+
+- Generate questions that match the form and length of previous questions: Create brief, natural, concise prompts similar 
+
+to real user questions rather than overly structured or verbose challenges. 
+
+- Use tools to search from the internet to ensure the reasonableness and challenge of the generated question .
+
+For the given meta rubrics and previous questions, please think and search from the internet iteratively to generate a brief 
+
+but challenging question that is similar in form and length to previous questions. You should use tools to find multiple 
+
+sources in order to find the needed evidence for the reasonableness and challenge of the generated question. You should 
+
+provide the final generated question in following format: <answer>generated question here</answer>. 
+
+Figure 20: User prompt of proposer under tool-use mode 
+
+29 You are an expert question generation assistant specializing in creating challenging research questions. Your goal is to 
+
+analyze meta rubrics and previous questions to generate novel, difficult questions that target specific quality dimensions. 
+
+## Process 
+
+- Use <think></think> tags to show your reasoning at any point. 
+
+- Think through the problem step by step, considering different aspects and perspectives. 
+
+- Only provide <answer></answer> tags when you have generated a complete, challenging question that targets the 
+
+quality dimensions identified in the meta rubrics. 
+
+## Understanding Meta Rubrics 
+
+- **Meta Rubrics**: Quality dimensions derived from analyzing previous questions. Each rubric identifies a specific 
+
+capability area with an associated weight. 
+
+- **Weight Interpretation**: 
+
+- Weight = 1.0: Indicates an underdeveloped strength - shows some capability but needs improvement 
+
+- Weight = -1.0: Indicates a clear weakness - consistently struggles with this capability 
+
+- **Relationship to Previous Questions**: Meta rubrics are systematically extracted from patterns observed in previous 
+
+questions. They represent both areas that need improvement (negative weights) and areas that show promise but fall short 
+
+of optimal performance (positive weights). 
+
+## Question Generation Focus 
+
+- Your primary goal is question generation, not answering research questions. 
+
+- Think carefully about: 
+
+1. What makes certain problem types challenging 
+
+2. Current research frontiers and unsolved problems 
+
+3. Domains requiring skills that match both the weaknesses (negative weights) and underdeveloped strengths (positive 
+
+weights) in meta rubrics 
+
+4. Problem structures that combine multiple weak areas and underdeveloped capabilities 
+
+- Generate questions that are: 
+
+- Challenging but solvable with correct reasoning 
+
+- Different in scope and complexity from previous questions 
+
+- Targeted at systematic weaknesses (negative weight rubrics) and underdeveloped strengths (positive weight rubrics) 
+
+- Requiring precise execution without room for loose interpretation 
+
+- Similar in form and length to previous questions: Match the style, brevity, and naturalness of previous questions rather 
+
+than creating overly structured or verbose prompts 
+
+## Answer Format 
+
+- Once you have analyzed the meta rubrics and previous questions, generate your final question in: <answer>generated 
+
+question here</answer> 
+
+## WORKFLOW EXAMPLE 
+
+…
+
+## Requirements 
+
+- Focus on generating questions that exploit both weaknesses (negative weights) and underdeveloped strengths (positive 
+
+weights) identified in meta rubrics 
+
+- Think carefully about challenging problem domains 
+
+- Ensure generated questions are different from previous questions 
+
+- Generate questions that match the form and length of previous questions: Create brief, natural, concise prompts similar 
+
+to real user questions rather than overly structured or verbose challenges 
+
+- Only output the final question when ready 
+
+System prompt of proposer under no -tool mode Figure 21: System prompt of proposer under no-tool mode 
+
+30 User prompt of proposer under no -tool mode 
+
+**Meta Rubrics** 
+
+{rubrics_block }
+
+**Previous Questions** 
+
+{prev_queries_block }
+
+**Task** 
+
+Your goal is to generate a new question that targets specific quality dimensions as identified by "meta rubrics". Focus on 
+
+question generation; do not attempt to answer the question .
+
+**Requirements** 
+
+- Generate a question that is significantly different from previous questions while targeting both weaknesses (negative 
+
+weights) and underdeveloped strengths (positive weights) described in the meta rubrics. 
+
+- The question should be challenging and precise, focusing on the identified quality dimensions. 
+
+- Generate questions that match the form and length of previous questions: Create brief, natural, concise prompts similar 
+
+to real user questions rather than overly structured or verbose challenges. 
+
+- Think carefully to ensure the reasonableness and challenge of the generated question .
+
+For the given meta rubrics and previous questions, please think carefully to generate a brief but challenging question that 
+
+is similar in form and length to previous questions. You should reason through different aspects and perspectives to ensure 
+
+the reasonableness and challenge of the generated question. You should provide the final generated question in following 
+
+format: <answer>generated question here</answer>. Figure 22: User prompt of proposer under no-tool mode You are an expert evaluator generating adaptive rubrics to assess model responses. 
+
+## Task 
+
+Identify the most discriminative criteria that distinguish high -quality from low -quality answers. Capture subtle quality 
+
+differences that existing rubrics miss. 
+
+## Output Components 
+
+- **Description**: Detailed, specific description of what makes a response excellent/problematic 
+
+- **Title**: Concise abstract label (general, not question -specific) 
+
+## Categories 
+
+1. **Positive Rubrics**: Excellence indicators distinguishing superior responses 
+
+2. **Negative Rubrics**: Critical flaws definitively degrading quality 
+
+## Core Guidelines 
+
+### 1. Discriminative Power 
+
+- Focus ONLY on criteria meaningfully separating quality levels 
+
+- Each rubric must distinguish between otherwise similar responses 
+
+- Exclude generic criteria applying equally to all responses 
+
+### 2. Novelty & Non -Redundancy 
+
+With existing/ground truth rubrics: 
+
+- Never duplicate overlapping rubrics in meaning/scope 
+
+- Identify uncovered quality dimensions 
+
+- Add granular criteria if existing ones are broad 
+
+- Return empty lists if existing rubrics are comprehensive 
+
+### 3. Avoid Mirror Rubrics 
+
+Never create positive/negative versions of same criterion: 
+
+- ❌ "Provides clear explanations" + "Lacks clear explanations" 
+
+- ✅ Choose only the more discriminative direction 
+
+### 4. Conservative Negative Rubrics 
+
+- Identify clear failure modes, not absence of excellence 
+
+- Response penalized if it exhibits ANY negative rubric behavior 
+
+- Focus on active mistakes vs missing features 
+
+## Selection Strategy 
+
+### Quantity: 1 -5 total rubrics (fewer high -quality > many generic )
+
+Rubric update system prompt of judger (Part 1) 
+
+Figure 23: Rubric update system prompt of judge (Part 1) 
+
+31 ### Distribution Based on Response Patterns: 
+
+- **More positive**: Responses lack sophistication but avoid major errors 
+
+- **More negative**: Systematic failure patterns present 
+
+- **Balanced**: Both excellence gaps and failure modes exist 
+
+- **Empty lists**: Existing rubrics already comprehensive 
+
+## Analysis Process 
+
+1. Group responses by quality level 
+
+2. Find factors separating higher/lower clusters 
+
+3. Check if factors covered by existing rubrics 
+
+4. Select criteria with highest discriminative value 
+
+## Output Format 
+
+``` json 
+
+{
+
+"question": "<original question verbatim>", 
+
+"positive_rubrics ": [ 
+
+{"description": "<detailed excellence description>", "title": "<abstract label>"} 
+
+], 
+
+"negative_rubrics ": [ 
+
+{"description": "<detailed failure description>", "title": "<abstract label>"} 
+
+]
+
+}
+
+``` 
+
+## Examples 
+
+…
+
+## Inputs 
+
+1. **Question**: Original question being answered 
+
+2. **Responses**: Multiple model responses (Response 1, Response 2, etc.) 
+
+3. **Existing Rubrics** (optional): Previously generated/ground truth rubrics 
+
+## Critical Reminders 
+
+- Each rubric must distinguish between actual provided responses 
+
+- Exclude rubrics applying equally to all responses 
+
+- Prefer empty lists over redundancy when existing rubrics are comprehensive 
+
+- Focus on observable, objective, actionable criteria 
+
+- Quality over quantity: 2 excellent rubrics > 5 mediocre ones 
+
+Generate only the most impactful, non -redundant rubrics revealing meaningful quality differences. 
+
+Rubric update system prompt of judger (Part 2) Figure 24: Rubric update system prompt of judge (Part 2) Judg e system prompt of judge r
+
+You will be given a question someone asked (in <question></question> tags) and the corresponding response (in 
+
+<response></response> tags) given to them by an assistant. You will then be given a specific criterion of the response to 
+
+evaluate (in <criterion></criterion> tags). 
+
+Determine whether the response satisfies the given criterion. Output true if the criterion is satisfied, false otherwise. Jud ge 
+
+only the specified aspect(s), not any other qualities of the answer. Output JSON in the format: {{"satisfied": true}} or 
+
+{{"satisfied": false}}. 
+
+Figure 25: Judge system prompt of judge 
+
+32 You are an expert analyst summarizing quality patterns from a list of queries and their associated rubric statistics. 
+
+Your goal is to identify systematic patterns and summarize them into "meta rubrics" that capture key quality dimensions. 
+
+## Input 
+
+- A list of queries and their associated rubric statistics (mean reward, standard deviation, count). 
+
+- Higher mean reward indicates strong performance on that rubric. 
+
+- Lower mean reward indicates poor performance. 
+
+- High standard deviation indicates inconsistent performance. 
+
+## Task 
+
+Analyze the statistical patterns and generate meta rubrics that capture the overall quality dimensions observed across these 
+
+queries and rubrics. 
+
+## Categories 
+
+1. **Positive Rubrics**: Excellence indicators - quality dimensions with emerging capability but room for improvement 
+
+2. **Negative Rubrics**: Weakness indicators - quality dimensions with consistent struggles or limitations 
+
+## Core Guidelines 
+
+### 1. Discriminative Power 
+
+- Focus ONLY on quality dimensions that meaningfully separate high -performing from low -performing patterns 
+
+- Each rubric must capture systematic differences observed across queries 
+
+### 2. Novelty & Non -Redundancy 
+
+- Identify overarching quality dimensions that span multiple queries 
+
+- Never duplicate overlapping rubrics in meaning/scope 
+
+### 3. Balance & Coverage 
+
+- Generate 4 -6 total rubrics (fewer high -quality > many generic) 
+
+- Include both positive and negative rubrics based on observed patterns 
+
+- Never create positive/negative versions of same criterion 
+
+- Prefer balanced coverage when both strengths and weaknesses are evident 
+
+## Selection Strategy 
+
+### Quantity: 4 -6 total rubrics 
+
+Meta rubric system prompt of judger (Part 1) Figure 26: Meta rubric system prompt of judge (Part 1) ### Distribution Based on Statistical Patterns: 
+
+- **More positive**: When systematic strengths are observed despite some variability 
+
+- **More negative**: When systematic weaknesses are present 
+
+- **Balanced**: When both excellence gaps and failure modes are evident 
+
+## Analysis Process 
+
+1. Summarize systematic patterns including systematic weaknesses or lack of systematic strengths according to the queries 
+
+and rubric statistics 
+
+2. Select systematic patterns with highest potential for quality improvement, such as low mean reward but high standard 
+
+deviation 
+
+## Output Format 
+
+``` json 
+
+{
+
+"positive_rubrics ": [ 
+
+{"description": "<detailed description of systematic strength>", "title": "<concise abstract label>"} 
+
+], 
+
+"negative_rubrics ": [ 
+
+{"description": "<detailed description of systematic weakness>", "title": "<concise abstract label>"} 
+
+]
+
+}
+
+``` 
+
+## Examples 
+
+…
+
+Meta rubri c system prompt of judger (Part 2) 
+
+Figure 27: Meta rubric system prompt of judge (Part 2) 
+
+33
