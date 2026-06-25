@@ -1,0 +1,946 @@
+Title: Motion-Aware Reinforcement Learning For Object Localization
+
+URL Source: https://arxiv.org/pdf/2606.21764v1
+
+Published Time: Tue, 23 Jun 2026 01:35:57 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# Motion-Aware Reinforcement Learning For Object Localization 
+
+# Prithvi Raj Singh †
+
+# McNeese State University 
+
+> psingh8@mcneese.edu
+
+# Satyendra Singh Louisiana Tech University 
+
+> srs083@latech.edu
+
+# Abstract 
+
+We present MARLNet (Motion-Aware Reinforce-ment Learning Network), a PPO-based bounding-box refinement agent that incorporates a constant-velocity motion prior into the observation state and an action smoothness penalty into the reward func-tion. The agent operates on 268-dimensional ob-servations encoding the current proposal, a kine-matic prediction, the previous action, and a 256-dimensional EfficientNet-B0 crop feature, and learns a five-dimensional policy controlling coordinate ad-justments and a binary termination trigger. Eval-uated on Pascal VOC 2012 and VisDrone 2019, MARLNet trains stably across all regularization strengths tested and achieves consistent gains in de-tection success rate at IoU ≥ 0.5: up to +0 .011 
+
+on VOC ( λphys = 0.10 ), where the motion prior pre-vents the overshooting that causes plain PPO to regress on this metric, and +0 .007 on VisDrone (λphys = 0.70 ), where unconstrained PPO achieves a larger gain ( +0 .025 ) owing to the weaker base detec-tor. Through reward design ablations and training dynamics analysis, we identify a reward interfer-ence in which combining a constant-velocity devia-tion penalty with an absolute IoU term causes trigger collapse, and show that replacing it with the action smoothness penalty resolves this failure. We fur-ther characterize a representational ceiling facing crop-feature refinement agents that share a back-bone with their base detector, confirmed through a global-plus-local observation ablation. Project page: 
+
+https: // prithviraj97. github. io/ marl-net 
+
+# 1. Introduction 
+
+Modern object detectors produce bounding-box pre-dictions in a single forward pass, mapping image features directly to box coordinates. While this ap-proach achieves strong accuracy on standard bench-
+
+> †Corresponding author
+
+marks, it treats localization as a one-shot regression problem with no opportunity for iterative correction. A detector that correctly identifies an object can still produce a proposal that is misaligned in posi-tion, scale, or aspect ratio – errors that compound under strict overlap-based evaluation criteria such as AP@.75 and are especially consequential for small or densely packed objects. Post-hoc refinement ad-dresses this gap directly: rather than retraining the detector, a lightweight module takes each committed proposal as input and iteratively adjusts its coor-dinates toward the ground truth. This decoupling makes refinement architecturally flexible and compu-tationally efficient, and it has motivated a growing line of work seeking to close the localization gap with-out the cost of full detector retraining [ 6, 13 , 29 , 31 ]. Reinforcement learning (RL) offers a compelling approach to bounding-box refinement by treating lo-calization as a sequence of corrective decisions rather than a single prediction. Refinement is inherently sequential – each coordinate adjustment changes the crop seen by the next step – and the target sig-nal, intersection-over-union, is non-differentiable and therefore inaccessible to standard regression losses. Policy gradient methods [ 26 ] handle both properties directly. Within this RL formulation, motion prior is an appealing design component: a bounding box being refined should move smoothly, and a kinematic model encoding this expectation – such as a constant-velocity prediction that extrapolates the box’s recent trajectory – provides a principled inductive bias that could regularize the policy and discourage erratic be-havior [ 2, 21 ]. Both components have independently attracted sustained research interest [ 2, 4 , 11 , 31 ], and their combination in a unified framework is a natural extension that, to our knowledge, has not been systematically studied. What is less well understood is how motion-derived penalty terms interact with the remaining components of a reward function designed for IoU op-timization. In practice, reward design for RL-based 1
+
+> arXiv:2606.21764v1 [cs.CV] 19 Jun 2026
+
+refinement involves at least three coupled objectives: rewarding overlap improvement, penalizing unnec-essary steps, and incentivizing timely termination via a learned trigger. Adding a motion-derived term introduces a fourth, and the interactions among all four are not transparent. Equally underexplored is the question of representational capacity: if the refinement agent operates on crop features extracted by the same backbone as the base detector, what ceiling does that shared basis impose on achievable performance, and is that ceiling a consequence of the crop-only view or a deeper representational con-straint? These two questions motivate the present work. We address both issues through the design and systematic evaluation of MARLNet (Motion-Aware Reinforcement Learning Network), a PPO-based bounding box refinement agent that incorporates a constant-velocity motion prior into the observation and an action smoothness penalty into the reward. MARLNet represents, to our knowledge, the first RL-based refinement framework to explicitly study the role of motion-structured priors in the single-image iterative refinement setting. In constructing and evaluating this framework across Pascal VOC 2012 [ 10 ] and VisDrone 2019 [ 32 ], we uncover two findings that carry implications beyond our specific implementation. First, we identify a reward interfer-ence in which a constant-velocity deviation penalty, combined with an absolute IoU term, causes trig-ger probability collapse by training epoch 26 and reduces mAP from 0.490 to 0.035 on VOC (see ap-pendix 13.1). Replacing this with an action smooth-ness penalty eliminates the collapse entirely. Sec-ond, we characterize a representational ceiling that bounds the performance of any crop-feature refine-ment agent sharing a backbone with its base detector – a constraint that is architectural, not a consequence of reward design, and one that points toward the next generation of refinement architectures. Through controlled ablations over reward variants, motion penalty strengths, and observation designs, we establish that this ceiling is representational: the agent and detector share an EfficientNet-B0 [ 27 ]backbone, and no reformulation of the crop-only view – including providing the agent with a full-image global feature alongside the crop – consistently overcomes this constraint. The agent does achieve reliable gains in detection success rate at IoU ≥ 0.5
+
+on both datasets, a metric that reflects practical precision requirements in downstream applications. Our contributions are as follows: 
+
+• MARLNet , a motion-aware reinforcement learn-ing framework for iterative bounding-box refine-ment. MARLNet integrates a constant-velocity motion prior into the observation state and an action smoothness penalty into the reward, en-abling stable PPO training across all regulariza-tion strengths tested on Pascal VOC 2012 and VisDrone 2019. 
+
+• A characterization of the feature information ceil-ing inherent to crop-feature RL refinement agents that share a backbone with their base detector. A global-plus-local observation ablation confirms the ceiling is representational rather than obser-vational, providing a concrete architectural diag-nosis that motivates future design choices. 
+
+• A reproducible experimental framework covering reward variant ablations, motion regularization sensitivity ( λphys ∈ { 0.05 , 0.10 , 0.20 , 0.50 , 0.70 }), latency benchmarking, and cross-dataset evalua-tion on two domains with substantially different object density, scale, and viewpoint. 
+
+• An analysis of reward interference in motion-regularized RL refinement, tracing training col-lapse to the combination of a kinematic deviation penalty and an absolute IoU term, with empirical evidence confirmed across both datasets. 
+
+# 2. Related Work 
+
+2.1. Bounding Box Refinement 
+
+Improving the spatial precision of detector propos-als has been a long-standing objective in computer vision. Classical approaches couple a lightweight regression head directly to the detector backbone, re-fining coordinates in a single forward pass [ 24 ]. More recent work has extended this idea to transformer-based architectures: RefineBox [ 6 ] applies a frozen backbone with a dedicated regression module to refine DETR-style predictions, while BBRefine-ment [ 13 ] proposes a universal post-hoc scheme that improves localization precision across multiple detec-tor families without retraining. In the visual tracking literature, Alpha-Refine [ 29 ] applies high-resolution refinement to coarse tracker predictions, demonstrat-ing that a dedicated refinement stage consistently improves overlap with the target object. Iterative refinement approaches push this further by applying the correction step multiple times: Cruciata et al. [ 7]show that iterating bounding-box refinement within a tracking pipeline reduces accumulated drift com-pared to single-pass correction. A shared limitation of all regression-based methods is that refinement is performed without sequential decision-making – the model commits to a correction in one step and 2cannot revise that decision in light of new evidence. Reinforcement learning addresses this limitation di-rectly by framing refinement as a multi-step policy optimization problem. 
+
+2.2. RL for Object Localization 
+
+Caicedo and Lazebnik [ 4] established the founda-tional MDP formulation for RL-based object local-ization, training a DQN agent to iteratively deform a bounding box using eight discrete transformation actions with an IoU-based reward and a learned ter-mination trigger. Subsequent work extended this framework to multi-class detection [ 20 ], proposal gen-eration [ 23 ], and post-hoc refinement applied after a separate detector has committed to a proposal [31]. König et al. [ 15 ] explicitly study the effect of reward design on convergence and final localization qual-ity across multiple training stages, finding that the choice of reward signal and step penalty substantially affects both speed and performance – a finding di-rectly relevant to our analysis of reward interference. In the tracking domain, RL agents have been trained to adjust viewpoint and bounding box parameters in response to target appearance [ 18 ], and applied to drone imagery where fast-moving targets require robust sequential localization policies [ 22 ]. Despite this breadth of application, the interaction between motion-derived regularization terms and IoU-based reward components has not been studied in any of these settings – a gap the present work addresses. 
+
+2.3. Motion Priors in Object Tracking and De-tection 
+
+Motion priors are well-established in multi-object tracking, where the constant-velocity Kalman filter provides a principled temporal state prior that ex-trapolates track positions from one video frame to the next [ 2]. The appeal is grounded in the dynamics of real scenes: objects move smoothly, and encoding this expectation reduces sensitivity to missed detec-tions and noisy proposals. Recent work has replaced hand-designed Kalman dynamics with learned mo-tion models [ 1], improving tracking robustness under non-linear motion and partial occlusion. In the detec-tion literature, motion cues have been incorporated through attention mechanisms to improve frame-to-frame consistency in traffic surveillance [ 19 ], while PMTrack [ 11 ] introduces motion-aware multi-object association that compensates for camera shake and non-linear object trajectories. MotionTrack [ 28 ] em-ploys a learnable motion predictor to forecast object positions in dynamic scenes, demonstrating that learned priors generalize better than hand-designed kinematic models when motion patterns are irregu-lar. Kinematic constraints have also proven effective in 3D detection: Brazil et al. [ 3 ] show that incor-porating motion consistency into monocular video detection improves temporal stability under occlu-sion. Despite this body of evidence, all of the above methods operate across video frames, where the constant-velocity assumption reflects genuine physi-cal object motion. The single-image iterative refine-ment setting studied here is categorically different – the agent acts within one static image, and the sequential steps carry no genuine temporal dynam-ics. Whether and how motion priors transfer to this setting is an open question that our present work addresses. 
+
+2.4. Action Smoothness in RL 
+
+Independent of the detection literature, a body of work in continuous control has studied the effect of action smoothness regularization on policy stability and generalization. Mysore et al. [ 21 ] introduced conditioning for action policy smoothness (CAPS), which penalizes the ℓ2 norm of consecutive action differences during policy optimization and demon-strated improved training stability and sim-to-real transfer in robotic control tasks. Lee et al. [ 16 ] ex-tended this principle to gradient-based smoothness constraints, showing that penalizing the gradient of the policy with respect to the state reduces policy sensitivity to observation noise. A consistent finding across this line of work is that excessive smooth-ing reduces policy expressiveness – a phenomenon consistent with the non-monotonic relationship be-tween the smoothness coefficient λ and generaliza-tion performance that we observe in Section 5. In the model-based RL literature, learning an explicit predictive dynamics model has been shown to im-prove policy stability and sample efficiency when the model operates in a low-dimensional state space [ 9], providing a theoretical precedent for incorporating structured priors into the reward computation. To our knowledge, action smoothness penalties have not previously been applied to RL-based bounding box refinement, nor has their interaction with IoU-based detection rewards been studied in any published work. 
+
+# 3. Problem Formulation 
+
+We formulate iterative bounding box refinement as a finite-horizon Markov Decision Process (MDP), defined by the tuple M = ( S, A, P, R, γ, T ). Rather than predicting box coordinates in a single forward 3pass, the agent learns to refine an initial detection hypothesis through a sequence of geometry-adjusting actions, guided by a reward signal that encodes both localization accuracy and trajectory smoothness. 
+
+3.1. Markov Decision Process Formulation 
+
+State Space S. At each time step t ∈{0, 1, . . . , T }, the agent observes a state vector 
+
+st = [bt, ˆbcv  
+
+> t
+
+, a t−1, f t
+
+] ∈ S , (1) where: 
+
+• bt = ( xt, y t, w t, h t) ∈ R4 is the current bounding box, with coordinates normalized to [0 , 1] .
+
+• ˆbcv  
+
+> t
+
+∈ R4 is the constant-velocity prediction of the next box position. 
+
+• at−1 = ( δx t−1, δy t−1, δw t−1, δh t−1) ∈ R4 is the previous action (initialized to zero at t = 0 ). 
+
+• ft ∈ R256 is a visual feature embedding extracted from the image crop I(bt), where I(bt) denotes the region of the image bounded by bt, resized to 
+
+224 × 224 pixels before feature extraction. The concatenated state vector is 268-dimensional (4+4+4+256 ). For the global-plus-local observation discussed in ( 6.4), a second full-image EfficientNet-B0 [ 27 ] embedding is appended alongside ft, yielding a 524-dimensional state; this variant is evaluated sep-arately and not used for the main reported results. The initial box b0 is provided by a pre-trained object detector. 
+
+Action Space A. The agent produces a contin-uous action at = ( δx t, δy t, δw t, δh t) ∈ R4 and a binary stopping signal astop  
+
+> t
+
+∈ { 0, 1}. Before being applied to the environment, continuous components are clamped to [−δmax , δ max ] with δmax = 0 .05 . The box is then updated as: 
+
+cxt+1 = clamp( cxt + δx t · wt), (2) 
+
+cyt+1 = clamp( cyt + δy t · ht), (3) 
+
+wt+1 = clamp (wt(1 + δw t)), (4) 
+
+ht+1 = clamp (ht(1 + δh t)), (5) where (cxt , c yt ) denotes the box centre. All resulting box coordinates are clamped to [0 , 1] to keep the proposal within the image boundary. Raw pre-clamp action values are stored in the rollout buffer so that PPO log-probability computations remain consistent with the sampling distribution. 
+
+Transition Dynamics P. The transition func-tion P(st+1 | st, a t) is deterministic. The next state is formed by updating the box, computing the new constant-velocity prediction, storing at as the previ-ous action, and extracting features from I(bt+1 ).
+
+Reward Function R. The agent receives a scalar reward: 
+
+rt = α · ∆IoU t − cstep − λphys · ∥ at − at−1∥2, (6) where 
+
+∆IoU t = IoU (bt+1 , b ∗) − IoU (bt, b ∗).
+
+The smoothness penalty is not applied at t = 0 
+
+since no previous action exists; λphys acts from t = 1 
+
+onward. At termination, the agent receives: 
+
+rterminal = Cbonus · IoU (bt+1 , b ∗). (7) Termination occurs under three conditions. If the stopping trigger fires ( astop  
+
+> t
+
+> 0.5) or the refined box reaches IoU (bt+1 , b ∗) ≥ τstop , the episode ends and the agent receives a terminal bonus proportional to final localization quality: 
+
+rterminal = Cbonus · IoU (bt+1 , b ∗), Cbonus = 5 .0.
+
+(8) If neither condition is met and t = T , the episode ends with no terminal bonus. No penalty is ap-plied when the trigger fires before reaching τstop ;the per-step cost cstep naturally discourages unneces-sary steps without destabilising the trigger. We use 
+
+τstop = 0 .6 for VOC and τstop = 0 .5 for VisDrone, 
+
+γ = 0 .99 , and T = 15 .
+
+3.2. Motion Prior 
+
+We use a constant-velocity (CV) model: 
+
+ˆbcv  
+
+> t+1
+
+= bt + ( bt − bt−1). (9) This prediction is included in the state as a mo-mentum cue. It is not used in the reward; in-stead, smoothness is enforced via the action penalty 
+
+∥at − at−1∥2. At t = 0 , no history exists; the model returns ˆbcv  
+
+> 1
+
+= b0, representing a zero predicted dis-placement. 
+
+3.3. Learning Objective 
+
+We learn a policy πθ (at | st) maximizing: 
+
+J(θ) = Eτ ∼πθ
+
+[ T∑
+
+> t=0
+
+γtrt
+
+]
+
+. (10) 4We optimize using PPO with objective: 
+
+LPPO (θ) = Et
+
+[
+
+min (rt(θ) ˆAt,
+
+clip( rt(θ), 1 − ϵ, 1 + ϵ) ˆAt
+
+)]
+
+(11) where 
+
+rt(θ) = πθ (at | st)
+
+πθold (at | st) , ˆAt = ˆRt − Vϕ(st).
+
+# 4. Methodology 
+
+This section describes the architecture and training procedure of MARLNet in full detail. The frame-work comprises three tightly coupled components: (1) a frozen visual feature extractor that provides a stable, appearance-based state representation; (2) a motion-aware refinement environment that manages bounding-box transitions and computes rewards; and (3) a PPO-based actor-critic agent that learns to bal-ance localization accuracy with trajectory smooth-ness. Figure 1 provides a schematic overview of the complete pipeline. 
+
+4.1. System Architecture 
+
+4.1.1. Initial Detection 
+
+Given an input RGB image I ∈ RH×W ×3, an initial bounding-box hypothesis b0 = ( x0, y 0, w 0, h 0) is ob-tained from a pre-trained object detector, specifically a Faster R-CNN [ 24 ] model with a ResNet-50 [ 12 ]backbone. The detector serves as a fixed initializa-tion module; its weights are not updated during RL training. All coordinates are normalized to [0 , 1] 
+
+relative to the image dimensions, ensuring scale in-variance across images of different resolutions. 
+
+4.1.2. Visual Feature Extraction 
+
+At each time step t, the current bounding box bt
+
+defines a region of interest within I. We crop this region, resize it to 224 × 224 pixels, and pass it through a pre-trained EfficientNet-B0 [ 27 ] backbone to obtain a visual embedding. The global average pooling output of EfficientNet-B0 (dimension 1280) is projected by a learned linear layer to a compact feature vector ft ∈ R256 .The backbone is frozen throughout RL training for two reasons. First, simultaneous updates to the feature extractor and the RL policy would introduce non-stationarity into the state representation, which is known to destabilize value estimation and policy gradients. Second, freezing the backbone eliminates backpropagation through the convolutional network, substantially reducing memory usage and per-step computation time. 
+
+4.1.3. Actor-Critic Network Architecture 
+
+The RL agent follows the actor-critic paradigm. The state vector st = [ bt, ˆbcv  
+
+> t
+
+, a t−1, f t] (as defined in Equation 1) is concatenated into a single vector of dimension ds = 268 and processed by a shared two-layer MLP: 
+
+ht = ReLU( W2 · ReLU( W1 · st + b1) + b2) , (12) where W1 ∈ R256 ×268 , W2 ∈ R256 ×256 , and b1, b 2 are bias vectors. The hidden representation ht ∈ R256 
+
+is shared across the actor and critic heads. 
+
+Actor head. The actor outputs parameters for a factored action distribution. For the continuous bounding-box adjustment at ∈ R4, it produces a mean vector and a vector of log-standard-deviations: 
+
+μt = Wμht + bμ, μt ∈ R4, (13) 
+
+log σt = ℓlog σ , (14) where ℓlog σ ∈ R4 is a globally-shared learnable pa-rameter vector (not conditioned on ht), following standard practice in PPO implementations [ 26 ]. Ac-tions are sampled as at ∼ N (μt, diag (σ2 
+
+> t
+
+)) . To pre-vent excessively large updates, sampled actions are clamped to [−δmax , δ max ] with δmax = 0 .05 before being applied to the environment; the unclamped samples are stored in the replay buffer so that log-probability recomputation during the PPO update remains exact. The actor also outputs a stopping probability via a scalar logit: 
+
+pstop = σ(w⊤
+
+> stop
+
+ht + bstop 
+
+) , (15) from which the binary stopping decision is sampled as astop  
+
+> t
+
+∼ Bernoulli( pstop ).
+
+Critic head. The critic estimates the scalar state-value function: 
+
+Vϕ(st) = w⊤ 
+
+> v
+
+ht + bv , (16) which approximates the expected discounted return from st under the current policy and provides the baseline for advantage computation. 
+
+4.2. Motion-Aware Environment 
+
+The environment maintains bounding-box state, computes state transitions, generates the CV-5Figure 1. Overview of the proposed motion-aware reinforcement learning framework for bounding box refinement. Given an initial object hypothesis from a detector, visual features are extracted from the cropped region and passed to an actor–critic agent. The agent predicts a bounding box adjustment and a stop signal. The environment evaluates the resulting IoU improvement and applies a motion-based consistency penalty derived from a constant-velocity model. The reward guides the PPO agent toward accurate and motion-consistent localization. 
+
+prediction feature, and evaluates the reward signal at each step. 
+
+4.2.1. State Transitions 
+
+Upon receiving action at = ( δx t, δy t, δw t, δh t), the environment updates the bounding box via a center-relative, scale-multiplicative rule. Let (cxt , c yt ) denote the box center. Then: 
+
+cxt+1 = clamp( cxt + δx t · wt), (17) 
+
+cyt+1 = clamp( cyt + δy t · ht), (18) 
+
+wt+1 = clamp( wt(1 + δw t)) , (19) 
+
+ht+1 = clamp( ht(1 + δh t)) , (20) where all values are clamped to [0 , 1] with the addi-tional constraint that the box remains within image boundaries. This parameterization is preferable to a purely additive update bt+1 = bt + at because a fixed δx produces a displacement proportional to the current box width, making the action magnitude invariant to object scale. The new state st+1 is then constructed as described in Section 3. 
+
+4.2.2. Reward Computation 
+
+The environment evaluates the quality of bt+1 and returns a scalar reward. The complete reward at step t is: 
+
+rt = α · ∆IoU t
+
+︸ ︷︷ ︸
+
+> improvement
+
+− cstep 
+
+︸︷︷︸ 
+
+> step cost
+
+− λphys · ∥ at − at−1∥2
+
+︸ ︷︷ ︸
+
+> smoothness penalty
+
+,
+
+(21) where ∆IoU t = IoU (bt+1 , b ∗) − IoU (bt, b ∗) and b∗ is the ground-truth box. The IoU between two boxes is computed as: 
+
+IoU( b, b ∗) = Area( b ∩ b∗)Area( b ∪ b∗) . (22) We denote the motion smoothness weight as λphys 
+
+throughout to distinguish it from the GAE param-eter λGAE ; the subscript reflects the smoothness penalty’s role as a motion-consistency regularizer. The three terms in Equation 21 each serve a dis-tinct purpose. The improvement term α · ∆IoU t is the primary localization signal: it rewards steps that bring the box closer to the ground truth and penal-izes steps that move it away. The step cost cstep 
+
+makes each refinement step carry a small fixed cost, discouraging the agent from taking unnecessary steps once a satisfactory localization has been reached. The smoothness penalty λphys ∥at − at−1∥2 penalizes abrupt changes in the action direction across consecu-tive steps, encoding the inductive bias that physically plausible refinement trajectories are smooth and di-rectionally consistent. As discussed in Section 3.2, this penalty acts on the action sequence rather than on the deviation from a predicted box position; this distinction is critical to avoiding the reward interfer-6ence that arises from the constant-velocity reward formulation. At episode termination – triggered either by 
+
+astop  
+
+> t
+
+= 1 or by IoU (bt+1 , b ∗) ≥ τstop – the agent receives an additional terminal bonus: 
+
+rterminal = Cbonus · IoU( bt+1 , b ∗), C bonus = 5 .0 (23) When the episode ends due to reaching t = Tmax ,no terminal bonus is awarded; only trigger-fired or 
+
+τstop -triggered termination earns rterminal . The pro-portional form of equation 23 provides a graded stopping incentive: the agent earns a larger bonus by terminating at a well-aligned box than by stop-ping prematurely. At t = 0 , where no previous action exists, the smoothness penalty is not applied. 
+
+4.3. Training Procedure 
+
+The complete training procedure is summarized in Algorithm 1. 
+
+4.3.1. Experience Collection 
+
+Training proceeds in epochs. Each epoch collects a fixed buffer of N environment transitions by rolling out the current policy πθ across randomly sampled training images. For each episode, the environment is initialized with the detector output b0 and the state vector s0 = [ b0, b 0, 04, f 0], where the second b0
+
+serves as the initial CV prediction (since no prior box exists at t = 0 ) and 04 initializes the previous-action slot. Each transition (st, a t, r t, log πθ (at|st), V ϕ(st)) 
+
+is stored in a replay buffer B. An episode terminates when astop  
+
+> t
+
+= 1 , when IoU (bt+1 , b ∗) ≥ τstop , or when 
+
+t = Tmax .
+
+4.3.2. Advantage Estimation 
+
+After collecting B, advantage estimates are computed using Generalized Advantage Estimation (GAE) [ 25 ]: 
+
+ˆAt = 
+
+> T−t
+
+∑
+
+> l=0
+
+(γλ GAE )l δt+l, (24) where δt = rt + γV ϕ(st+1 ) − Vϕ(st) is the temporal-difference error, γ is the discount factor, and λGAE ∈
+
+[0 , 1] trades off bias against variance in the advantage estimate. Target returns are computed as ˆRt =ˆAt + Vϕ(st).
+
+4.3.3. Policy and Value Updates 
+
+The actor is updated by maximizing the clipped PPO objective [26]: 
+
+LPPO (θ) = Et
+
+[
+
+min (rt(θ) ˆAt,
+
+clip( rt(θ), 1 − ϵ, 1 + ϵ) ˆAt
+
+)]
+
+(25) where rt(θ) = πθ (at|st)/π θold (at|st) is the importance-sampling ratio. The critic is updated by minimizing the mean squared error between pre-dicted and target values: 
+
+Lvalue (ϕ) = Et
+
+[(Vϕ(st) − ˆRt
+
+)2]
+
+. (26) To encourage exploration of the action and stop-ping distributions, an entropy regularization term is added: 
+
+Lentropy = −ce Et
+
+[H[πθ (·| st)] ], (27) where H[·] denotes Shannon entropy and ce is the entropy coefficient. The combined training loss is: 
+
+Ltotal = LPPO (θ) + cv Lvalue (ϕ) + Lentropy , (28) where cv is the value loss coefficient. For each col-lected buffer, the network is updated for K epochs of minibatch gradient descent using the Adam opti-mizer [ 14 ], after which a new buffer is collected with the updated policy. Gradient norms are clipped to 
+
+0.5 to prevent destabilizing updates. Detailed implementation settings are provided in the Appendix 9 for reproducibility, including model architecture, feature extraction configuration, opti-mization hyperparameters, and hardware specifica-tions. 
+
+# 5. Experimental Details 
+
+5.1. Datasets 
+
+Pascal VOC2012. We train and evaluate primar-ily on the Pascal VOC2012 dataset [ 10 ], which con-tains 11,540 images with bounding-box annotations across 20 object categories. We use the standard 
+
+train split (5,717 images) for policy training and the val split (5,823 images) for evaluation. Ini-tial bounding-box hypotheses are generated by a pre-trained Faster R-CNN [ 24 ] with a ResNet-50 backbone, run at a confidence threshold of 0.5.
+
+VisDrone2019-DET. To assess generalization to a more challenging domain, we evaluate MARLNet on the VisDrone2019 detection benchmark [ 32 ]. Vis-Drone features aerial imagery from UAV platforms 7Algorithm 1 MARLNet Training with Motion-Aware PPO 
+
+Input: Pre-trained detector D, training dataset 
+
+Dtrain , frozen feature extractor Φ, hyperparame-ters  
+
+> 1:
+
+Initialize policy πθ , value network Vϕ 
+
+> 2:
+
+Initialize motion-aware environment E 
+
+> 3:
+
+for each training epoch do  
+
+> 4:
+
+B ← ∅ ▷ Initialize replay buffer  
+
+> 5:
+
+for each sampled image I from Dtrain do  
+
+> 6:
+
+b0 ← D (I) ▷ Initial box from detector  
+
+> 7:
+
+f0 ← Φ( I(b0)) ▷ Extract visual features  
+
+> 8:
+
+s0 ← [b0, b 0, 04, f 0] ▷ ˆbcv 0 = b0; a−1 = 0 
+
+> 9:
+
+for t = 0 to Tmax do  
+
+> 10:
+
+Sample at ∼ πθ (at|st), astop  
+
+> t
+
+∼
+
+Bernoulli( pstop ) 
+
+> 11:
+
+Execute at in E, observe rt, st+1  
+
+> 12:
+
+Store (st, a t, r t, log πθ (at|st), V ϕ(st)) 
+
+in B 
+
+> 13:
+
+if astop  
+
+> t
+
+= 1 or IoU (bt+1 , b ∗) ≥ τstop 
+
+or t = Tmax then  
+
+> 14:
+
+break  
+
+> 15:
+
+end if  
+
+> 16:
+
+end for  
+
+> 17:
+
+end for  
+
+> 18:
+
+Compute advantages { ˆAt} via GAE on B 
+
+> 19:
+
+Compute target returns { ˆRt} 
+
+> 20:
+
+for k = 1 to K update epochs do  
+
+> 21:
+
+Shuffle B and partition into minibatches  
+
+> 22:
+
+for each minibatch do  
+
+> 23:
+
+Compute Ltotal (Eq. 28)  
+
+> 24:
+
+Update θ, ϕ via Adam; clip gradients to 0.5 
+
+> 25:
+
+end for  
+
+> 26:
+
+end for  
+
+> 27:
+
+end for 
+
+with densely packed, small-scale objects under signif-icant viewpoint and illumination variation. Results on VisDrone are reported in Section 6.2. COCO-pretrained Faster R-CNN cannot be used directly on VisDrone because the object classes are incompatible (80 COCO classes vs 10 VisDrone cat-egories) and the domain shift from ground-level to aerial imagery is severe enough to produce near-random initial detections. We fine-tuned a ResNet-50 Faster R-CNN on the VisDrone2019 training split for 30 epochs, keeping the backbone pre-trained on ImageNet and replacing the classification head. Training converged around epoch 15 with loss plateauing at approximately 0.85. The resulting detector achieves mAP 0.189 on the VisDrone2019-validation split, which is consistent with published results [ 5, 8 , 30 ] for this architecture on this dataset. Ground-truth annotations serve exclusively as re-ward targets during training and as evaluation ref-erences at test time; they are never provided to the agent as input. 
+
+5.2. Baselines 
+
+We compare MARLNet against four configurations that isolate the contribution of each design compo-nent: 
+
+• Detector Only. Direct output of the pre-trained Faster R-CNN detector, without any further re-finement. This baseline establishes the quality of the initial hypothesis that all refinement methods start from. 
+
+• Heuristic Policy. A hand-designed refinement rule that greedily shifts the box center and adjusts its scale toward the ground-truth location using IoU-based updates at each step. It uses no learned components and serves as a lower bound on what a principled sequential strategy should achieve. We describe the heuristic policy and outline the refinement algorithm in detail in Appendix 12. 
+
+• PPO (No Motion Priors). A PPO agent trained with λphys = 0 , receiving only the IoU improvement signal α · ∆IoU t − cstep and the terminal bonus. This isolates the contribution of the smoothness regularizer from the RL training itself. 
+
+• MARLNet. The full model trained with the smoothness (motion) penalty ( λphys = 0 .05 ) as described in Section 4.2.2. Unless otherwise stated, results use the epoch-70 checkpoint, which we identify as the best-generalizing model based on validation performance (discussed further in Section 13.2). 
+
+5.3. Evaluation Metrics 
+
+We report a comprehensive set of localization metrics evaluated on the VOC val split using the COCO evaluation protocol [17]: 
+
+• mAP (0.5:0.95). Mean Average Precision av-eraged over IoU thresholds from 0.50 to 0.95 in steps of 0.05. This is the primary detection qual-ity metric and is sensitive to both localization correctness and precision. 
+
+• AP@0.5, AP@0.75. Average Precision at spe-cific IoU thresholds. AP@0.5 measures loose po-sitional agreement; AP@0.75 measures tight pre-cision. Comparing the two reveals whether a method achieves correct localization but insuffi-cient precision. 
+
+• AR. Average Recall at 100 detections per image. 8Figure 2. Inference pipeline of MARLNet. Given an input image, a fine-tuned Faster R-CNN provides an initial bounding-box hypothesis. At each refinement step, the current box defines a crop that is processed by a frozen EfficientNet-B0 backbone to produce a 256-dimensional feature vector ft. This is concatenated with the current box coordinates, a constant-velocity motion prediction, and the previous action to form the 268-dimensional state st,which is passed to a shared actor-critic MLP. The actor outputs a continuous adjustment (δx, δy, δw, δh ) and a binary stopping signal. If the trigger fires, the current box is returned as the refined output; otherwise the box is updated and the loop repeats. The motion smoothness penalty λ∥at − at−1∥ in the per-step reward encourages directionally consistent refinement trajectories. Maximum episode length Tmax = 15 ; average steps at inference: 1.0–1.2. 
+
+• Mean IoU (mIoU). Best-match IoU between each predicted box and all ground-truth boxes for the same image, averaged across all predictions. 
+
+• Success Rate (SR@ τ ). Fraction of predicted boxes whose best-match IoU exceeds threshold τ ,reported at τ ∈ { 0.5, 0.7}.
+
+• ∆IoU. Mean change in best-match IoU relative to the detector initialization, measuring net re-finement gain or loss. 
+
+# 6. Results & Discussion 
+
+6.1. Results on Pascal VOC 2012 
+
+Table 1 reports quantitative results for all four meth-ods on the Pascal VOC 2012 validation split. Table 7 presents a per-category breakdown of AP@0.5 for all methods. The Faster R-CNN base detector achieves mAP 0.490, AP@.5 0.748, and AR 0.593, establish-ing a strong baseline against which all refinement methods are compared. No refinement method improves mAP over the detector. PPO without motion prior attains mAP 0.452 and AP@.5 0.745, recovering most of the detector’s performance but not surpassing it. MARL-Net ( λ=0.10 ) achieves mAP 0.437 and AP@.5 0.750, slightly below PPO on mAP while maintaining a comparable AP@.5. The heuristic baseline produces the weakest mAP overall (0.414, AP@.5 0.661), con-firming that naive coordinate adjustment without learned policy or motion-aware structure is insuffi-cient for reliable refinement. All three refinement methods produce negative mean ∆IoU relative to the detector proposals, indicating that starting from an already strong detection baseline, the refinement loop tends on average to slightly perturb rather than improve individual box coordinates. The SR@.5 metric reveals a qualitatively dif-ferent pattern. Plain PPO achieves SR@.5 0.501, marginally below the detector’s 0.504 – indicat-ing that an unconstrained policy does not reliably improve precision under strict IoU thresholds on this dataset. MARLNet with λ= 0.10 , by contrast, achieves SR@.5 0.515, exceeding the detector by 
+
++0 .011 . This distinction is directionally consis-tent with the role of the smoothness penalty: by constraining the magnitude of consecutive action changes, the motion prior reduces the probabil-ity of overshooting proposals that are already well-localized, preserving precision where plain PPO’s un-constrained updates slightly degrade it. The SR@.7 metric follows a similar pattern, with PPO recover-ing to 0.377 and MARLNet to 0.383, both below the detector’s 0.389. The method ranking on all mAP-based metrics 9is consistent with the detector representing a per-formance ceiling: Detector > PPO > MARLNet >
+
+Heuristic. We analyze the source of this ceiling in Section 6.4. 
+
+6.2. Results on VisDrone 
+
+Table 3 reports results on the VisDrone 2019 valida-tion split and further per-category results are pre-sented in Table 8. VisDrone presents a substantially harder refinement problem than VOC: objects are smaller (median bounding box area < 0.3% of image area), more densely packed (median 88 annotations per image), and viewed from an aerial perspective with significant clutter. The fine-tuned Faster R-CNN achieves mAP 0.189 on this split, reflecting the inherent difficulty of the aerial domain. The method ranking on VisDrone is identical to VOC: the detector baseline leads on mAP, PPO is the best-performing refinement method, MARLNet fol-lows, and the heuristic degrades most severely. This cross-dataset consistency in the ordering of methods is the strongest empirical signal of the paper – the finding holds across two datasets that differ substan-tially in image resolution, viewpoint, object scale, and domain. PPO achieves SR@.5 = 0.694 versus the detector’s 0.669, an improvement of +0.025. This gain is consistent with the relative weakness of the base detector on this domain (mAP 0.189 vs 0.490 on VOC): when initial proposals are substan-tially misaligned, unconstrained policy updates have greater scope to improve SR@.5 before encountering the representational ceiling. On VOC, by contrast, plain PPO does not improve SR@.5 over the detector (0.501 vs 0.504 ); it is MARLNet with motion regu-larization that achieves the gain ( +0 .011 at λ=0.10 ). MARLNet ( λ=0.05 ) achieves SR@.5 = 0.666 on Vis-Drone, slightly below the detector’s 0.669, which we attribute to the smoothness penalty constraining the step size available to correct the larger initial misalignments prevalent in the aerial domain. The lambda ablation on VisDrone (Table 4) repli-cates the non-monotonic pattern observed on VOC: intermediate values ( λ ∈ { 0.1, 0.5}) underperform both the low ( λ = 0 .05 ) and high ( λ = 0 .70 ) set-tings. λ = 0 .70 achieves the best mAP (0.175) and AP@0.75 (0.170) on VisDrone, consistent with the VOC finding that stronger smoothness constraints encourage earlier stopping and better generalization. The replication of this pattern across both datasets strengthens the precision-generalization tradeoff in-terpretation established in Section 13.1. 
+
+6.3. Effect of Motion regularization Strength 
+
+Tables 2 and 4 report the effect of varying the smoothness coefficient λ ∈{0.05 , 0.10 , 0.20 , 0.50 , 0.70 } on VOC and Vis-Drone respectively. Across both datasets, the relationship between λ and performance is non-monotonic, but the specific patterns differ in ways that illuminate how detector quality and object scale interact with the smoothness prior. 
+
+VOC. On VOC, λ= 0.10 achieves the best over-all performance: mAP 0.437, AP@.5 0.750, and SR@.5 0.515, the highest SR@.5 in the experi-ment and a gain of +0 .011 over the base detector. 
+
+λ=0.20 follows closely (mAP 0.434, SR@.5 0.511), also exceeding the detector on SR@.5. Perfor-mance degrades at λ=0.50 (mAP 0.408, SR@.5 0.499, 
+
+∆IoU −0.023 ), the weakest configuration on VOC, where heavy smoothing causes the policy to commit prematurely before meaningful refinement. λ=0.70 
+
+partially recovers (mAP 0.422), suggesting that very high regularization acts as a conservative early-stopping mechanism that avoids the worst-case over-shooting of intermediate values. SR@.5 improvement over the detector on VOC requires motion regular-ization: λ ∈ { 0.05 , 0.10 , 0.20 } all exceed the detector on this metric, while plain PPO and larger λ values do not. 
+
+VisDrone. On VisDrone, λ=0.70 achieves the best mAP (0.175) and AP@.75 (0.170), with λ= 0.20 
+
+close behind (mAP 0.174, AP@.75 0.163). Notably, 
+
+λ=0.10 is the clear outlier, producing the worst re-sults across all metrics: mAP 0.143, AP@.75 0.101, and ∆IoU −0.039 – by far the most disruptive con-figuration across either dataset. The remaining three values ( λ ∈ { 0.05 , 0.50 , 0.70 }) cluster closely on mAP (0.167–0.175), with higher λ generally pre-ferred. AP@.5 is stable across the full λ range on VisDrone (0.324–0.336, spread 0.012), while AP@.75 varies substantially (0.101–0.170, spread 0.069), in-dicating that the smoothness coefficient primarily affects precision under strict localization thresholds rather than coarse detection recall. 
+
+Cross-dataset comparison. From the combined ablation, the most notable finding is the reversal of 
+
+λ=0.10 across datasets: it is the best configuration on VOC and the worst on VisDrone by a significant margin. This reversal is consistent with the differ-ence in starting proposal quality between the two domains. On VOC, where the detector is strong 10 Method mAP AP@.5 AP@.75 AR SR@.5 SR@.7 ∆IoU Detector only 0.490 0.748 0.544 0.593 0.504 0.389 —Heuristic 0.414 0.661 0.442 0.557 0.506 0.359 −0.013 PPO 0.452 0.745 0.498 0.555 0.501 0.377 −0.012 MARLNet ( λ=0 .10 ) 0.437 0.750 0.491 0.544 0.515 ↑ 0.383 −0.008 
+
+Table 1. Localization results on Pascal VOC 2012 validation split (5823 images). All methods use the same Faster R-CNN initial detections. MARLNet uses the epoch-70 checkpoint with λ=0.10 . ∆IoU measures mean IoU change relative to the initial detector proposal; negative values indicate the refinement does not improve average overlap over the detector. Best result per column in bold .
+
+Figure 3. Illustration of refinement process by MARLNet on random images from the VOC validation split. Each row shows the initial detector box (red) and the final refined box (blue) for a single image. The agent learns to make small, precise adjustments that often improve IoU with the ground-truth annotation (green). The smoothness penalty encourages consistent refinement trajectories, as evidenced by the relatively small step sizes and coherent directional movement from red to blue. 
+
+λ mAP AP@.5 AP@.75 AR SR@.5 SR@.7 ∆IoU Detector (ref.) 0.490 0.748 0.544 0.593 0.504 0.389 —0.05 0.428 0.745 0.477 0.534 0.506 ↑ 0.373 −0.014 0.10 0.437 0.750 0.491 0.544 0.515 ↑ 0.383 −0.008 0.20 0.434 0.748 0.483 0.539 0.511 ↑ 0.377 −0.010 0.50 0.408 0.741 0.432 0.512 0.499 0.360 −0.023 0.70 0.422 0.743 0.465 0.527 0.503 0.367 −0.018 
+
+Table 2. Effect of the motion regularization coefficient λ on Pascal VOC 2012 val. All variants use the epoch-70 checkpoint. The detector baseline is included for reference. ↑ denotes improvement over the detector on that metric. AP@0.5 is stable across the full range, while AP@0.75 exhibits a non-monotonic pattern with a performance dip at intermediate values 
+
+(mAP 0.490) and initial proposals are well-localized, a moderate smoothness coefficient allows the pol-icy to make precise, directionally consistent adjust-ments without overshooting. On VisDrone, where the detector is substantially weaker (mAP 0.189) and proposals require larger corrections, λ=0.10 ap-pears insufficiently constrained to prevent erratic refinement trajectories – reflected in its ∆IoU of 11 Method mAP AP@.5 AP@.75 AR mIoU SR@.5 SR@.7 ∆IoU 
+
+Detector Only (init.) 0.189 0.337 0.187 0.280 0.566 0.669 0.439 —Heuristic 0.140 0.257 0.134 0.266 0.559 0.671 0.418 −0.007 PPO 0.177 0.339 0.172 0.267 0.547 0.694 0.423 −0.020 MARLNet ( λ = 0 .05 ) 0.167 0.333 0.156 0.255 0.551 0.666 0.414 −0.015 
+
+Table 3. Localization results on the VisDrone 2019 validation split (548 images). Initial bounding-box hypotheses are provided by a Faster R-CNN detector fine-tuned on VisDrone training data. Bold indicates the best value among refinement methods. 
+
+Figure 4. Illustration of refinement process by MARLNet on random images from the VisDrone 2019 validation split. Each group of three columns shows the initial detector box (red), the final refined box (blue), and the ground-truth box (green). MARLNet successfully refines some marginally-aligned boxes over the 0.5 IoU threshold, but does not systematically correct localization errors, consistent with the feature-information ceiling analysis. 
+
+λphys mAP AP@0.5 AP@0.75 SR@0.5 SR@0.7 ∆IoU 
+
+0.05 (reported) 0.1671 0.3333 0.1555 0.6663 0.4141 -0.0150 0.1 0.1434 0.3238 0.1014 0.6613 0.3675 -0.0391 0.2 0.1742 0.3356 0.1631 0.6666 0.4221 -0.0114 0.5 0.1681 0.3330 0.1584 0.6634 0.4127 -0.0172 0.7 0.1751 0.3350 0.1698 0.6761 0.4233 -0.0121 
+
+Table 4. Ablation results for different smoothness penalty weights λphys on visDrone 2019 validation split. All models trained for 70 epochs with identical settings. AP@0.5 is stable across the full range, while AP@0.75 exhibits a non-monotonic pattern with a performance dip at intermediate values. 
+
+−0.039 – while λ ≥ 0.20 provides enough regulariza-tion to stabilize the policy. The practical implication is that λ should be treated as a dataset-dependent hyperparameter calibrated against the strength of the base detector: a weaker detector benefits from stronger regularization, while a stronger detector benefits from lighter regularization that preserves policy expressiveness for fine-grained adjustments. 
+
+6.4. The Feature Information Ceiling 
+
+The consistent failure to improve mAP over the detector baseline on both datasets is not a failure 12 of the RL formulation or the motion prior – it is an information-theoretic property of the problem setup. The refinement agent observes a crop of the image centred on the current bounding box, processed by the same EfficientNet-B0 backbone that informed the detector’s initial prediction. It therefore operates on a representational basis that contains no information the detector did not already have access to. This ceiling is particularly pronounced on Vis-Drone, where the median object occupies a region of approximately 30 × 20 pixels in the original im-age. When this region is cropped and upsampled to 224 × 224 for EfficientNet-B0, the resulting fea-tures are near-uniform due to the absence of texture variation at the original scale. The agent is, in ef-fect, navigating with near-zero visual signal. The SR@0.5 improvements suggest that even under these conditions the policy learns something useful – but the improvements are bounded by the information available in the crop. Closing this gap would require either richer state observations (multi-scale feature pyramids, global image context, or appearance models adapted to the target domain) or a weaker detector initialization that leaves more residual signal for the agent to exploit. To verify that the performance ceiling is not an artefact of the crop-only observation design, we ex-tended the state vector to 524 dimensions by concate-nating a full-image EfficientNet-B0 embedding along-side the local crop embedding, providing the agent with explicit spatial context about the crop’s posi-tion within the scene. Table 5 reports results across four λ values. Global +local does not consistently outperform crop-only: at λ ∈ { 0.05 , 0.10 }, perfor-mance drops substantially – by 0.078 and 0.075 mAP respectively – while λ= 0.20 produces results nearly identical to the crop-only variant ( −0.002 mAP). The single configuration where global +local wins is λ= 0.50 (+0 .008 mAP), and this gain should be interpreted cautiously given the instability exhibited at smaller λ values. The sensitivity of global +local performance to λ is substantially higher than that of the crop-only variant: the mAP range across tested 
+
+λ values is 0.082 for global +local versus 0.029 for crop-only – a factor of nearly three – consistent with a harder optimization landscape introduced by the higher-dimensional observation. Taken together, these results confirm that the performance ceiling arises from the shared representational basis between the refinement agent and the base detector, rather than from the limited spatial context of the crop-only observation. Addressing this ceiling requires architectural changes that provide the agent access to representations distinct from those used by the detector – for instance, a separately trained feature extractor or a task-specific representation learned end-to-end with the policy. 
+
+# 7. Limitations and Future Work 
+
+Limitations of the current work suggest concrete directions for future investigation. 
+
+Domain-adapted feature extraction. 
+
+EfficientNet-B0 is pre-trained on ImageNet and frozen throughout RL training. For aerial im-agery such as VisDrone, the distribution mismatch between ImageNet features and drone-view objects is severe. Fine-tuning the feature extractor jointly with the RL policy – with careful stabilization to prevent non-stationarity – could yield substantially richer crop representations and break the current information ceiling. 
+
+Learned motion prior. The constant-velocity model in the observation vector is a hand-designed, domain-agnostic prior. A natural extension is to replace it with a learned dynamics model fψ that predicts expected bbox motion conditioned on vi-sual features and trajectory history. Such a model could adapt the motion prior to different motion patterns–pedestrians, vehicles, small aerial objects– rather than imposing the same kinematic assump-tion across all categories. The smoothness penalty framework developed here provides a stable train-ing foundation on which such an extension could be built. We outline the mathematical formulation of this extension in the Appendix 11. 
+
+# 8. Conclusion 
+
+We present MARLNet, a motion-aware reinforce-ment learning framework for iterative bounding-box refinement that integrates a constant-velocity mo-tion prior into the observation state and an action smoothness penalty into the reward. Evaluated on Pascal VOC 2012 and VisDrone 2019, MARL-Net trains stably across all tested regularization strengths and achieves gains in detection success rate at IoU ≥ 0.5 over the base detector ( +0 .011 on VOC at λphys = 0.10 ; +0 .007 on VisDrone at λphys = 0.70 ), with plain PPO achieving a larger SR@.5 gain on VisDrone ( +0 .025 ) where the weaker base detector leaves more room for unconstrained refinement. The policy converged to a near-one-shot refinement strat-egy, making its computational footprint comparable 13 λ Obs. mAP AP@.5 AP@.75 AR SR@.5 ∆IoU 0.05 Crop only 0.428 0.745 0.477 0.534 0.506 −0.014 Global+local 0.350 0.617 0.380 0.476 0.477 −0.030 0.10 Crop only 0.437 0.750 0.491 0.544 0.515 −0.008 Global+local 0.362 0.640 0.397 0.487 0.480 −0.030 0.20 Crop only 0.434 0.748 0.483 0.539 0.511 −0.010 Global+local 0.432 0.748 0.480 0.538 0.508 −0.012 0.50 Crop only 0.408 0.741 0.432 0.512 0.499 −0.023 Global+local † 0.416 0.745 0.448 0.521 0.507 −0.017 0.70 Crop only 0.422 0.743 0.465 0.527 0.503 −0.018 Global+local 0.406 0.737 0.433 0.508 0.492 −0.028    
+
+> Table 5. Crop-only vs. global +local observation on Pascal VOC 2012 val. Adding full-image context (524-dim state) does not consistently improve performance, confirming that the performance ceiling is representational rather than observational. Crop-only results are taken from Table 2. †denotes the single configuration where global +local exceeds crop-only on mAP.
+
+to single-pass regression methods while retaining the flexibility of sequential decision-making. Through systematic reward design analysis, we identified a reward interference in which combining a constant-velocity deviation penalty with an abso-lute IoU term causes trigger collapse by epoch 26 – reducing the agent to maximum-step jitter and cutting mAP to 0.035 from a detector baseline of 0.490. Replacing the kinematic deviation penalty with an action smoothness penalty eliminates this failure entirely. This formulation encodes the correct inductive bias for static-image refinement – trajecto-ries should be smooth, not perpetually accelerating – and produces stable training across a wide range of penalty weights on both datasets. A consistent finding across both datasets is that no refinement method surpasses the detector on mAP. We traced this to a representational ceiling: the agent operates on crop features from the same EfficientNet-B0 backbone as the detector and there-fore cannot access signal the initialisation did not already encode. A global-plus-local observation abla-tion confirmed the ceiling is representational rather than observational – providing a concrete architec-tural diagnosis for future work rather than a funda-mental limitation of the RL approach itself. These findings offer practical guidance for build-ing motion-regularized RL refinement systems: the smoothness penalty is a stable and effective motion prior, the choice of regularization strength should be calibrated to base detector quality, and breaking the performance ceiling will require feature representa-tions that go beyond the detector’s own backbone. 
+
+# References                      
+
+> [1] Momir Adžemović, Predrag Tadić, Andrija Petrović, and Mladen Nikolić. Beyond kalman filters: deep learning-based filters for improved object tracking.
+> Machine Vision and Applications , 36(1):20, 2025. 3 [2] Alex Bewley, Zongyuan Ge, Lionel Ott, Fabio Ramos, and Ben Upcroft. Simple online and re-altime tracking. In 2016 IEEE international confer-ence on image processing (ICIP) , pages 3464–3468. Ieee, 2016. 1, 3 [3] Garrick Brazil, Gerard Pons-Moll, Xiaoming Liu, and Bernt Schiele. Kinematic 3d object detection in monocular video. In European Conference on Computer Vision , pages 135–152. Springer, 2020. 3 [4] Juan C Caicedo and Svetlana Lazebnik. Active object localization with deep reinforcement learning. In Proceedings of the IEEE international conference on computer vision , pages 2488–2496, 2015. 1, 3 [5] Bing Cao, Haiyu Yao, Pengfei Zhu, and Qinghua Hu. Visible and clear: Finding tiny objects in difference map. In European Conference on Computer Vision ,pages 1–18. Springer, 2024. 8 [6] Yiqun Chen, Qiang Chen, Peize Sun, Shoufa Chen, Jingdong Wang, and Jian Cheng. Enhancing your trained detrs with box refinement. arXiv preprint arXiv:2307.11828 , 2023. 1, 2 [7] Giorgio Cruciata, Liliana Lo Presti, and Marco La Cascia. Iterative multiple bounding-box refine-ments for visual tracking. Journal of Imaging , 8(3): 61, 2022. 2 [8] Dawei Du, Pengfei Zhu, Longyin Wen, Xiao Bian, Haibin Lin, Qinghua Hu, Tao Peng, Jiayu Zheng, Xinyao Wang, Yue Zhang, et al. Visdrone-det2019: The vision meets drone object detection in image challenge results. In Proceedings of the IEEE/CVF
+
+14 international conference on computer vision work-shops , pages 0–0, 2019. 8 [9] Frederik Ebert, Chelsea Finn, Sudeep Dasari, et al. Visual foresight: Model-based deep reinforcement learning for vision-based robotic control. arXiv preprint arXiv:1812.00568 , 2018. 3 [10] Mark Everingham, Luc Van Gool, Christopher KI Williams, John Winn, and Andrew Zisserman. The pascal visual object classes (voc) challenge. Inter-national journal of computer vision , 88(2):303–338, 2010. 2, 7 [11] Xu Guo, Yujin Zheng, and Dingwen Wang. Pm-track: multi-object tracking with motion-aware. In 
+
+Proceedings of the Asian Conference on Computer Vision , pages 3091–3106, 2024. 1, 3 [12] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recog-nition. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 770– 778, 2016. 5 [13] Petr Hurtik, Marek Vajgl, and David Hynar. Bbre-finement: A universal scheme to improve the preci-sion of box object detectors. Applied Sciences , 12 (7):3402, 2022. 1, 2 [14] Diederik P Kingma and Jimmy Ba. Adam: Amethod for stochastic optimization. arXiv preprint arXiv:1412.6980 , 2014. 7, 1 [15] Jonas König, Simon Malberg, Martin Martens, Se-bastian Niehaus, Artus Krohn-Grimberghe, and Arunselvan Ramaswamy. Multi-stage reinforcement learning for object detection. In Science and Infor-mation Conference , pages 178–191. Springer, 2019. 3[16] I Lee, Hoang-Giang Cao, Cong-Tinh Dao, Yu-Cheng Chen, and I-Chen Wu. Gradient-based regulariza-tion for action smoothness in robotic control with reinforcement learning. In 2024 IEEE/RSJ Interna-tional Conference on Intelligent Robots and Systems (IROS) , pages 603–610. IEEE, 2024. 3 [17] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco: Com-mon objects in context. In European conference on computer vision , pages 740–755. Springer, 2014. 8 [18] Xin Liu, Jie Tan, Xiaoguang Ren, Weiya Ren, and Huadong Dai. Kurl: A knowledge-guided reinforce-ment learning model for active object tracking. In 
+
+Asian conference on machine learning , pages 818– 833. PMLR, 2024. 3 [19] X. Liu et al. Traffic video object detection using mo-tion prior. arXiv preprint arXiv:2311.10092 , 2023. 3[20] Stefan Mathe, Aleksis Pirinen, and Cristian Smin-chisescu. Reinforcement learning for visual object detection. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 2894–2902, 2016. 3 [21] Siddharth Mysore, Bassel Mabsout, Renato Man-cuso, and Kate Saenko. Regularizing action policies for smooth control with reinforcement learning. In 
+
+2021 IEEE International Conference on Robotics and Automation (ICRA) , pages 1810–1816. IEEE, 2021. 1, 3 [22] Sedat Ozer et al. Visual object tracking in drone im-ages with deep reinforcement learning. In 2020 25th International Conference on Pattern Recognition (ICPR) , pages 10082–10089. IEEE, 2021. 3 [23] Aleksis Pirinen and Cristian Sminchisescu. Deep reinforcement learning of region proposal networks for object detection. In proceedings of the IEEE con-ference on computer vision and pattern recognition ,pages 6945–6954, 2018. 3 [24] Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun. Faster r-cnn: Towards real-time object detection with region proposal networks. Advances in neural information processing systems , 28, 2015. 2, 5, 7 [25] John Schulman, Philipp Moritz, Sergey Levine, Michael Jordan, and Pieter Abbeel. High-dimensional continuous control using general-ized advantage estimation. arXiv preprint arXiv:1506.02438 , 2015. 7 [26] John Schulman, Filip Wolski, Prafulla Dhari-wal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 , 2017. 1, 5, 7 [27] Mingxing Tan and Quoc Le. Efficientnet: Rethink-ing model scaling for convolutional neural networks. In International conference on machine learning ,pages 6105–6114. PMLR, 2019. 2, 4, 5 [28] Changcheng Xiao, Qiong Cao, Yujie Zhong, Long Lan, Xiang Zhang, Zhigang Luo, and Dacheng Tao. Motiontrack: Learning motion predictor for multi-ple object tracking. Neural Networks , 179:106539, 2024. 3 [29] Bin Yan, Xinyu Zhang, Dong Wang, Huchuan Lu, and Xiaoyun Yang. Alpha-refine: Boosting track-ing performance by precise bounding box estima-tion. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 5289–5298, 2021. 1, 2 [30] Yi Zhao and Guiping Chen. Lpae-yolov8: lightweight aerial small object detection via lse-head and adaptive attention. Scientific Reports , 15(1): 44780, 2025. 8 [31] Man Zhou, Rujing Wang, Chengjun Xie, Liu Liu, Rui Li, Fangyuan Wang, and Dengshan Li. Rein-forcenet: A reinforcement learning embedded object detection framework with region selection network. 
+
+Neurocomputing , 443:369–379, 2021. 1, 3 [32] Pengfei Zhu, Longyin Wen, Dawei Du, Xiao Bian, Heng Fan, Qinghua Hu, and Haibin Ling. Detection and tracking meet drones challenge. IEEE Transac-tions on Pattern Analysis and Machine Intelligence ,44(11):7380–7399, 2021. 2, 7 
+
+15 Motion-Aware Reinforcement Learning For Object Localization 
+
+# Supplementary Material 
+
+# 9. Implementation Details 
+
+Network architecture and feature extraction. 
+
+The shared MLP backbone comprises two fully con-nected layers of dimension 256 with ReLU activa-tions. The actor head outputs a 4-dimensional mean vector μt, a globally learnable log-standard-deviation 
+
+log σ ∈ R4, and a scalar stopping logit; the critic head outputs a scalar value estimate (approximately 
+
+200 K trainable parameters total). EfficientNet-B0, pre-trained on ImageNet-1K, projects its 1280-dimensional global average pooling output to 256 dimensions via a learned linear layer; crops are re-sized to 224 × 224 before the forward pass. 
+
+Training hyperparameters. Table 6 summarizes all hyperparameters used in our experiments.  
+
+> Table 6. MARLNet training hyperparameters.
+
+Parameter Symbol Value 
+
+PPO 
+
+Clipping parameter ϵ 0.2
+
+Discount factor γ 0.99 
+
+GAE parameter λGAE 0.95 
+
+Steps per epoch N 2048 
+
+PPO update epochs K 10 
+
+Minibatch size M 128 
+
+Loss coefficients 
+
+Value loss coefficient cv 0.5
+
+Entropy coefficient ce 0.02 
+
+Reward function 
+
+IoU improvement weight α 5.0
+
+Step cost cstep 0.05 
+
+Smoothness weight λphys 0.05 
+
+Terminal bonus scale Cbonus 5.0
+
+Stopping threshold τstop 0.6
+
+Episode and optimization 
+
+Max refinement steps Tmax 15 
+
+Max action delta δmax 0.05 
+
+Learning rate – 2 × 10 −4
+
+Optimizer – Adam [14] Gradient clip norm – 0.5
+
+Computational resources. All experiments are conducted on a single NVIDIA GeForce RTX 5060 GPU with 8 GB of VRAM and 64 GB of system RAM on 13th Gen Intel Core i7–13700F with clock frequency of 2.10 GHz. Training for 70 epochs on the Pascal VOC2012 and VisDrone2019-DET training split takes approximately 3 to 4 hours. 
+
+# 10 . More Results on VOC & VisDrone 
+
+Tables 7 and 8 report per-category AP@0.5 for all methods on VOC and VisDrone respectively, com-plementing the aggregate metrics in the main paper. 
+
+# 11 . Mathematical Formulation of the Learnable Motion Model 
+
+While the fixed constant–velocity assumption pro-vides a simple and effective motion prior, it cannot capture complex object dynamics or camera motion. To address this limitation, we extend the frame-work by introducing a learnable motion module that predicts the next bounding box in a data-driven manner. 
+
+Parametric Dynamics Model. Instead of the handcrafted update ˆbphys,t = bt + ( bt − bt−1), we define a differentiable mapping 
+
+ˆbphys,t = fψ (bt, ∆bt, f t),
+
+where fψ (·) is a neural network with parame-ters ψ. The inputs consist of the current box 
+
+bt = ( xt, y t, w t, h t), its motion ∆bt = bt − bt−1, and the visual feature embedding ft extracted from the cropped region. The network outputs a motion offset that estimates the next physically plausible box. 
+
+Motion Consistency Loss. During training, the predicted box ˆbphys,t is encouraged to match the agent’s actual next box bt+1 through a self-consistency term: 
+
+Lphys = ∥ bt+1 − fψ (bt, ∆bt, f t) ∥22.
+
+Optionally, when frame-wise ground truth b∗ 
+
+> t+1
+
+is available, a supervised variant LGT phys = ∥ b∗ 
+
+> t+1
+
+−
+
+fψ (bt, ∆bt, f t) ∥22 can be used to further guide learn-ing. 
+
+Joint Optimization. The motion model is trained jointly with the PPO policy πθ . At each 1Category Detector only Heuristic PPO MARLNet 
+
+aeroplane 0.8210 0.7806 0.8283 0.8270 bicycle 0.7818 0.6615 0.7736 0.7817 bird 0.7726 0.7084 0.7651 0.7588 boat 0.5814 0.5174 0.5838 0.5689 bottle 0.6545 0.6079 0.6484 0.6519 bus 0.8444 0.8120 0.8452 0.8444 car 0.7041 0.6321 0.6992 0.6978 cat 0.8838 0.8041 0.8773 0.8751 chair 0.5777 0.4541 0.5767 0.5660 cow 0.7970 0.6959 0.7934 0.7849 diningtable 0.5360 0.4051 0.5278 0.5275 dog 0.8489 0.7417 0.8377 0.8401 horse 0.8563 0.7808 0.8508 0.8548 motorbike 0.8777 0.7825 0.8746 0.8745 person 0.8642 0.7885 0.8607 0.8607 pottedplant 0.5755 0.4964 0.5793 0.5649 sheep 0.7844 0.7229 0.7803 0.7842 sofa 0.6267 0.3375 0.6215 0.6199 train 0.8413 0.8020 0.8437 0.8406 tvmonitor 0.7319 0.6879 0.7309 0.7243 
+
+Mean AP@0.5 0.7481 0.6610 0.7449 0.7424 
+
+Table 7. Per-category and mean Average Precision (AP@0.5) comparison across different architectures on PASCAL VOC Dataset. 
+
+Category Detector only Heuristic PPO MARLNet 
+
+pedestrian 0.4133 0.3634 0.4203 0.4087 people 0.3034 0.2011 0.3009 0.2955 bicycle 0.0964 0.0420 0.0953 0.0921 car 0.7482 0.7190 0.7482 0.7471 van 0.3882 0.2102 0.3866 0.3826 truck 0.3365 0.2560 0.3384 0.3343 tricycle 0.2118 0.1168 0.2133 0.2109 awning-tricycle 0.0901 0.0450 0.0906 0.0905 bus 0.3805 0.2713 0.3851 0.3805 motor 0.4024 0.3494 0.4063 0.3907 
+
+Mean AP@0.5 0.3371 0.2574 0.3385 0.3333 
+
+Table 8. Per-category and mean Average Precision (AP@0.5) comparison across architectures for the VisDrone-2019-DET dataset. 
+
+step, the reward incorporates the learned prediction: 
+
+rt = α ∆IoU − λphys ∥ bt − ˆbphys,t ∥2,
+
+and the overall objective becomes 
+
+max  
+
+> θ,ψ
+
+Et
+
+[JP P O (θ; rt(ψ)) ] − η Lphys ,
+
+where η balances reinforcement and motion-consistency terms. Because rt depends on the dif-ferentiable function fψ , gradients can propagate through the motion module, enabling end-to-end learning. 
+
+Interpretation. The learnable motion model acts as a data-driven dynamics prior that adapts to di-verse motion patterns. While the PPO agent opti-mizes localization accuracy via IoU-based reward, fψ
+
+learns to model how bounding boxes evolve across time. Their co-training yields policies that are both accurate and physically coherent, bridging model-free and model-based reinforcement learning within a unified framework. 212. Heuristic Refinement Policy 
+
+We describe the greedy detector-rescore heuristic used as a non-learned baseline throughout the ex-periments. The method requires no training and no ground-truth supervision at inference time. It shares the same base detector as MARLNet, ensuring a fair comparison: both methods operate from identical initial proposals and use the same Faster R-CNN backbone. 
+
+Design rationale. The heuristic is motivated by a simple observation: if a candidate box better en-closes an object, the detector should assign higher confidence to a proposal that overlaps it. Rather than learning a policy to maximise IoU directly, the heuristic uses the detector’s own confidence score as a proxy for localization quality, performing a greedy coordinate search to find the nearby box that the detector scores most highly. This proxy is imper-fect – detector confidence and IoU with ground truth are not perfectly correlated – which explains why the heuristic is competitive but bounded relative to methods that optimise the true localization signal directly. 
+
+Candidate generation and scoring. At each step, GenerateCandidates produces up to Nc=9
+
+boxes by combining three scale factors ( ×0.9, ×1.0,
+
+×1.1) with five centre offsets (no shift, and ±15% of box dimensions along each axis), deduplicating the resulting 3×5 grid. Each candidate is scored as the maximum detector confidence among detector boxes with IoU ≥ τ =0.5, and zero when none overlap. The detector runs once per step and its outputs are reused across all candidates. Refinement terminates when no candidate improves the score by more than 
+
+ε=10 −4, or when T =8 steps are exhausted. 
+
+# 13 . Discussion on Results of Experi-ment 
+
+13.1. Reward Design Analysis 
+
+The CV-penalty reward causes catastrophic failure. When the motion penalty is defined as deviation from the constant-velocity prediction – 
+
+λphys ∥bt+1 − ˆbcv 
+
+> t+1
+
+∥2 – training collapses by epoch 26. The mean stopping probability ¯pstop falls below 0.01 and never recovers, reducing the model to ran-dom per-step jitter over all Tmax steps. Figure 5(b) shows mean training IoU degrading from 0.42 to 0.21, confirming complete localization failure. 
+
+Algorithm 2 Greedy Heuristic Refinement 
+
+Input: Image I; initial detection (b0, s 0); detector 
+
+D; max steps T =8; scale factors S={0.9, 1.0, 1.1};shift fraction δ=0.15 ; candidate limit Nc= 9; overlap threshold τ =0 .5; improvement threshold ε=10 −4
+
+Output: Refined box b∗ 
+
+> 1:
+
+function GenerateCandidates (b, S, δ, N c) 
+
+> 2:
+
+Extract centre (cx, c y ) and size (w, h ) from b 
+
+> 3:
+
+Shifts ← { (0 , 0) , (δ, 0) , (−δ, 0) , (0 , δ ), (0 , −δ)} 
+
+> 4:
+
+C ← ∅  
+
+> 5:
+
+for σ ∈ S do  
+
+> 6:
+
+for (dx, d y ) ∈ Shifts do  
+
+> 7:
+
+Construct box centred at (cx +
+
+dxw, c y + dy h) with size (σw, σh ) 
+
+> 8:
+
+Clamp to image boundaries; add to C 
+
+> 9:
+
+end for  
+
+> 10:
+
+end for  
+
+> 11:
+
+return first Nc unique boxes from C 
+
+> 12:
+
+end function  
+
+> 13:
+
+b ← b0, s ← s0 
+
+> 14:
+
+for t = 1 to T do  
+
+> 15:
+
+C ← GenerateCandidates (b, S, δ, N c) 
+
+> 16:
+
+O ← D (I) // run detector once per step; reuse for all candidates  
+
+> 17:
+
+for each candidate c ∈ C do  
+
+> 18:
+
+score (c) ← max 
+
+> oi∈O
+> IoU( c, o i)≥τ
+
+conf( oi) // 0 if no 
+
+oi overlaps c 
+
+> 19:
+
+end for  
+
+> 20:
+
+b′ ← arg max c∈C score (c), s′ ←
+
+max c∈C score (c) 
+
+> 21:
+
+if s′ ≤ s + ε then  
+
+> 22:
+
+break // no improvement; terminate early  
+
+> 23:
+
+end if  
+
+> 24:
+
+b ← b′, s ← s′ 
+
+> 25:
+
+end for  
+
+> 26:
+
+return b∗ ← b
+
+The failure mechanism is a reward accumulation imbalance. At initialization, each step yields approx-imately β · IoU t ≈ 0.42 from the absolute IoU term alone. Accumulated over Tmax = 15 steps, this ex-ceeds the terminal bonus ( Cbonus ·IoU ≤ 10 ·0.6 = 6 .0
+
+for typical final IoU) by a large margin, making it always more profitable for the agent to run all steps rather than stop. The policy consequently learns to suppress pstop to zero, eliminating the only mecha-nism for obtaining well-timed terminal bonuses. This failure is compounded by the CV prediction itself: the constant-velocity model extrapolates con-tinued acceleration in the box’s current direction, 3Figure 5. Training dynamics comparing the two motion prior formulations over 70 epochs. (a) Mean episodic reward: the smoothness prior (blue, solid) grows steadily, while the CV-deviation prior (red, dashed) remains flat near zero throughout training. (b) Mean training IoU: the smoothness prior rises to 0.51 before the run was stopped at epoch 69, consistently approaching the detector initialization IoU of 0.487 (dotted line) and exceeding it; the CV-deviation prior degrades monotonically from 0.42 to 0.21, falling far below the detector baseline. (c) Mean stopping probability   
+
+> ¯pstop : the smoothness prior learns a well-calibrated stopping signal that rises from 0.50 to 0.69; the CV-deviation prior undergoes trigger collapse by epoch 26 (vertical dotted line), after which ¯pstop remains at zero for the remainder of training. The shaded red region marks the collapse regime. Together, panels (b) and (c) confirm that the CV-deviation formulation fails not merely by producing lower reward, but by causing the agent to lose its stopping mechanism entirely, reducing it to maximum-step jitter.
+
+whereas a converging agent must decelerate toward the target. The CV penalty therefore actively dis-courages the convergent behaviour the agent should exhibit. 
+
+The smoothness penalty recovers stable train-ing. Replacing the CV penalty with the action-smoothness penalty eliminates trigger collapse: ¯pstop 
+
+rises monotonically from 0.50 to 0.69 over 70 epochs and the agent learns a meaningful stopping strat-egy. The smoothness penalty makes no claim about where the box should be at the next step; it only con-strains how abruptly the action direction can change, which is the physically reasonable inductive bias for a refinement agent operating on static images. 
+
+13.2. Training Dynamics 
+
+Figure 5 plots three training metrics – mean episodic reward, mean IoU, and mean stopping probability – over the course of training for MARLNet and the CV-penalty variant. Two observations from the training curves are worth noting. MARLNet’s mean training IoU rises from 0.42 at epoch 1 to 0.51 by epoch 70, confirming that the policy improves localization over training. The stopping probability rises monotonically from 0.50 to 0.69, indicating the agent learns to fire the termination trigger at well-aligned proposals rather than exhausting the maximum step budget. Vali-dation performance stabilizes by epoch 60, which is the checkpoint reported throughout the paper. 
+
+13.3. Inference Efficiency 
+
+Table 9 and Figure 6 report inference latency across both datasets and devices. On GPU, the full MARL-Net pipeline runs in approximately 84–85 ms end-to-end, corresponding to approximately 12 FPS. The policy forward pass accounts for less than 1 ms of this total; the dominant cost is EfficientNet-B0 crop extraction (9–10 ms per step). On CPU, the bot-tleneck shifts entirely to Faster R-CNN ( ∼900 ms), with MARLNet adding only 56–57 ms overhead – 6–7% of total pipeline time. The average of 1.0–1.2 refinement steps per episode is a notable finding. The policy converged to a near-one-shot strategy through reward shaping rather than architectural constraint: the terminal bonus makes immediate stopping at a reasonable IoU preferable to continued refinement in expectation. This makes MARLNet computationally comparable to single-pass regression-based refinement methods, while retaining the theoretical flexibility of iterative sequential decision-making. 4Dataset Device Steps Feat./step Refinement Detector End-to-end 
+
+VOC GPU 1.2 9.0 ms 32 ms 52 ms 84 ms VOC CPU 1.2 16.4 ms 57 ms 871 ms 929 ms VisDrone GPU 1.0 9.4 ms 30 ms 55 ms 85 ms VisDrone CPU 1.0 17.7 ms 56 ms 968 ms 1024 ms 
+
+Table 9. Inference latency of MARLNet (mean ms per image, 200 images after 50 warmup iterations). Feature extraction and policy forward are reported per step; total refinement is summed across all steps. Hardware: NVIDIA GeForce RTX 5060 (GPU) and Intel i7 13th Gen CPU. 
+
+Figure 6. Inference latency of MARLNet on GPU and CPU across both datasets. The policy forward pass is negligible compared to feature extraction and the detector, confirming that the RL component does not introduce a significant computational bottleneck. 
+
+5

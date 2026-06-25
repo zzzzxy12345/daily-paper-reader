@@ -6,80 +6,107 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-24
-- 运行时间：2026-06-24 22:05:55 UTC
+- 最新运行日期：2026-06-25
+- 运行时间：2026-06-25 21:11:07 UTC
 - 运行状态：成功
-- 本次总论文数：20
-- 精读区：8
+- 本次总论文数：29
+- 精读区：17
 - 速读区：12
 
 ### 今日简报（AI）
-今日收录20篇论文，精读中《Direct Advantage Estimation》与《Sakana Fugu Technical Report》均获9分高分，在可扩展深度强化学习与系统设计上实现关键突破。建议优先关注这两篇精读工作，其方法在样本效率与鲁棒性上展示出显著优势。速读中的多阶段事实验证与混合开放演化方向也值得延伸，适合后续跟踪。
-- 详情：[/202606/24/README](/202606/24/README)
+今天共推荐29篇论文，精读17篇，重点关注离线策略学习与多步LLM智能体两大方向。最值得读的是《Horizon Adaptive Offline Policy Learning via Value Stitching》和《ARCO: Adaptive Rubric with Co-Evolution for Multi-Step LLM-Based Agents》，均获9.0高分。建议优先精读这两篇，再浏览速读中《Elastic Queries Reinforcement Learning》等三篇8分论文。
+- 详情：[/202606/25/README](/202606/25/README)
 
 ### 精读区论文标签
-1. [Direct Advantage Estimation for Scalable and Sample-efficient Deep Reinforcement Learning](/202606/24/2606.20411v1-direct-advantage-estimation-for-scalable-and-sample-efficient-deep-reinforcement-learning)  
+1. [Horizon Adaptive Offline Policy Learning via Value Stitching](/202606/25/2606.21136v1-horizon-adaptive-offline-policy-learning-via-value-stitching)  
+   标签：评分：9.0/10、query:agent
+   evidence：离线强化学习策略学习与动态时间视域
+2. [ARCO: Adaptive Rubric with Co-Evolution for Multi-Step LLM-Based Agents](/202606/25/2606.21262v1-arco-adaptive-rubric-with-co-evolution-for-multi-step-llm-based-agents)  
+   标签：评分：9.0/10、query:agent
+   evidence：多步LLM智能体的强化学习，自适应评分规则奖励
+3. [Beyond the Next Step: Variable-Length Latent World Models for Long-Horizon Planning](/202606/25/2606.21775v1-beyond-the-next-step-variable-length-latent-world-models-for-long-horizon-planning)  
+   标签：评分：9.0/10、query:agent
+   evidence：面向智能体长时程规划的世界模型
+4. [Scalable Maximum Entropy Reinforcement Learning for Diffusion Policies via Adjoint Matching](/202606/25/2606.22630v1-scalable-maximum-entropy-reinforcement-learning-for-diffusion-policies-via-adjoint-matching)  
    标签：评分：9.0/10、query:rl-papers
-   evidence：直接优势估计用于可扩展且样本高效的深度强化学习
-2. [Sakana Fugu Technical Report](/202606/24/2606.21228v2-sakana-fugu-technical-report)  
+   evidence：面向扩散策略的可扩展强化学习算法
+5. [Self-Evolution for Multi-Turn Tool-Calling Agents via Divergence-Point Preference Learning](/202606/25/2606.23112v1-self-evolution-for-multi-turn-tool-calling-agents-via-divergence-point-preference-learning)  
    标签：评分：9.0/10、query:agent
-   evidence：用于构建智能体系统的LLM编排器模型
-3. [Reward-free Pretraining for Reinforcement Learning via Occupancy Coverage Maximization](/202606/24/2606.21271v1-reward-free-pretraining-for-reinforcement-learning-via-occupancy-coverage-maximization)  
+   evidence：基于分歧点偏好学习的多轮工具调用智能体自我进化
+6. [HoloAgent-0: A Unified Embodied Agent Framework with 3D Spatial Memory](/202606/25/2606.23565v1-holoagent-0-a-unified-embodied-agent-framework-with-3d-spatial-memory)  
+   标签：评分：9.0/10、query:agent
+   evidence：统一具身智能体框架及3D空间记忆
+7. [Complex Autonomous UAV Task Execution and Decision-Making With s(CASP)](/202606/25/2606.23866v1-complex-autonomous-uav-task-execution-and-decision-making-with-scasp)  
+   标签：评分：9.0/10、query:agent
+   evidence：基于s(CASP)逻辑编程的自主无人机任务执行与决策
+8. [Escaping the Self-Confirmation Trap: An Execute-Distill-Verify Paradigm for Agentic Experience Learning](/202606/25/2606.24428v1-escaping-the-self-confirmation-trap-an-execute-distill-verify-paradigm-for-agentic-experience-learning)  
+   标签：评分：9.0/10、query:agent
+   evidence：LLM智能体的经验学习，多智能体范式
+9. [GCT-MARL: Graph-Based Contrastive Transfer for Sample-Efficient Cooperative Multi-Agent Reinforcement Learning](/202606/25/2606.25073v1-gct-marl-graph-based-contrastive-transfer-for-sample-efficient-cooperative-multi-agent-reinforcement-learning)  
+   标签：评分：9.0/10、query:agent
+   evidence：多智能体强化学习迁移
+10. [Stagnant Neuron: Towards Understanding the Plasticity Loss in Multi-Agent Reinforcement Learning Value Factorization Methods](/202606/25/2606.25335v1-stagnant-neuron-towards-understanding-the-plasticity-loss-in-multi-agent-reinforcement-learning-value-factorization-methods)  
+   标签：评分：9.0/10、query:agent
+   evidence：多智能体强化学习价值分解中的可塑性损失与神经元停滞
+11. [MAPL: Multi-Objective Preference Learning for Robot Locomotion](/202606/25/2606.25398v1-mapl-multi-objective-preference-learning-for-robot-locomotion)  
    标签：评分：9.0/10、query:rl-papers
-   evidence：通过占据覆盖最大化实现无奖励预训练
-4. [WebCQ: Cooperative Multi-Agent Deep Reinforcement Learning for Scalable Web GUI Testing](/202606/24/2606.22502v1-webcq-cooperative-multi-agent-deep-reinforcement-learning-for-scalable-web-gui-testing)  
+   evidence：用于机器人运动奖励设计的多目标偏好学习
+12. [BrainAgent: A Large Language Model-Driven Multi-Agent Framework for Autonomous Brain Signal Understanding](/202606/25/2606.25400v1-brainagent-a-large-language-model-driven-multi-agent-framework-for-autonomous-brain-signal-understanding)  
    标签：评分：9.0/10、query:agent
-   evidence：用于可扩展Web GUI测试的合作多智能体深度强化学习
-5. [Robust Data-Driven Nash Equilibrium Seeking under Partial-Decision Information](/202606/24/2606.23011v1-robust-data-driven-nash-equilibrium-seeking-under-partial-decision-information)  
+   evidence：多智能体框架应用于真实世界脑信号理解
+13. [HEART: Coordination of Heterogeneous Expert Agents for Physically Grounded Robotic Task Planning](/202606/25/2606.25404v1-heart-coordination-of-heterogeneous-expert-agents-for-physically-grounded-robotic-task-planning)  
    标签：评分：9.0/10、query:agent
-   evidence：多智能体强化学习中的纳什均衡搜索
-6. [MAS-PromptBench: When Does Prompt Optimization Improve Multi-Agent LLM Systems?](/202606/24/2606.23664v1-mas-promptbench-when-does-prompt-optimization-improve-multi-agent-llm-systems)  
+   evidence：异构多LLM框架用于机器人任务规划
+14. [Learning with a Single Rollout via Monte Carlo Pass@k Critic](/202606/25/2606.25451v1-learning-with-a-single-rollout-via-monte-carlo-passk-critic)  
    标签：评分：9.0/10、query:agent
-   evidence：多智能体LLM系统提示优化
-7. [Safe and Generalizable Hierarchical Multi-Agent RL via Constraint Manifold Control](/202606/24/2606.24010v1-safe-and-generalizable-hierarchical-multi-agent-rl-via-constraint-manifold-control)  
+   evidence：单次rollout的PPO及令牌级信用分配
+15. [Low Variance Trust Region Optimization with Independent Actors and Sequential Updates in Cooperative Multi-agent Reinforcement Learning](/202606/25/2606.25526v1-low-variance-trust-region-optimization-with-independent-actors-and-sequential-updates-in-cooperative-multi-agent-reinforcement-learning)  
    标签：评分：9.0/10、query:agent
-   evidence：带安全约束的分层多智能体强化学习
-8. [ASALT: Adaptive State Alignment for Lateral Transfer in Multi-agent Reinforcement Learning](/202606/24/2606.24601v1-asalt-adaptive-state-alignment-for-lateral-transfer-in-multi-agent-reinforcement-learning)  
+   evidence：合作多智能体强化学习中的信任区域优化与独立演员
+16. [Reference-Free Heterogeneous Multi-Agent Reinforcement Learning for Grid-Friendly Tie-Line Power Shaping in Industrial Microgrids](/202606/25/2606.25599v1-reference-free-heterogeneous-multi-agent-reinforcement-learning-for-grid-friendly-tie-line-power-shaping-in-industrial-microgrids)  
    标签：评分：9.0/10、query:agent
-   evidence：多智能体强化学习的迁移学习与状态对齐
+   evidence：异构多智能体强化学习在工业微电网功率整形中的实际应用
+17. [Multi-Agent Goal Recognition with Team- and Goal-Conditioned Reinforcement Learning and Factorized Branch-and-Bound](/202606/25/2606.25978v1-multi-agent-goal-recognition-with-team--and-goal-conditioned-reinforcement-learning-and-factorized-branch-and-bound)  
+   标签：评分：9.0/10、query:agent
+   evidence：基于团队和目标条件强化学习的多智能体目标识别
 
 ### 速读区论文标签
-1. [From Verdict to Process: Agentic Reinforcement Learning for Multi-Stage Fact Verification](/202606/24/2606.13262v1-from-verdict-to-process-agentic-reinforcement-learning-for-multi-stage-fact-verification)  
+1. [Elastic Queries Reinforcement Learning: Self-Aware Policy Execution for VLA Models](/202606/25/2606.14375v1-elastic-queries-reinforcement-learning-self-aware-policy-execution-for-vla-models)  
    标签：评分：8.0/10、query:agent
-   evidence：面向多阶段事实验证的智能体强化学习
-2. [A Reactive Redistribution Mechanism for STL Tasks in Multi-Agent Systems Under Time-Varying Communication](/202606/24/2606.13479v1-a-reactive-redistribution-mechanism-for-stl-tasks-in-multi-agent-systems-under-time-varying-communication)  
+   evidence：VLA模型中弹性查询的强化学习策略执行
+2. [CSPO: Constraint-Sensitive Policy Optimization for Safe Reinforcement Learning](/202606/25/2606.14415v1-cspo-constraint-sensitive-policy-optimization-for-safe-reinforcement-learning)  
    标签：评分：8.0/10、query:agent
-   evidence：多智能体系统中的任务再分配
-3. [Hybrid Open-Ended Tri-Evolution Makes Better Deep Researcher](/202606/24/2606.13710v1-hybrid-open-ended-tri-evolution-makes-better-deep-researcher)  
+   evidence：面向安全强化学习的约束敏感策略优化
+3. [RL-Index: Reinforcement Learning for Retrieval Index Reasoning](/202606/25/2606.16316v1-rl-index-reinforcement-learning-for-retrieval-index-reasoning)  
    标签：评分：8.0/10、query:agent
-   evidence：基于强化学习的代理进化用于深度研究
-4. [Hybrid Open-Ended Tri-Evolution Makes Better Deep Researcher](/202606/24/2606.13710v2-hybrid-open-ended-tri-evolution-makes-better-deep-researcher)  
+   evidence：基于强化学习的代理索引框架
+4. [Direction-Conditioned Policies via Compositional Subgoal Scoring for Online Goal-Conditioned Reinforcement Learning](/202606/25/2606.16515v1-direction-conditioned-policies-via-compositional-subgoal-scoring-for-online-goal-conditioned-reinforcement-learning)  
    标签：评分：8.0/10、query:agent
-   evidence：基于强化学习的代理进化用于深度研究
-5. [TetraRL: A Self-Adaptive Runtime for On-Device Deep Reinforcement Learning Systems](/202606/24/2606.13891v1-tetrarl-a-self-adaptive-runtime-for-on-device-deep-reinforcement-learning-systems)  
+   evidence：具有方向条件策略和子目标评分的在线目标条件RL方法
+5. [Human-on-the-Bridge: Scalable Evaluation for AI Agents](/202606/25/2606.16871v1-human-on-the-bridge-scalable-evaluation-for-ai-agents)  
    标签：评分：8.0/10、query:agent
-   evidence：面向自主机器人的设备端DRL自适应运行时，平衡实时性和资源约束
-6. [Closing the Feedback Loop: From Experience Extraction to Insight Governance in Verbal Reinforcement Learning](/202606/24/2606.17591v1-closing-the-feedback-loop-from-experience-extraction-to-insight-governance-in-verbal-reinforcement-learning)  
+   evidence：针对AI智能体的可扩展评估范式
+6. [PulseCX: Breaking the Closed-World Assumption in Real-Time CX](/202606/25/2606.21124v1-pulsecx-breaking-the-closed-world-assumption-in-real-time-cx)  
    标签：评分：7.0/10、query:agent
-   evidence：LLM智能体的口头强化学习
-7. [Playful Agentic Robot Learning](/202606/24/2606.19419v1-playful-agentic-robot-learning)  
-   标签：评分：7.0/10、query:agent
-   evidence：用于真实世界技能获取的自主机器人玩耍学习
-8. [Temporal Self-Imitation Learning](/202606/24/2606.19752v2-temporal-self-imitation-learning)  
-   标签：评分：7.0/10、query:agent
-   evidence：时间自我模仿学习用于强化学习
-9. [Adversarial observations in probabilistic State-Space Models for robust Reinforcement Learning](/202606/24/2606.20880v1-adversarial-observations-in-probabilistic-state-space-models-for-robust-reinforcement-learning)  
+   evidence：用于客户体验实时对话AI智能体的PulseCX框架
+7. [NASDAQ: Normalized Observation Space Dynamics-Augmented Q-Learning](/202606/25/2606.21297v1-nasdaq-normalized-observation-space-dynamics-augmented-q-learning)  
    标签：评分：7.0/10、query:rl-papers
-   evidence：针对对抗性观测的鲁棒强化学习
-10. [From RAN Control to Agentic Intelligence: Architecture and Vision for Energy Efficient AI-RAN](/202606/24/2606.21955v1-from-ran-control-to-agentic-intelligence-architecture-and-vision-for-energy-efficient-ai-ran)  
+   evidence：为基于观测预测的强化学习设计归一化方法以提升样本效率
+8. [Hallucination as Context Drift: Synchronization Protocols for Multi-Agent LLM Systems](/202606/25/2606.21666v1-hallucination-as-context-drift-synchronization-protocols-for-multi-agent-llm-systems)  
+   标签：评分：7.0/10、query:agent
+   evidence：面向多智能体LLM系统的上下文漂移同步
+9. [Motion-Aware Reinforcement Learning For Object Localization](/202606/25/2606.21764v1-motion-aware-reinforcement-learning-for-object-localization)  
+   标签：评分：7.0/10、query:agent
+   evidence：强化学习智能体用于目标定位
+10. [The Two-Hump Problem: Bridging the Difficulty Gap in Mathematical Reinforcement Learning](/202606/25/2606.21611v1-the-two-hump-problem-bridging-the-difficulty-gap-in-mathematical-reinforcement-learning)  
+   标签：评分：6.0/10、query:rl-papers
+   evidence：通过数据生成和算法改进解决数学RL中的难度差距
+11. [CalVerT: Augmenting Agents with Calibrated Verifier Telemetry Improves Action and Learning in Knowledge-Intensive Tasks](/202606/25/2606.21777v1-calvert-augmenting-agents-with-calibrated-verifier-telemetry-improves-action-and-learning-in-knowledge-intensive-tasks)  
    标签：评分：6.0/10、query:agent
-   evidence：面向节能AI-RAN网络的智能体智能架构
-11. [What are Key Factors for Updates in RL for LLM Reasoning?](/202606/24/2606.22570v1-what-are-key-factors-for-updates-in-rl-for-llm-reasoning)  
-   标签：评分：6.0/10、query:rl-papers
-   evidence：RLVR更新的理论分析，揭示离策略程度的影响
-12. [On the Position Bias of On-Policy Distillation](/202606/24/2606.22600v2-on-the-position-bias-of-on-policy-distillation)  
-   标签：评分：6.0/10、query:rl-papers
-   evidence：策略蒸馏中的位置偏置
+   evidence：用验证器遥测增强智能体状态
+12. [RoboLineage: Agent-Native Data Lifecycle Governance Across Robot Policy Iterations](/202606/25/2606.22142v1-robolineage-agent-native-data-lifecycle-governance-across-robot-policy-iterations)  
+   标签：评分：6.0/10、query:agent
+   evidence：机器人策略的数据生命周期治理
 
 
 <div class="dpr-home-promo-card">

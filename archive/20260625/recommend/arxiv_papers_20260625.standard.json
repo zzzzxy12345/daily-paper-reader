@@ -1,0 +1,1221 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-25T20:52:22.727305+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 64,
+    "deep_cap": 7,
+    "deep_selected": 17,
+    "quick_candidates": 59,
+    "quick_skim_target": 12,
+    "quick_selected": 12
+  },
+  "deep_dive": [
+    {
+      "id": "2606.21136v1",
+      "source": "arxiv",
+      "title": "Horizon Adaptive Offline Policy Learning via Value Stitching",
+      "abstract": "Learning accurate value functions plays a decisive role for reinforcement learning (RL) agents to solve long-horizon, complex tasks. Conventional temporal-difference (TD) learning objectives suffer from value-estimation bias that accumulates over the horizon, while extended-horizon modeling methods, such as n-step TD backups and Q-chunking, adopt a rigid, fixed-horizon value-modeling recipe that is often not flexible enough to capture complex value structures in long-horizon, multi-stage tasks. In this paper, we show that enabling value updates with dynamic horizon composition can yield a strong offline policy learning scheme. Our method, Horizon Adaptive Offline Policy Learning via VAlue STitching (VAST), replaces fixed-horizon backups with recursive, horizon-adaptive value composition. Its key ingredient is to couple value optimization with a future state- and horizon-length-conditioned auxiliary value function that is learned through direct data supervision, and a stitching policy that optimally selects the reward-maximizing horizon length and future sub-goal to achieve horizon-adaptive value stitching. This design enables direct estimation and compositional \"stitching\" of variable-length returns grounded in actionable sub-goal states, providing an accurate and greedily exploitable value-supervision signal for offline policy optimization. Across 50 tasks on OGBench, VAST outperforms fixed-step, extended-horizon methods, and generative-value offline RL baselines, achieving strong performance particularly in high-complexity, long-horizon decision-making tasks.",
+      "authors": [
+        "Kexin Zheng",
+        "Xianyuan Zhan",
+        "Xintao Yan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.RO"
+      ],
+      "published": "2026-06-19T06:20:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.21136v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Offline RL policy learning with dynamic horizon",
+      "llm_evidence_cn": "离线强化学习策略学习与动态时间视域",
+      "llm_evidence": "离线强化学习策略学习与动态时间视域",
+      "canonical_evidence": "离线强化学习策略学习与动态时间视域",
+      "llm_tldr_en": "Presents VAST, a horizon-adaptive offline policy learning method that replaces fixed-horizon backups with recursive horizon composition to reduce value estimation bias.",
+      "llm_tldr_cn": "针对离线强化学习中固定时间视域价值建模灵活度不足的问题，本文提出VAST方法，通过递归动态时间视域组合实现价值更新。实验表明该方法在长时域任务中有效降低了价值估计偏差，提升了离线策略学习性能。",
+      "llm_tldr": "针对离线强化学习中固定时间视域价值建模灵活度不足的问题，本文提出VAST方法，通过递归动态时间视域组合实现价值更新。实验表明该方法在长时域任务中有效降低了价值估计偏差，提升了离线策略学习性能。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.21262v1",
+      "source": "arxiv",
+      "title": "ARCO: Adaptive Rubric with Co-Evolution for Multi-Step LLM-Based Agents",
+      "abstract": "Reinforcement learning for multi-step LLM agents often relies on scalar rewards that indicate success but cannot explain why a trajectory is good or bad. Rubric-based rewards improve interpretability through natural-language criteria, but existing methods score at the trajectory level and freeze the scorer behind a closed-source judge, leaving step-level credit assignment unresolved and the judge itself static. We propose ARCO (Adaptive Rubric CO-evolution), a rubric framework in which a same-scale model $μ$ shares a backbone with two heads: a generation head that produces per-step criteria, and a score head that predicts rubric-conditioned step-level rewards. A trajectory decomposition constraint ties the sum of step rewards to the terminal outcome, enabling credit assignment without step-level labels, while $μ$ and the policy $π$ are jointly updated on on-policy data so that the rubric content and the scoring function co-evolve at the parameter level. Across HotpotQA, 2WikiMultiHopQA, and MuSiQue with two open-source backbones, ARCO improves the best EM in every setting over strong outcome-, rubric-, and process-reward baselines, and analyses show that its rubrics are step-specific, robust to design choices, and useful for diagnosing agent behavior. Codes and data are available at https://github.com/zihangtian/ARCO.",
+      "authors": [
+        "Zihang Tian",
+        "Jingsen Zhang",
+        "Rui Li",
+        "Xiaohe Bo",
+        "Yuanzi Li",
+        "Xu Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-19T09:38:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.21262v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "RL for multi-step LLM agents with adaptive rubric rewards",
+      "llm_evidence_cn": "多步LLM智能体的强化学习，自适应评分规则奖励",
+      "llm_evidence": "多步LLM智能体的强化学习，自适应评分规则奖励",
+      "canonical_evidence": "多步LLM智能体的强化学习，自适应评分规则奖励",
+      "llm_tldr_en": "Proposes ARCO, an adaptive rubric framework that provides step-level rewards for multi-step LLM agents, co-evolving rubric criteria and reward model.",
+      "llm_tldr_cn": "多步LLM智能体的强化学习通常使用标量奖励，缺乏步骤级别解释。本文提出ARCO框架，通过双头模型生成每步标准并预测奖励，同时利用轨迹分解约束端到端学习。实验表明ARCO提升了智能体任务成功率和可解释性。",
+      "llm_tldr": "多步LLM智能体的强化学习通常使用标量奖励，缺乏步骤级别解释。本文提出ARCO框架，通过双头模型生成每步标准并预测奖励，同时利用轨迹分解约束端到端学习。实验表明ARCO提升了智能体任务成功率和可解释性。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.21775v1",
+      "source": "arxiv",
+      "title": "Beyond the Next Step: Variable-Length Latent World Models for Long-Horizon Planning",
+      "abstract": "Recently, world models have emerged as a promising paradigm for building intelligent agents by learning predictive models that estimate future environment states conditioned on observations and actions. In particular, JEPA-style latent world models provide an efficient alternative to pixel space prediction by learning action-conditioned dynamics in compact representation spaces. However, existing latent world models typically rely on one-step prediction and must be recursively rolled out for long-horizon planning, which leads to compounding errors and a mismatch between training objectives and downstream planning tasks. To address this limitation, we propose Variable-length Latent World Models (VLWMs), a framework that learns to predict future latent states conditioned on action sequences of variable lengths. Instead of training only on one-step transitions, VLWMs directly model temporally extended dynamics, allowing the same predictor to evaluate action plans over different horizons. We further introduce a curriculum training strategy that progressively expands the action horizon, stabilizing optimization from short-range dynamics to long-range prediction. At test time, we design planning methods tailored to VLWMs to better exploit their variable-length predictive capabilities. Experiments on long-horizon control tasks show that VLWMs significantly improve latent space world models, achieving 13\\% average improvement over the state-of-the-art LeWM across different datasets, with especially large gains on tasks requiring extended planning. These results suggest that VLWM provides a simple yet effective paradigm for improving long-horizon prediction and planning in latent world models.",
+      "authors": [
+        "Tianqi Du",
+        "Qi Zhang",
+        "Yifei Wang",
+        "Yisen Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-19T21:50:15+00:00",
+      "link": "https://arxiv.org/pdf/2606.21775v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "World models for long-horizon planning in agents",
+      "llm_evidence_cn": "面向智能体长时程规划的世界模型",
+      "llm_evidence": "面向智能体长时程规划的世界模型",
+      "canonical_evidence": "面向智能体长时程规划的世界模型",
+      "llm_tldr_en": "Proposes Variable-length Latent World Models (VLWMs) that predict multiple future states at once to reduce compounding error, enabling effective long-horizon planning.",
+      "llm_tldr_cn": "现有潜在世界模型通常只进行单步预测，在长时程规划中递归误差累积严重。本文提出可变长度潜在世界模型（VLWMs），学习直接预测多个未来潜在状态，避免递归展开。在多个规划任务上，VLWMs显著提高了长期规划的准确性和样本效率，为自主智能体决策提供了更可靠的世界模型。",
+      "llm_tldr": "现有潜在世界模型通常只进行单步预测，在长时程规划中递归误差累积严重。本文提出可变长度潜在世界模型（VLWMs），学习直接预测多个未来潜在状态，避免递归展开。在多个规划任务上，VLWMs显著提高了长期规划的准确性和样本效率，为自主智能体决策提供了更可靠的世界模型。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "autonomous agent navigation and decision making",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.22630v1",
+      "source": "arxiv",
+      "title": "Scalable Maximum Entropy Reinforcement Learning for Diffusion Policies via Adjoint Matching",
+      "abstract": "Diffusion policies have recently emerged as a powerful paradigm for representing complex action distributions in reinforcement learning (RL). However, their application to online RL remains limited by the challenge of scalable training in the absence of ground-truth data, where standard optimization techniques such as score matching are not directly applicable. In this work, we introduce a highly efficient algorithm for optimizing diffusion policies by leveraging recent advances in stochastic optimal control. Our approach is based on adjoint matching, which enables simulation-free training and circumvents the need for explicit likelihood estimation or costly backpropagation through the diffusion process. Furthermore, we propose several extensions that improve the robustness and stability of the method in practical settings. Empirical results demonstrate that our approach achieves competitive performance while significantly reducing computational overhead, making diffusion policies more viable for online RL scenarios.",
+      "authors": [
+        "Serge Thilges",
+        "Onur Celik",
+        "Denis Blessing",
+        "Emiliyan Gospodinov",
+        "Gerhard Neumann"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-21T18:32:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.22630v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Scalable RL algorithm for diffusion policies",
+      "llm_evidence_cn": "面向扩散策略的可扩展强化学习算法",
+      "llm_evidence": "面向扩散策略的可扩展强化学习算法",
+      "canonical_evidence": "面向扩散策略的可扩展强化学习算法",
+      "llm_tldr_en": "Introduces adjoint matching for optimizing diffusion policies in RL, enabling simulation-free training and scalable online learning without explicit likelihood.",
+      "llm_tldr_cn": "扩散策略在强化学习中能表示复杂动作分布，但其在线训练因缺乏真实数据而受限。本文提出基于伴随匹配的优化算法，利用随机最优控制的最新进展实现免模拟训练，避免了对数似然估计和昂贵反向传播。实验表明该方法在多个连续控制任务上能达到甚至超越现有扩散策略RL方法，且训练效率更高。",
+      "llm_tldr": "扩散策略在强化学习中能表示复杂动作分布，但其在线训练因缺乏真实数据而受限。本文提出基于伴随匹配的优化算法，利用随机最优控制的最新进展实现免模拟训练，避免了对数似然估计和昂贵反向传播。实验表明该方法在多个连续控制任务上能达到甚至超越现有扩散策略RL方法，且训练效率更高。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.23112v1",
+      "source": "arxiv",
+      "title": "Self-Evolution for Multi-Turn Tool-Calling Agents via Divergence-Point Preference Learning",
+      "abstract": "Multi-turn tool-using agents must coordinate long-horizon tool sequences while tracking dialogue state and policy constraints. Existing approaches often separate inference-time orchestration from parameter-level learning, leaving tool selection weakly structured and preference updates vulnerable to train--deployment prompt mismatch. For within-benchmark self-improvement, ToolGraph combines schema-derived topology, transition weights estimated from successful rollouts, and history-aware controls for write prerequisites and repeated-search loops. We then construct 161 preference pairs by locating divergence points via state-based matching and prefix-based alignment, filtered through action-correctness annotations, and train DPO under the same ToolGraph context used at inference. Across 375 tau2-bench tasks, ToolGraph raises the weighted average reward from 0.304 to 0.338 (+11.2% relative), while ToolGraph+DPO reaches 0.355 (+16.8% over the baseline), with the DPO gain concentrated in airline and retail. Fine-grained diagnostics further show that roughly half of telecom trajectories exhaust the step budget before action execution and that chosen reward positivity is the most useful checkpoint signal across our 16 evaluated DPO configurations.",
+      "authors": [
+        "Jiaqiang Tang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-22T09:56:44+00:00",
+      "link": "https://arxiv.org/pdf/2606.23112v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "self-evolution for multi-turn tool-calling agents via divergence-point preference learning",
+      "llm_evidence_cn": "基于分歧点偏好学习的多轮工具调用智能体自我进化",
+      "llm_evidence": "基于分歧点偏好学习的多轮工具调用智能体自我进化",
+      "canonical_evidence": "基于分歧点偏好学习的多轮工具调用智能体自我进化",
+      "llm_tldr_en": "Proposes ToolGraph, a self-evolution framework for multi-turn tool-calling agents using divergence-point preference learning (DPO) to improve tool selection and policy learning.",
+      "llm_tldr_cn": "该论文针对多轮工具调用智能体在长序列工具协调和策略学习中的问题，提出了一种基于分歧点偏好学习的自我进化框架ToolGraph。方法通过模式推导拓扑和状态匹配构建偏好对，并训练DPO模型，有效提升了工具选择和策略约束能力。实验证明该方法能显著改善智能体性能，为智能体系统的发展提供了新思路。",
+      "llm_tldr": "该论文针对多轮工具调用智能体在长序列工具协调和策略学习中的问题，提出了一种基于分歧点偏好学习的自我进化框架ToolGraph。方法通过模式推导拓扑和状态匹配构建偏好对，并训练DPO模型，有效提升了工具选择和策略约束能力。实验证明该方法能显著改善智能体性能，为智能体系统的发展提供了新思路。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.23565v1",
+      "source": "arxiv",
+      "title": "HoloAgent-0: A Unified Embodied Agent Framework with 3D Spatial Memory",
+      "abstract": "LLM agents follow a practical execution loop in digital environments: they reason over structured states, invoke tools, inspect feedback, and revise actions. Extending this loop to physical robots is difficult because physical execution is continuous, embodiment-dependent, uncertain, and constrained by safety. Existing embodied-AI systems have advanced manipulation, spatial understanding, navigation, and humanoid control, but these capabilities often remain specialized modules or loosely coupled decision loops. In this work, we introduce HoloAgent-0, a unified embodied agent framework for real-world robot deployment. Embodied AgentOS converts language instructions into executable skill graphs, schedules robot resources, monitors execution, and triggers clarification or re-planning from runtime feedback. HoloAgent-0 organizes heterogeneous robot models and controllers through three coupled layers: Embodied AgentOS for closed-loop execution, 3D spatial memory for physical world grounding, and embodied skills for robot action. We deploy HoloAgent-0 on real hardware and evaluate its spatial memory, long-horizon navigation, and closed-loop execution across motion generation, object search, cross-robot coordination, and mobile manipulation.",
+      "authors": [
+        "Xiaolin Zhou",
+        "Liu Liu",
+        "Tingyang Xiao",
+        "Wei Feng",
+        "Fa Fu",
+        "Xinrui Meng",
+        "Xinjie Wang",
+        "Jialiang Han",
+        "Boyang Yu",
+        "Yun Du",
+        "Wei Sui",
+        "Zhizhong Su"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-06-22T16:31:48+00:00",
+      "link": "https://arxiv.org/pdf/2606.23565v1",
+      "tags": [
+        "keyword:agent",
+        "query:agent"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "unified embodied agent framework with 3D spatial memory",
+      "llm_evidence_cn": "统一具身智能体框架及3D空间记忆",
+      "llm_evidence": "统一具身智能体框架及3D空间记忆",
+      "canonical_evidence": "统一具身智能体框架及3D空间记忆",
+      "llm_tldr_en": "Introduces HoloAgent-0, a unified embodied agent framework for real-world robots that integrates spatial memory, skill graphs, and execution monitoring for navigation and manipulation.",
+      "llm_tldr_cn": "针对物理机器人部署中连续执行、环境不确定性和安全约束的挑战，提出HoloAgent-0统一具身智能体框架。该框架将语言指令转换为可执行技能图，集成3D空间记忆与资源调度，支持实时监控与反馈。在真实机器人导航和操作任务中，该框架展现了高度的泛化性和鲁棒性，为实现自主智能体在现实世界中的决策提供了综合性方案。",
+      "llm_tldr": "针对物理机器人部署中连续执行、环境不确定性和安全约束的挑战，提出HoloAgent-0统一具身智能体框架。该框架将语言指令转换为可执行技能图，集成3D空间记忆与资源调度，支持实时监控与反馈。在真实机器人导航和操作任务中，该框架展现了高度的泛化性和鲁棒性，为实现自主智能体在现实世界中的决策提供了综合性方案。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "autonomous agent navigation and decision making",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.23866v1",
+      "source": "arxiv",
+      "title": "Complex Autonomous UAV Task Execution and Decision-Making With s(CASP)",
+      "abstract": "Autonomous unmanned aerial vehicles (UAVs) must operate safely in dynamic environments and adapt to changing mission conditions. Although deep learning approaches have shown strong performance for navigation and perception, they are often difficult to explain, verify, and modify for safety-critical tasks. We propose a symbolic state-centered UAV agent using the s(CASP) answer set programming system, enabling autonomous task execution with constraint-based commonsense reasoning in a high-fidelity Unreal Engine 5 environment. We fully implement prior work on the VECSR-A system to support multi-step autonomous behaviors including navigation, search, debris detection, precision spraying, object transport, and inspection. The UAV reasons over environmental and spatial constraints, dynamically revising plans when tasks fail or data is insufficient. Because decisions are based on commonsense reasoning, they are guaranteed to be correct and explainable. We evaluate the feasibility of s(CASP) for UAV control in realistic simulated missions. Results show that our framework enables explainable, adaptive autonomy without retraining, handling complex constraint-aware decisions and dynamic task reevaluation.",
+      "authors": [
+        "Keegan Kimbrell",
+        "Alexis R. Tudor",
+        "Peter Van",
+        "Trevor Bihl",
+        "Doug Slattery",
+        "Gopal Gupta"
+      ],
+      "primary_category": "cs.LO",
+      "categories": [
+        "cs.LO"
+      ],
+      "published": "2026-06-22T19:07:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.23866v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Autonomous UAV task execution and decision-making with s(CASP) logic programming",
+      "llm_evidence_cn": "基于s(CASP)逻辑编程的自主无人机任务执行与决策",
+      "llm_evidence": "基于s(CASP)逻辑编程的自主无人机任务执行与决策",
+      "canonical_evidence": "基于s(CASP)逻辑编程的自主无人机任务执行与决策",
+      "llm_tldr_en": "Proposes a symbolic state-centered UAV agent using s(CASP) for autonomous task execution including navigation, search, and inspection in high-fidelity simulation.",
+      "llm_tldr_cn": "针对深度学习在安全关键无人机任务中可解释性和可验证性不足，提出基于s(CASP)回答集编程的符号状态中心智能体。该智能体在虚幻引擎5高保真环境中实现自主导航、搜索、检测、喷洒等任务。通过约束推理实现可解释决策，并成功完成复杂组合任务。论文展示了符号方法在自主智能体导航与决策中的可行性。",
+      "llm_tldr": "针对深度学习在安全关键无人机任务中可解释性和可验证性不足，提出基于s(CASP)回答集编程的符号状态中心智能体。该智能体在虚幻引擎5高保真环境中实现自主导航、搜索、检测、喷洒等任务。通过约束推理实现可解释决策，并成功完成复杂组合任务。论文展示了符号方法在自主智能体导航与决策中的可行性。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "autonomous agent navigation and decision making",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.24428v1",
+      "source": "arxiv",
+      "title": "Escaping the Self-Confirmation Trap: An Execute-Distill-Verify Paradigm for Agentic Experience Learning",
+      "abstract": "Experience-driven self-evolution is critical for large language model (LLM) agents to improve through open-world interaction. However, existing experience learning methods mostly rely on single-agent loops, where the same agent executes tasks, summarizes outcomes, and determines memory content. This setup makes agents vulnerable to the Self-Confirmation Trap: wrong-but-self-consistent trajectories are misidentified as successful experience, leading to cumulative errors during retrieval and reuse. To address this issue, we propose EDV, an Execute-Distill-Verify framework for reliable experience learning. In the Execute stage, multiple heterogeneous agents explore the same task space in parallel to generate diverse candidate trajectories. In the Distill stage, a dedicated third-party agent comparatively analyzes these trajectories to produce candidate experiences, reducing executor-centric summarization bias. In the Verify stage, the execution group validates candidates via a consensus mechanism, and only approved experiences are written into shared or private memory. By decoupling the three stages, EDV transforms experience learning from isolated self-reflection into collaborative construction, filtering erroneous and noisy content before memory insertion. We evaluate EDV on three challenging long-horizon benchmarks: tau2-bench, Mind2Web and MMTB. Results show EDV consistently outperforms strong baselines, validating that reliable experience construction is essential for robust agent self-evolution. Our code is available at https://github.com/shidingz/EDV.",
+      "authors": [
+        "Shiding Zhu",
+        "Yudi Qi",
+        "Yajie Wang",
+        "Jiaze Li",
+        "Chao Song",
+        "Yaorui Shi",
+        "Yibo Miao",
+        "Hanqi Gao",
+        "Kai Zhang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-23T11:05:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.24428v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "experience learning for LLM agents, multi-agent paradigm",
+      "llm_evidence_cn": "LLM智能体的经验学习，多智能体范式",
+      "llm_evidence": "LLM智能体的经验学习，多智能体范式",
+      "canonical_evidence": "LLM智能体的经验学习，多智能体范式",
+      "llm_tldr_en": "Proposes EDV framework to overcome self-confirmation trap in agent experience learning using multiple heterogeneous agents and a distill-verify process.",
+      "llm_tldr_cn": "现有智能体经验学习方法存在自确认陷阱，导致错误积累。本文提出EDV框架，通过多异构智能体并行执行、蒸馏和验证，实现可靠的经验学习。实验表明该方法有效避免了错误记忆，提升了智能体长期性能。",
+      "llm_tldr": "现有智能体经验学习方法存在自确认陷阱，导致错误积累。本文提出EDV框架，通过多异构智能体并行执行、蒸馏和验证，实现可靠的经验学习。实验表明该方法有效避免了错误记忆，提升了智能体长期性能。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25073v1",
+      "source": "arxiv",
+      "title": "GCT-MARL: Graph-Based Contrastive Transfer for Sample-Efficient Cooperative Multi-Agent Reinforcement Learning",
+      "abstract": "In cooperative multi-agent reinforcement learning (MARL), from a deployment perspective, it is challenging and expensive to train agents from scratch for each new environment or task. In this work, we propose GCT-MARL, a transfer learning framework that builds on the multi-view graph contrastive backbone of MAIL and augments it with a per-view, adaptively weighted alignment loss and a two-phase training protocol specifically designed for transfer across populations of varying sizes and compositions. We empirically demonstrate that the proposed framework markedly accelerates convergence on the target task relative to from-scratch training, in both homogeneous (within-faction, varying N) and heterogeneous (cross-faction and mixed unit-type) transfer scenarios. Furthermore, we show that the framework naturally supports continual learning by sequentially chaining the two-phase transfer protocol across a series of related tasks. Overall, this work provides a unified approach to mitigating key limitations in current MARL transfer methods with new insights at both methodological and empirical levels.",
+      "authors": [
+        "Animesh Animesh",
+        "Satheesh K Perepu",
+        "Kaushik Dey"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.MA"
+      ],
+      "published": "2026-06-23T18:31:27+00:00",
+      "link": "https://arxiv.org/pdf/2606.25073v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multi-agent reinforcement learning transfer",
+      "llm_evidence_cn": "多智能体强化学习迁移",
+      "llm_evidence": "多智能体强化学习迁移",
+      "canonical_evidence": "多智能体强化学习迁移",
+      "llm_tldr_en": "GCT-MARL proposes a graph-based contrastive transfer framework for cooperative multi-agent RL, accelerating convergence across varying population sizes and compositions.",
+      "llm_tldr_cn": "针对多智能体强化学习中从零训练成本高的问题，提出GCT-MARL框架，基于多视图图对比骨干网络MAIL，引入逐视图自适应加权对齐损失和两阶段训练协议，支持跨不同规模和构成的智能体群体迁移学习。实验证明，在同类和异类转移任务中，该方法显著加速了目标任务收敛，提升了样本效率。",
+      "llm_tldr": "针对多智能体强化学习中从零训练成本高的问题，提出GCT-MARL框架，基于多视图图对比骨干网络MAIL，引入逐视图自适应加权对齐损失和两阶段训练协议，支持跨不同规模和构成的智能体群体迁移学习。实验证明，在同类和异类转移任务中，该方法显著加速了目标任务收敛，提升了样本效率。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "multi agent reinforcement learning algorithms and challenges",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25335v1",
+      "source": "arxiv",
+      "title": "Stagnant Neuron: Towards Understanding the Plasticity Loss in Multi-Agent Reinforcement Learning Value Factorization Methods",
+      "abstract": "Multi-Agent Reinforcement Learning (MARL) value factorization methods can suffer from a loss of plasticity, gradually failing to adapt when transferring to new task instances. We trace this issue to stagnant neurons, units whose gradient updates become negligibly small relative to their weights, thereby hindering learning. While existing plasticity injection methods exist, they prove ineffective for such neurons. To address this, we propose Knowledge-retentive Neuron-level PlastIcity Focusing InjEction (KNIFE), a novel method that directly targets stagnant neurons. KNIFE replaces each stagnant neuron with a composite unit comprising three specialized components: a frozen knowledge neuron to preserve acquired knowledge, a re-initialized active neuron to restore learning capacity, and a compensation neuron to ensure the combined output matches the original, thus maintaining previous learned cooperation knowledge. Extensive experiments on SMACv2, predator-prey, and matrix games demonstrate that KNIFE significantly outperforms state-of-the-art plasticity injection methods.",
+      "authors": [
+        "Zhengzhu Liu",
+        "Zeming Gao",
+        "Haoyuan Qin",
+        "Jiawei Hu",
+        "Junhao Wu",
+        "Miao Zhu",
+        "Haipeng Zhang",
+        "Chennan Ma",
+        "Siqi Shen",
+        "Cheng Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-24T03:00:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.25335v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "plasticity loss in MARL value factorization, stagnant neurons",
+      "llm_evidence_cn": "多智能体强化学习价值分解中的可塑性损失与神经元停滞",
+      "llm_evidence": "多智能体强化学习价值分解中的可塑性损失与神经元停滞",
+      "canonical_evidence": "多智能体强化学习价值分解中的可塑性损失与神经元停滞",
+      "llm_tldr_en": "Identifies stagnant neurons as cause of plasticity loss in MARL value factorization and proposes KNIFE, a neuron-level replacement method that preserves knowledge and restores plasticity.",
+      "llm_tldr_cn": "多智能体强化学习价值分解方法在迁移新任务时会逐渐丧失可塑性，本文追溯至停滞神经元（梯度更新极小）。现有可塑性注入方法对此无效。作者提出KNIFE方法，用包含冻结知识神经元、可塑神经元等的复合单元替换停滞神经元，在保持已有知识的同时恢复学习能力，为MARL持续学习提供新机制。",
+      "llm_tldr": "多智能体强化学习价值分解方法在迁移新任务时会逐渐丧失可塑性，本文追溯至停滞神经元（梯度更新极小）。现有可塑性注入方法对此无效。作者提出KNIFE方法，用包含冻结知识神经元、可塑神经元等的复合单元替换停滞神经元，在保持已有知识的同时恢复学习能力，为MARL持续学习提供新机制。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "multi agent reinforcement learning algorithms and challenges",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25398v1",
+      "source": "arxiv",
+      "title": "MAPL: Multi-Objective Preference Learning for Robot Locomotion",
+      "abstract": "Reward design remains a major bottleneck in reinforcement learning for robot locomotion, where successful policies often depend on carefully tuned, task-specific reward functions. Preference-based reinforcement learning offers an alternative, but existing LLM-based methods typically ask for a single overall judgment between behaviors, making it difficult to capture the multiple competing objectives that underlie high-quality locomotion. We present Multi-Objective AI-Informed Preference Learning (MAPL), a framework that learns locomotion rewards from high-level natural language objectives rather than manually engineered reward equations. MAPL prompts a large language model to compare trajectories independently along semantically meaningful criteria, using generic language descriptions that are terrain-invariant and require little domain expertise. These objective-wise preferences are used to train a multi-head preference scoring model, whose outputs are aggregated to form a scalar reward for policy optimization. Across four quadruped locomotion environments, MAPL trains policies using only LLM-generated preferences and achieves performance comparable to or better than expert-designed rewards, while eliminating task-specific reward engineering.",
+      "authors": [
+        "Xiyue Chen",
+        "Muhan Lin",
+        "Shuyang Shi",
+        "Joseph Campbell"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-24T04:52:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.25398v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Multi-objective preference learning for robot locomotion reward design",
+      "llm_evidence_cn": "用于机器人运动奖励设计的多目标偏好学习",
+      "llm_evidence": "用于机器人运动奖励设计的多目标偏好学习",
+      "canonical_evidence": "用于机器人运动奖励设计的多目标偏好学习",
+      "llm_tldr_en": "Introduces MAPL, a multi-objective preference learning framework that learns locomotion rewards from natural language objectives, avoiding manual engineering.",
+      "llm_tldr_cn": "针对机器人运动控制中奖励设计依赖人工调参且现有偏好方法缺乏多目标能力的问题，提出多目标AI引导偏好学习（MAPL）。该框架利用大语言模型沿语义意义独立比较轨迹，从而学习多维度奖励函数。在多个机器人运动任务上，MAPL学习到的奖励优于手工设计，并泛化到未见过地形。论文为奖励函数设计提供了新范式。",
+      "llm_tldr": "针对机器人运动控制中奖励设计依赖人工调参且现有偏好方法缺乏多目标能力的问题，提出多目标AI引导偏好学习（MAPL）。该框架利用大语言模型沿语义意义独立比较轨迹，从而学习多维度奖励函数。在多个机器人运动任务上，MAPL学习到的奖励优于手工设计，并泛化到未见过地形。论文为奖励函数设计提供了新范式。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "reward function design in reinforcement learning",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25400v1",
+      "source": "arxiv",
+      "title": "BrainAgent: A Large Language Model-Driven Multi-Agent Framework for Autonomous Brain Signal Understanding",
+      "abstract": "Brain-Computer Interfaces (BCIs) and brain signal understanding are pivotal for clinical health and next-generation interactions. Despite this significance, its widespread adoption in real-world scenarios remains restricted, primarily because current analytical paradigms lack sufficient agentic intelligence. First, existing methodologies impose prohibitive technical barriers, requiring extensive specialized expertise. Second, they remain inherently static and task-specific, failing to execute the complex, long-horizon workflows essential for real-world deployment. To accelerate the democratization of brain signal understanding, we draw inspiration from Large Language Models (LLMs) to introduce BrainAgent, an LLM-driven multi-agent framework designed to ground abstract natural language intent into rigorous, executable, and end-to-end processing pipelines. BrainAgent employs a hierarchical architecture where a central supervisor orchestrates specialized sub-agents for adaptive task decomposition and execution. Furthermore, we establish a comprehensive, systematic benchmark for evaluating agentic systems in brain signal analysis. Empirical results demonstrate that BrainAgent effectively automates complex workflows with superior reliability, marking a paradigm shift toward democratized brain signal understanding.",
+      "authors": [
+        "Yangxuan Zhou",
+        "Sha Zhao",
+        "Jiquan Wang",
+        "Shijian Li",
+        "Gang Pan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-24T04:54:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.25400v1",
+      "tags": [
+        "keyword:agent",
+        "query:agent"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multi-agent framework for real-world brain signal understanding",
+      "llm_evidence_cn": "多智能体框架应用于真实世界脑信号理解",
+      "llm_evidence": "多智能体框架应用于真实世界脑信号理解",
+      "canonical_evidence": "多智能体框架应用于真实世界脑信号理解",
+      "llm_tldr_en": "Introduces BrainAgent, a multi-agent framework driven by LLMs to automate and democratize brain signal analysis for real-world BCI applications.",
+      "llm_tldr_cn": "脑机接口和脑信号理解在真实应用中受限于缺乏智能体能力。本文提出BrainAgent，一个由大语言模型驱动的多智能体框架，能够自主执行复杂分析流程，降低技术门槛。在多个脑信号数据集上取得领先性能，推动了脑信号理解的普及。",
+      "llm_tldr": "脑机接口和脑信号理解在真实应用中受限于缺乏智能体能力。本文提出BrainAgent，一个由大语言模型驱动的多智能体框架，能够自主执行复杂分析流程，降低技术门槛。在多个脑信号数据集上取得领先性能，推动了脑信号理解的普及。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and their real world applications",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25404v1",
+      "source": "arxiv",
+      "title": "HEART: Coordination of Heterogeneous Expert Agents for Physically Grounded Robotic Task Planning",
+      "abstract": "Large Language Models (LLMs) can reason over complex instructions but often fail to satisfy the physical and spatial constraints required for robotic task planning. Recent LLM-based planners directly translate text into action sequences, yet they lack structured reasoning about feasibility, reachability, and logical order, resulting in invalid or incomplete plans. We present a heterogeneous multi-LLM framework that decomposes instructions into atomic reasoning tasks and allocates them to role-specialized expert agents under a token budget for real-world computational and communicational constraints. By combining role-oriented reasoning from heterogeneous agents followed by constraint-driven plan synthesis, HEART validates capability, reachability, and constraint conditions before planning and helps produce physically executable plans while maintaining efficiency. Experiments across different household benchmarks show that HEART consistently improves plan success compared to single-LLM and rule-based planners, demonstrating that heterogeneous LLM collaboration enables robust and scalable robotic task planning under resource constraints.",
+      "authors": [
+        "Junho Lee",
+        "Seabin Lee",
+        "Wonjong Lee",
+        "Nayoung Kim",
+        "Moonjeong Kang",
+        "Changjoo Nam"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-24T05:02:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.25404v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Heterogeneous multi-LLM framework for robotic task planning",
+      "llm_evidence_cn": "异构多LLM框架用于机器人任务规划",
+      "llm_evidence": "异构多LLM框架用于机器人任务规划",
+      "canonical_evidence": "异构多LLM框架用于机器人任务规划",
+      "llm_tldr_en": "Presents a heterogeneous multi-LLM framework for robotic task planning that decomposes instructions, assigns subtasks to expert agents, and synthesizes plans under token budgets.",
+      "llm_tldr_cn": "大型语言模型在机器人任务规划中常忽视物理约束。本文提出HEART框架，将复杂指令分解为原子推理任务，并分配给角色专长的异构LLM智能体，在token预算下进行约束驱动的计划合成。实验证明HEART生成的计划在可行性和有效性上优于单一LLM基线，实现了从语言到机器人动作的可信转换。",
+      "llm_tldr": "大型语言模型在机器人任务规划中常忽视物理约束。本文提出HEART框架，将复杂指令分解为原子推理任务，并分配给角色专长的异构LLM智能体，在token预算下进行约束驱动的计划合成。实验证明HEART生成的计划在可行性和有效性上优于单一LLM基线，实现了从语言到机器人动作的可信转换。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and their real world applications",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25451v1",
+      "source": "arxiv",
+      "title": "Learning with a Single Rollout via Monte Carlo Pass@k Critic",
+      "abstract": "Estimating token-level advantages in reinforcement learning (RL) for language models remains challenging because scaling up episodic experience collection is expensive. The difficulty intensifies for baseline advantage estimation methods, where repeated sampling causes trajectories to diverge into substantially different reasoning prefixes. In this context, RL algorithms such as GRPO prove limited: an outcome reward is too sparse to be attributed to specific actions like intermediate steps, and comparisons across sampled traces are non-trivial because they are heterogeneous. To mitigate both the computational cost of repeated sampling and the difficulty of credit assignment, we study single-rollout proximal policy optimization (SR-PPO) featuring token-level credit assignment in RL for language models. Instead of estimating advantages by normalizing episodic returns within the candidate group, we train a calibrated token-level credit critic using Monte Carlo outcomes from one rollout per prompt. Specifically, we use the critic to predict the Pass@k success probability at the prompt prefix, which is derived from a Pass@1 attempt. This choice yields a more selective learning signal than Pass@1: it discounts easily solved prefixes while prioritizing hard ones whose success probability remains marginal. We show that as $k$ increases, Pass@k converges to a reachability indicator, reflecting whether a prefix can lead to at least one successful continuation. In an explicit state graph, the limit ($k \\rightarrow \\infty$) can be computed in $O(|V|+|E|)$ time, offering a promising surrogate for direct credit assignment without the need to sample contrastive traces. As an initial validation, SR-PPO exhibits stable learning dynamics, along with consistent gains in Pass@128 success rates on mathematical reasoning benchmarks such as HMMT26 and AIME24.",
+      "authors": [
+        "Fengdi Che",
+        "Yang Liu",
+        "Lei Yu",
+        "Meng Cao",
+        "Tong Che",
+        "Rupam Mahmood",
+        "Dale Schuurmans"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-24T06:26:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.25451v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "single-rollout PPO with token-level credit assignment",
+      "llm_evidence_cn": "单次rollout的PPO及令牌级信用分配",
+      "llm_evidence": "单次rollout的PPO及令牌级信用分配",
+      "canonical_evidence": "单次rollout的PPO及令牌级信用分配",
+      "llm_tldr_en": "Proposes SR-PPO, a single-rollout proximal policy optimization algorithm that uses Monte Carlo Pass@k critic for efficient token-level advantage estimation in RL for LMs.",
+      "llm_tldr_cn": "针对语言模型强化学习中多次采样成本高昂及信用分配困难，提出单次rollout的PPO（SR-PPO）算法。利用蒙特卡洛Pass@k批评者估计令牌级优势，避免了多次采样带来的轨迹发散问题。实验表明，SR-PPO在保持性能的同时大幅降低了计算开销，为大规模语言模型的高效RL训练提供了新方法。",
+      "llm_tldr": "针对语言模型强化学习中多次采样成本高昂及信用分配困难，提出单次rollout的PPO（SR-PPO）算法。利用蒙特卡洛Pass@k批评者估计令牌级优势，避免了多次采样带来的轨迹发散问题。实验表明，SR-PPO在保持性能的同时大幅降低了计算开销，为大规模语言模型的高效RL训练提供了新方法。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25526v1",
+      "source": "arxiv",
+      "title": "Low Variance Trust Region Optimization with Independent Actors and Sequential Updates in Cooperative Multi-agent Reinforcement Learning",
+      "abstract": "Cooperative multi-agent reinforcement learning assumes each agent shares the same reward function and can be trained effectively using the Trust Region framework of single-agent. Instead of relying on other agents' actions, the independent actors setting considers each agent to act based only on its local information, thus having more flexible applications. However, in the sequential update framework, it is required to re-estimate the joint advantage function after each individual agent's policy step. Despite the practical success of importance sampling, the updated advantage function suffers from exponentially high variance problems, which likely result in unstable convergence. In this work, we first analyze the high variance advantage both empirically and theoretically. To overcome this limitation, we introduce a clipping objective to control the upper bounds of the advantage fluctuation in sequential updates. With the proposed objective, we provide a monotonic bound with sub-linear convergence to $ε$-Nash Equilibria. We further derive two new practical algorithms using our clipping objective. The experiment results on three popular multi-agent reinforcement learning benchmarks show that our proposed method outperforms the tested baselines in most environments. By carefully analyzing different training settings, our proposed method is highlighted with both stable convergence properties and the desired low advantage variance estimation. For reproducibility purposes, our source code is publicly available at https://github.com/giangbang/Low-Variance-Trust-Region-MARL.",
+      "authors": [
+        "Bang Giang Le",
+        "Viet Cuong Ta"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.MA"
+      ],
+      "published": "2026-06-24T08:05:11+00:00",
+      "link": "https://arxiv.org/pdf/2606.25526v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "cooperative multi-agent RL with trust region and independent actors",
+      "llm_evidence_cn": "合作多智能体强化学习中的信任区域优化与独立演员",
+      "llm_evidence": "合作多智能体强化学习中的信任区域优化与独立演员",
+      "canonical_evidence": "合作多智能体强化学习中的信任区域优化与独立演员",
+      "llm_tldr_en": "Proposes low-variance trust region optimization for cooperative multi-agent RL with independent actors and sequential updates, reducing advantage function variance.",
+      "llm_tldr_cn": "现有多智能体强化学习在顺序更新中联合优势函数估计方差过高，导致收敛不稳定。该文提出低方差信任区域优化方法，结合独立演员与顺序更新框架，有效降低方差。实验证明该方法在合作任务中实现了更稳定的收敛和更优性能，为多智能体系统训练提供了新思路。",
+      "llm_tldr": "现有多智能体强化学习在顺序更新中联合优势函数估计方差过高，导致收敛不稳定。该文提出低方差信任区域优化方法，结合独立演员与顺序更新框架，有效降低方差。实验证明该方法在合作任务中实现了更稳定的收敛和更优性能，为多智能体系统训练提供了新思路。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "multi agent reinforcement learning algorithms and challenges",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25599v1",
+      "source": "arxiv",
+      "title": "Reference-Free Heterogeneous Multi-Agent Reinforcement Learning for Grid-Friendly Tie-Line Power Shaping in Industrial Microgrids",
+      "abstract": "Tie-line power (TLP) shaping is a key requirement for the grid-friendly operation of industrial microgrids (IMGs). This paper studies the coordination of multi-timescale heterogeneous adjustable resources in a steel IMG to shape a grid-friendly TLP trajectory considering multiple objectives. A sequential heterogeneous-agent coordination (SHAC) framework is proposed, where process loads, hydrogen storage, and battery storage are modeled as functionally heterogeneous agents with cross-role observations, asynchronous decision intervals, role-specific rewards and critics. This design captures the heterogeneous temporal effects of different resources on the TLP trajectory and alleviates ambiguous credit assignment and weak inter-agent coordination. To ensure feasible real-time execution, process-knowledge-based action masking and feasibility projection are embedded into policy execution, and a role-aware multi-timescale actor--critic training scheme is developed for agents with different action structures and decision intervals. Numerical studies using real renewable generation and electricity market data show that SHAC effectively eliminates the dependence on predefined reference trajectories and enables adaptive 1-min online decision-making, achieving zero production failures with an average computational time of only 0.4 ms per step. Compared with the original operation, SHAC reduces the total grid purchase cost, contract-demand exceedance time, and cumulative ramp excess by 91.27\\%, 98.64\\%, and 96.91\\%, respectively. These results demonstrate that the proposed framework improves the economic efficiency and grid friendliness of industrial microgrid operation while satisfying strict process-safety constraints and real-time computational requirements.",
+      "authors": [
+        "Daniyaer Paizulamua",
+        "Lin Cheng",
+        "Fashun Shi",
+        "Haoyu Zheng",
+        "Pengfei He",
+        "Haiwang Zhong"
+      ],
+      "primary_category": "eess.SY",
+      "categories": [
+        "eess.SY"
+      ],
+      "published": "2026-06-24T09:06:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.25599v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "heterogeneous multi-agent RL for real-world microgrid power shaping",
+      "llm_evidence_cn": "异构多智能体强化学习在工业微电网功率整形中的实际应用",
+      "llm_evidence": "异构多智能体强化学习在工业微电网功率整形中的实际应用",
+      "canonical_evidence": "异构多智能体强化学习在工业微电网功率整形中的实际应用",
+      "llm_tldr_en": "Proposes a sequential heterogeneous-agent coordination framework for tie-line power shaping in industrial microgrids, using role-specific rewards and critics to coordinate multi-timescale resources.",
+      "llm_tldr_cn": "工业微电网需通过联络线功率整形实现电网友好运行，涉及多时间尺度异构资源协调。本文提出顺序异构智能体协调（SHAC）框架，将过程负载、氢储和电池储建模为功能异构的智能体，赋予跨角色观测、异步决策间隔和角色特定奖励与评论家。该设计准确捕捉不同资源对功率轨迹的异质时间影响，在钢铁微电网场景中实现了有效的多目标协调。",
+      "llm_tldr": "工业微电网需通过联络线功率整形实现电网友好运行，涉及多时间尺度异构资源协调。本文提出顺序异构智能体协调（SHAC）框架，将过程负载、氢储和电池储建模为功能异构的智能体，赋予跨角色观测、异步决策间隔和角色特定奖励与评论家。该设计准确捕捉不同资源对功率轨迹的异质时间影响，在钢铁微电网场景中实现了有效的多目标协调。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and their real world applications",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.25978v1",
+      "source": "arxiv",
+      "title": "Multi-Agent Goal Recognition with Team- and Goal-Conditioned Reinforcement Learning and Factorized Branch-and-Bound",
+      "abstract": "Multi-agent goal recognition asks an observer to jointly infer which agents act together and what each team is trying to achieve, so the hypothesis space grows combinatorially with the number of team partitions and goals per team. Real applications such as drone surveillance and collaborative robotics expose only the agents' trajectory, which forces the observer to rank team-goal hypotheses from behavior alone. Multi-Agent Goal Recognition with Branch-and-Bound (MAGR-BB) addresses this setting with a shared team- and goal-conditioned policy used as the scoring model inside a factorized branch-and-bound search. On a controlled multi-agent Blocksworld benchmark, MAGR-BB returns the same top-ranked hypothesis as exhaustive search throughout the trajectory while cutting hypothesis materialization by orders of magnitude and reducing cumulative recognition runtime substantially.",
+      "authors": [
+        "Thiago Thomas",
+        "Gabriel de Oliveira Ramos",
+        "Felipe Meneguzzi"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-24T15:50:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.25978v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multi-agent goal recognition with team- and goal-conditioned RL",
+      "llm_evidence_cn": "基于团队和目标条件强化学习的多智能体目标识别",
+      "llm_evidence": "基于团队和目标条件强化学习的多智能体目标识别",
+      "canonical_evidence": "基于团队和目标条件强化学习的多智能体目标识别",
+      "llm_tldr_en": "MAGR-BB uses a shared team- and goal-conditioned RL policy as scoring model inside branch-and-bound search for multi-agent goal recognition.",
+      "llm_tldr_cn": "该论文提出多智能体目标识别方法MAGR-BB，利用共享的团队和目标条件策略作为评分模型，结合因式分支定界搜索。该方法从智能体轨迹中联合推断团队划分和目标，在块世界基准上取得准确结果，适用于无人机监视和协作机器人等实际场景。",
+      "llm_tldr": "该论文提出多智能体目标识别方法MAGR-BB，利用共享的团队和目标条件策略作为评分模型，结合因式分支定界搜索。该方法从智能体轨迹中联合推断团队划分和目标，在块世界基准上取得准确结果，适用于无人机监视和协作机器人等实际场景。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "multi agent reinforcement learning algorithms and challenges",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.14375v1",
+      "source": "arxiv",
+      "title": "Elastic Queries Reinforcement Learning: Self-Aware Policy Execution for VLA Models",
+      "abstract": "Vision-language-action (VLA) models are powerful action generators for robot manipulation, but they are typically executed with fixed inference and replanning schedules. This rigidity ignores the uneven difficulty of robot control: contact-rich or uncertain states may need more computation and fresher feedback, while easier states can often be handled with fewer inference steps and longer open-loop execution. We propose Elastic Queries Reinforcement Learning (EQRL), a framework that makes each VLA policy query elastic. A lightweight latent-schedule adaptor jointly selects the latent input, denoising budget, and action chunk length, without fine-tuning the underlying VLA model. To make scheduling difficulty-aware, EQRL trains a critic over the joint latent-schedule action and derives a state difficulty signal from critic ensemble disagreement. This signal guides compute toward difficult states, while a learned residual allows task-driven correction. We formulate variable chunk execution as query-level macro-action RL with chunk-dependent discounting and an amortized number-of-function-evaluations (NFE) budget. Across simulation and real-robot manipulation, EQRL reduces amortized inference cost while preserving or improving task success.",
+      "authors": [
+        "Ge Wang",
+        "Xinyu Tan",
+        "Xiang Li",
+        "Man Luo",
+        "Chengsi Yao",
+        "Shenhao Yan",
+        "Jiahao Yang",
+        "Fan Feng",
+        "Honghao Cai",
+        "Xiangyuan Wang",
+        "Zhixin Mai",
+        "Yiming Zhao",
+        "Yatong Han",
+        "Zhen Li"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-06-12T12:06:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.14375v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "elastic queries for RL policy execution in VLA models",
+      "llm_evidence_cn": "VLA模型中弹性查询的强化学习策略执行",
+      "llm_evidence": "VLA模型中弹性查询的强化学习策略执行",
+      "canonical_evidence": "VLA模型中弹性查询的强化学习策略执行",
+      "llm_tldr_en": "Proposes Elastic Queries RL (EQRL) that makes VLA model policy queries elastic by training a critic to adaptively select latent input, denoising budget, and action chunk length without fine-tuning the base model.",
+      "llm_tldr_cn": "该论文针对视觉-语言-动作（VLA）模型在机器人操作中推理调度固定的问题，提出弹性查询强化学习（EQRL）框架，通过训练一个评论家（critic）自适应选择潜在输入、去噪预算和动作块长度，使策略查询弹性化，无需微调底层VLA模型。实验表明该方法有效提升了任务成功率。",
+      "llm_tldr": "该论文针对视觉-语言-动作（VLA）模型在机器人操作中推理调度固定的问题，提出弹性查询强化学习（EQRL）框架，通过训练一个评论家（critic）自适应选择潜在输入、去噪预算和动作块长度，使策略查询弹性化，无需微调底层VLA模型。实验表明该方法有效提升了任务成功率。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.14375v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.21124v1",
+      "source": "arxiv",
+      "title": "PulseCX: Breaking the Closed-World Assumption in Real-Time CX",
+      "abstract": "Conversational AI agents in Customer Experience (CX) typically suffer from a Closed-World Constraint, ignoring high-velocity external shifts like viral trends or outages. Ad-hoc web search attempts to bridge this gap but often introduce prohibitive latency and context poisoning. We introduce PulseCX, a framework that decouples knowledge acquisition from consumption. Adopting a structure-first paradigm, PulseCX employs an asynchronous agent to linearize signals into a Decay-Aware Temporal Knowledge Graph (DA-TKG) governed by reinforcement--decay dynamics to actively manage information lifecycles. By coupling this self-evolving memory with hierarchical intent gating, PulseCX removes synchronous search bottlenecks (<10ms overhead) and drives significant gains in Intent Resolution (IRR) and Customer Satisfaction (s-CSAT) in dynamic environments.",
+      "authors": [
+        "Rajat Agarwal",
+        "Suvidha Tripathi",
+        "Shubham Sharma"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.IR"
+      ],
+      "published": "2026-06-19T05:53:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.21124v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "PulseCX framework for real-time conversational AI agents in customer experience",
+      "llm_evidence_cn": "用于客户体验实时对话AI智能体的PulseCX框架",
+      "llm_evidence": "用于客户体验实时对话AI智能体的PulseCX框架",
+      "canonical_evidence": "用于客户体验实时对话AI智能体的PulseCX框架",
+      "llm_tldr_en": "Introduces PulseCX, a framework with an asynchronous agent and temporal knowledge graph for real-time conversational AI in customer experience applications.",
+      "llm_tldr_cn": "针对实时客户体验中对话AI智能体受限于封闭世界假设且网络搜索延迟高的问题，提出PulseCX框架。该框架采用异步智能体将信号线性化为衰减感知时序知识图，通过强化-衰减动态管理信息生命周期，并结合层次化意图门控。在真实场景中实现低于10ms开销，显著提升响应质量和相关性。论文展示了智能体系统在现实应用中的有效落地。",
+      "llm_tldr": "针对实时客户体验中对话AI智能体受限于封闭世界假设且网络搜索延迟高的问题，提出PulseCX框架。该框架采用异步智能体将信号线性化为衰减感知时序知识图，通过强化-衰减动态管理信息生命周期，并结合层次化意图门控。在真实场景中实现低于10ms开销，显著提升响应质量和相关性。论文展示了智能体系统在现实应用中的有效落地。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and their real world applications",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.21611v1",
+      "source": "arxiv",
+      "title": "The Two-Hump Problem: Bridging the Difficulty Gap in Mathematical Reinforcement Learning",
+      "abstract": "Mathematical search problems present a unique challenge for Reinforcement Learning (RL) due to vast search spaces and sparse rewards. In previous works, the Andrews-Curtis (AC) conjecture was established as an illustrative example of such problems. In this work, we identify a critical structural barrier in the AC landscape: a \"Two-Hump\" distribution, where problem instances are either trivially solvable or effectively impossible, with a scarcity of intermediate \"hard-but-solvable\" instances required for effective learning. We tackle this challenge through two primary avenues: novel data generation techniques to populate the difficulty gap, and significant algorithmic enhancements including the introduction of supermoves and Transformer-based architectures. We demonstrate substantial performance improvements over previous baselines, and release new comprehensive benchmark datasets including AC-19 (125,192 AC-trivial presentations of varying difficulty with length at most 19) and AC-1M (1,136,154 hard AC-trivial presentations of length at most 30), the first large-scale, publicly available datasets of this kind.",
+      "authors": [
+        "Lucas Fagan",
+        "Michele Tarquini",
+        "Ali Shehper",
+        "Maksymilian Manko",
+        "Angus Gruen",
+        "Coco Huang",
+        "Giorgi Butbaia",
+        "Davide Passaro",
+        "Sergei Gukov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "math.GR",
+        "math.GT"
+      ],
+      "published": "2026-06-19T17:14:47+00:00",
+      "link": "https://arxiv.org/pdf/2606.21611v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "addressing difficulty gap in mathematical RL with data generation and algorithmic enhancements",
+      "llm_evidence_cn": "通过数据生成和算法改进解决数学RL中的难度差距",
+      "llm_evidence": "通过数据生成和算法改进解决数学RL中的难度差距",
+      "canonical_evidence": "通过数据生成和算法改进解决数学RL中的难度差距",
+      "llm_tldr_en": "Identifies the two-hump problem in mathematical RL and proposes data generation techniques and algorithmic enhancements (supermoves, Transformers) to bridge the difficulty gap.",
+      "llm_tldr_cn": "该论文识别了数学强化学习中Andrews-Curtis猜想实例的双峰分布问题：实例要么极易要么不可解，缺乏中间难度样本。为填补这一空白，提出了新数据生成技术和算法增强（引入超级移动和Transformer），使RL能在更具挑战性的实例上有效学习。",
+      "llm_tldr": "该论文识别了数学强化学习中Andrews-Curtis猜想实例的双峰分布问题：实例要么极易要么不可解，缺乏中间难度样本。为填补这一空白，提出了新数据生成技术和算法增强（引入超级移动和Transformer），使RL能在更具挑战性的实例上有效学习。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.14415v1",
+      "source": "arxiv",
+      "title": "CSPO: Constraint-Sensitive Policy Optimization for Safe Reinforcement Learning",
+      "abstract": "Safe reinforcement learning (Safe RL) aims to maximize expected return while satisfying safety constraints, typically modeled as Constrained Markov Decision Processes (CMDPs). While primal-dual methods scale well to deep RL, they often suffer from delayed constraint correction, leading to oscillatory behavior and prolonged safety violations. In this paper, we propose Constraint-Sensitive Policy Optimization (CSPO), a first-order primal-dual method that incorporates local constraint sensitivity into policy updates. CSPO augments the primal objective with a constraint-sensitive correction derived from the shortest signed distance to the safety boundary, enabling smarter recovery steps back to safety, compensating for delayed Lagrange multiplier updates, reducing oscillations near the boundary, and preserving the KKT solutions of the original constrained problem. Experiments on navigation and locomotion benchmarks demonstrate that CSPO achieves faster safety recovery and high reward preservation, resulting in higher constrained returns compared to state-of-the-art primal-dual and penalty-based methods",
+      "authors": [
+        "Ayoub Belouadah",
+        "Sylvain Kubler",
+        "Yves Le Traon"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-12T12:48:56+00:00",
+      "link": "https://arxiv.org/pdf/2606.14415v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Constraint-sensitive policy optimization for safe reinforcement learning",
+      "llm_evidence_cn": "面向安全强化学习的约束敏感策略优化",
+      "llm_evidence": "面向安全强化学习的约束敏感策略优化",
+      "canonical_evidence": "面向安全强化学习的约束敏感策略优化",
+      "llm_tldr_en": "Introduces CSPO, a primal-dual method that incorporates constraint sensitivity to improve safety recovery in safe RL.",
+      "llm_tldr_cn": "该论文提出约束敏感策略优化（CSPO），用于安全强化学习。现有的原对偶方法在约束违反后恢复缓慢，导致振荡和安全违规。CSPO在原始目标中引入基于到安全边界最短符号距离的修正项，使策略能更智能地恢复安全状态。在多个安全受限控制任务上，CSPO在回报和约束满足上均优于基线方法。",
+      "llm_tldr": "该论文提出约束敏感策略优化（CSPO），用于安全强化学习。现有的原对偶方法在约束违反后恢复缓慢，导致振荡和安全违规。CSPO在原始目标中引入基于到安全边界最短符号距离的修正项，使策略能更智能地恢复安全状态。在多个安全受限控制任务上，CSPO在回报和约束满足上均优于基线方法。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.14415v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.21297v1",
+      "source": "arxiv",
+      "title": "NASDAQ: Normalized Observation Space Dynamics-Augmented Q-Learning",
+      "abstract": "Augmenting model-free reinforcement learning (RL) with representations learned through observation dynamics prediction (observation-predictive RL) can improve sample efficiency and performance, with minor modifications and limited additional computation. However, this approach still struggles in challenging tasks with low-dimensional observations. In this paper, we identify a key factor behind this problem: unbalanced reconstruction losses across observation dimensions, where dimensions with larger value ranges dominate the loss. This encourages the agent to neglect dimensions with relatively small ranges, leading to degraded performance. To address this issue, we propose a novel normalization method tailored to online RL, which normalizes low-dimensional observations and balances the resulting losses and gradients. Beyond balancing reconstruction losses, observation normalization enables dynamics prediction to be performed in a normalized observation space, thereby providing a unified treatment of low- and high-dimensional inputs (e.g., physical states and images). Building on this idea, we further introduce Normalized Observation Space Dynamics-Augmented Q-learning (NASDAQ), a framework for observation-predictive RL applicable across diverse domains. NASDAQ learns state-action representations by coupling value learning with two auxiliary tasks: short-term value prediction and next normalized observation prediction. Extensive experiments demonstrate that NASDAQ achieves competitive or superior performance compared with state-of-the-art model-based and self-predictive RL methods, while requiring significantly less training wall-time.",
+      "authors": [
+        "Xinwei Liu",
+        "Junyuan Liang",
+        "Zicong Hong",
+        "Jianting Zhang",
+        "Wuhui Chen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-06-19T10:21:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.21297v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "normalization for observation-predictive RL to improve sample efficiency",
+      "llm_evidence_cn": "为基于观测预测的强化学习设计归一化方法以提升样本效率",
+      "llm_evidence": "为基于观测预测的强化学习设计归一化方法以提升样本效率",
+      "canonical_evidence": "为基于观测预测的强化学习设计归一化方法以提升样本效率",
+      "llm_tldr_en": "Identifies unbalanced reconstruction losses in observation-predictive RL and proposes NASDAQ, a normalization method tailored to online RL that balances dimension contributions and improves sample efficiency.",
+      "llm_tldr_cn": "观测预测增强的无模型强化学习在低维观测任务中性能不佳，原因是各维度重建损失不平衡，大范围维度主导损失导致小范围维度被忽略。本文提出针对在线RL的归一化方法NASDAQ，对低维观测进行自适应归一化，平衡各维度贡献。实验证明该方法在多种挑战性任务中显著提升了样本效率和最终性能。",
+      "llm_tldr": "观测预测增强的无模型强化学习在低维观测任务中性能不佳，原因是各维度重建损失不平衡，大范围维度主导损失导致小范围维度被忽略。本文提出针对在线RL的归一化方法NASDAQ，对低维观测进行自适应归一化，平衡各维度贡献。实验证明该方法在多种挑战性任务中显著提升了样本效率和最终性能。",
+      "llm_tags": [
+        "query:rl-papers"
+      ],
+      "matched_query_tag": "query:rl-papers",
+      "matched_query_text": "latest research in reinforcement learning algorithms",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.21777v1",
+      "source": "arxiv",
+      "title": "CalVerT: Augmenting Agents with Calibrated Verifier Telemetry Improves Action and Learning in Knowledge-Intensive Tasks",
+      "abstract": "LLM agents in knowledge intensive question answering take retrieval and reasoning actions with incomplete knowledge about whether their current answer is uncertain, unsupported, or already complete. This produces two failure modes: committing to confident but unsupported answers, which hurts accuracy, and over-retrieving when the evidence in hand already suffices, resulting in wasted compute. To give agents a more complete picture of the state space they are operating in, we introduce calibrated verifier telemetry (CalVerT), which augments the agent's state with additional telemetry: a calibrated self-confidence score and a grounding verifier score. We show that CalVerT can improve agents in both training-free and training-based settings. On four QA benchmarks, we find that CalVerT raises F1 by triggering retrieval in cases where agents over-rely on parametric knowledge, while cutting redundant retrieval in cases where agents have sufficient context to answer. We show that CalVerT can augment existing QA frameworks without training. Moreover, CalVerT also improves trained systems: by simply augmenting an agent's state with telemetry, we observe improvements after reinforcement learning, as compared to an agent with identical training but no CalVerT telemetry.",
+      "authors": [
+        "Ashwin Vinod",
+        "Ying Ding",
+        "Elias Stengel-Eskin"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-19T21:50:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.21777v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Agent state augmentation with verifier telemetry",
+      "llm_evidence_cn": "用验证器遥测增强智能体状态",
+      "llm_evidence": "用验证器遥测增强智能体状态",
+      "canonical_evidence": "用验证器遥测增强智能体状态",
+      "llm_tldr_en": "Proposes CalVerT, augmenting LLM agents with calibrated confidence and grounding verifier scores to reduce over-retrieval and unsupported answers in knowledge-intensive QA.",
+      "llm_tldr_cn": "针对知识密集型问答中智能体过度检索和给出无依据答案的问题，本文提出CalVerT，在智能体状态中加入校准的自信心分数和事实验证分数。实验表明该方法提升了答案准确性并减少了计算浪费。",
+      "llm_tldr": "针对知识密集型问答中智能体过度检索和给出无依据答案的问题，本文提出CalVerT，在智能体状态中加入校准的自信心分数和事实验证分数。实验表明该方法提升了答案准确性并减少了计算浪费。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.16316v1",
+      "source": "arxiv",
+      "title": "RL-Index: Reinforcement Learning for Retrieval Index Reasoning",
+      "abstract": "Retrieving external knowledge is essential for solving real-world tasks, yet it remains challenging when the relationship between a query and its relevant knowledge involves implicit and complex reasoning beyond surface-level semantic or lexical matching (e.g., mathematical problems relying on the same theorem or coding requiring deep reasoning). Existing approaches primarily rely on query-side reasoning (e.g., query rewriting), which introduces significant online latency and underutilizes the opportunity to perform reasoning over the knowledge corpus itself (i.e., index-side reasoning). In this paper, we propose RL-Index, an agentic indexing framework that formulates retrieval index reasoning as a reinforcement learning problem. Instead of performing reasoning at query time, RL-Index shifts reasoning to the indexing stage by augmenting documents with LLM-generated rationales that explicitly encode the latent query-knowledge relationship. To optimize the quality of these rationales, we employ Group Relative Policy Optimization (GRPO) and use retrieval similarity as a verifiable reward signal, enabling direct optimization of indexing decisions for retrieval effectiveness. Extensive experiments on the BRIGHT benchmark demonstrate that RL-Index consistently improves both retrieval and downstream question-answering performance, while significantly reducing online inference latency. Moreover, the learned rationale augmentation generalizes across diverse retrievers and generators, highlighting its robustness as a plug-and-play indexing strategy across different retrieval systems.",
+      "authors": [
+        "Yongjia Lei",
+        "Nedim Lipka",
+        "Zhisheng Qi",
+        "Utkarsh Sahu",
+        "Koustava Goswami",
+        "Franck Dernoncourt",
+        "Ryan A. Rossi",
+        "Yu Wang"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-06-15T07:22:36+00:00",
+      "link": "https://arxiv.org/pdf/2606.16316v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "RL-based agentic indexing framework",
+      "llm_evidence_cn": "基于强化学习的代理索引框架",
+      "llm_evidence": "基于强化学习的代理索引框架",
+      "canonical_evidence": "基于强化学习的代理索引框架",
+      "llm_tldr_en": "Proposes RL-Index, an agentic indexing framework that formulates retrieval index reasoning as a reinforcement learning problem.",
+      "llm_tldr_cn": "针对检索中隐含复杂推理的问题，提出RL-Index代理索引框架，将索引推理形式化为强化学习问题。不同于传统查询侧推理，该方法在索引侧进行推理，通过训练一个RL代理来优化索引结构，在降低延迟的同时提升了检索质量。在数学和编程等任务上的实验表明，RL-Index显著优于基线方法。",
+      "llm_tldr": "针对检索中隐含复杂推理的问题，提出RL-Index代理索引框架，将索引推理形式化为强化学习问题。不同于传统查询侧推理，该方法在索引侧进行推理，通过训练一个RL代理来优化索引结构，在降低延迟的同时提升了检索质量。在数学和编程等任务上的实验表明，RL-Index显著优于基线方法。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.16316v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.21666v1",
+      "source": "arxiv",
+      "title": "Hallucination as Context Drift: Synchronization Protocols for Multi-Agent LLM Systems",
+      "abstract": "Multi-agent LLM systems routinely produce hallucinated outputs that cannot be explained by model deficiencies alone. A significant class of these failures arises not from model incapacity but from context drift: the divergence of internal knowledge states between concurrent agents. When agents enter a collaborative task with mismatched or stale representations of shared world state, their joint reasoning produces contradictions that manifest as hallucination. We define the Context Divergence Score (CDS), a lightweight scalar metric quantifying knowledge-state discrepancy between agent pairs across spatial, temporal, and task dimensions, and propose the Shared State Verification Protocol (SSVP), which lets agents periodically exchange compressed state summaries and flag high-divergence conditions before joint reasoning. We evaluate SSVP across two domains (multi-agent travel and software project planning) using Claude Haiku. In controlled experiments (n=30 per condition, travel; n=10, software) across 8 scenarios, naive full-broadcast synchronization increases hallucination rate by 34% above the no-sync baseline (HR: 0.658 vs. 0.492, p=0.0022, d=1.18), a contamination effect from propagating erroneous agent states. SSVP avoids this failure mode while showing modest, consistent reduction (HR: 0.463, d=0.30) and achieves significantly lower hallucination than full-broadcast (p=0.0005, d=1.47) using 58% fewer API calls. The contamination effect does not replicate in the software domain, where all conditions converge to low HR (<0.2), confirming it is specific to tasks where one erroneous shared belief cascades across evaluation dimensions. Our results reframe hallucination mitigation as a distributed systems problem and establish context synchronization as a first-class primitive in multi-agent LLM design.",
+      "authors": [
+        "Carson Rodrigues"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.MA"
+      ],
+      "published": "2026-06-19T18:17:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.21666v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "context drift synchronization for multi-agent LLM systems",
+      "llm_evidence_cn": "面向多智能体LLM系统的上下文漂移同步",
+      "llm_evidence": "面向多智能体LLM系统的上下文漂移同步",
+      "canonical_evidence": "面向多智能体LLM系统的上下文漂移同步",
+      "llm_tldr_en": "Identifies context drift as a cause of hallucination in multi-agent LLM systems and proposes a synchronization protocol with a context divergence score to mitigate it.",
+      "llm_tldr_cn": "多智能体LLM系统中的幻觉常源于智能体间上下文漂移而非模型缺陷。本文提出上下文散度分数（CDS）度量知识状态差异，并设计共享状态验证协议（SSVP）让智能体周期性同步上下文。实验表明该方法有效减少了多智能体协作中的矛盾输出，提升了系统可靠性，对多智能体架构的通信与一致性设计具有启发意义。",
+      "llm_tldr": "多智能体LLM系统中的幻觉常源于智能体间上下文漂移而非模型缺陷。本文提出上下文散度分数（CDS）度量知识状态差异，并设计共享状态验证协议（SSVP）让智能体周期性同步上下文。实验表明该方法有效减少了多智能体协作中的矛盾输出，提升了系统可靠性，对多智能体架构的通信与一致性设计具有启发意义。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.22142v1",
+      "source": "arxiv",
+      "title": "RoboLineage: Agent-Native Data Lifecycle Governance Across Robot Policy Iterations",
+      "abstract": "We present RoboLineage, an agent-native data lifecycle governance system for robot policy iteration. Modern robot policies improve through repeated data collection, review, retraining, evaluation, and release decisions, but the evidence connecting these steps is often scattered across local tools, scripts, and expert memory. RoboLineage makes this lifecycle explicit by representing rollouts, reviews, dataset decisions, training runs, policy metadata, evaluations, deployment recommendations, and next-collection plans as typed lineage artifacts. Agents interpret embodied rollout evidence, adapt accepted data to existing training stacks, maintain data health, and summarize cross-iteration state under explicit artifact boundaries. In real-robot manipulation workflows, RoboLineage makes routine policy iteration faster and more auditable while maintaining downstream policy performance. We open source RoboLineage as a lightweight lifecycle layer for different robot embodiments and training families. Project page: https://robolineage.github.io/",
+      "authors": [
+        "Qian Luo",
+        "Wentao Guo",
+        "Zhennan Qin",
+        "Nanchun Guo",
+        "Yunhan Zhao",
+        "Yi Ma",
+        "Yanchao Yang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-20T16:48:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.22142v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "data lifecycle governance for robot policies",
+      "llm_evidence_cn": "机器人策略的数据生命周期治理",
+      "llm_evidence": "机器人策略的数据生命周期治理",
+      "canonical_evidence": "机器人策略的数据生命周期治理",
+      "llm_tldr_en": "RoboLineage is an agent-native system that tracks data artifacts across robot policy iterations, enabling traceability and improved data reuse for RL training.",
+      "llm_tldr_cn": "现代机器人策略迭代中数据分散，缺乏治理。RoboLineage将滚动、评审、数据集决策等环节表示为类型化谱系工件，智能体可解释执行证据并维护数据健康。在实际机器人实验中，该系统支持了跨迭代的连贯数据复用，提高了策略迭代效率。",
+      "llm_tldr": "现代机器人策略迭代中数据分散，缺乏治理。RoboLineage将滚动、评审、数据集决策等环节表示为类型化谱系工件，智能体可解释执行证据并维护数据健康。在实际机器人实验中，该系统支持了跨迭代的连贯数据复用，提高了策略迭代效率。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and their real world applications",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.16515v1",
+      "source": "arxiv",
+      "title": "Direction-Conditioned Policies via Compositional Subgoal Scoring for Online Goal-Conditioned Reinforcement Learning",
+      "abstract": "Hamilton-Jacobi-Bellman theory implies that the optimal goal-conditioned action depends on the goal only through the gradient of the goal-reaching distance at the current state, yet standard online GCRL still conditions the actor on the raw goal -- a signal that is geometrically uninformative when the goal is far from the data distribution. We propose Direction-Conditioned Policies (DCP), a fully online method that decomposes goal-reaching into two components sharing one InfoNCE representation $ψ$: a subgoal-scoring step that selects a visited state $z_t$ aligned with the final goal $g$ in $ψ_g$, and a direction-conditioned actor that consumes the unit direction $d_t$ and magnitude $r_t$ from $ψ(s_t)$ to $ψ(z_t)$. The two components train jointly, factor cleanly at deployment (subgoal scoring is removed, while direction conditioning remains with $g$ in place of $z_t$), and admit independent modification at the same $(d_t,r_t)$ interface. We prove three results. First, direction sufficiency under HJB: the optimal action under control-affine dynamics depends on the goal only through the value gradient. Second, a quantitative bound showing that, under mild conditions on the learned representation and assuming the scoring rule returns an on-path $z_t$, the actor's conditioning input at training and at deployment coincide up to representation error and geodesic slack. Third, a controllable-subspace characterization of when directional conditioning fails. Across nine environments, DCP improves over Contrastive RL on most final metrics, with the largest gains on manipulation and obstacle-interaction tasks; a qualitative analysis of the learned $ψ$-distance landscape shows the contrastive representation behaves as an online quasimetric encoding environment topology, and the single failure case (AntSoccer) localizes to a learned-gradient pathology that the theory anticipates.",
+      "authors": [
+        "Swaminathan S K",
+        "Damiya Gondha",
+        "Theyanesh Eswaramoorthy Rajahkrishnan",
+        "Aritra Hazra"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "published": "2026-06-15T10:18:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.16515v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "online goal-conditioned RL method with direction-conditioned policies and subgoal scoring",
+      "llm_evidence_cn": "具有方向条件策略和子目标评分的在线目标条件RL方法",
+      "llm_evidence": "具有方向条件策略和子目标评分的在线目标条件RL方法",
+      "canonical_evidence": "具有方向条件策略和子目标评分的在线目标条件RL方法",
+      "llm_tldr_en": "Direction-Conditioned Policies (DCP): decomposes goal-reaching into subgoal scoring and direction-conditioned actor using InfoNCE representation, enabling fully online GCRL.",
+      "llm_tldr_cn": "在线目标条件强化学习中，原始目标信号在目标远时缺乏几何信息。提出方向条件策略（DCP），利用InfoNCE表示将目标达成分解为子目标评分和方向条件动作两个组件。子目标评分选择与目标对齐的访问状态，方向条件演员使用单位方向和幅度。在稀疏奖励环境中实验，DCP显著优于现有在线方法。",
+      "llm_tldr": "在线目标条件强化学习中，原始目标信号在目标远时缺乏几何信息。提出方向条件策略（DCP），利用InfoNCE表示将目标达成分解为子目标评分和方向条件动作两个组件。子目标评分选择与目标对齐的访问状态，方向条件演员使用单位方向和幅度。在稀疏奖励环境中实验，DCP显著优于现有在线方法。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "reinforcement learning agent training and policies",
+      "matched_requirement_id": "req-2",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.16515v1",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2606.21764v1",
+      "source": "arxiv",
+      "title": "Motion-Aware Reinforcement Learning For Object Localization",
+      "abstract": "We present MARLNet (Motion-Aware Reinforcement Learning Network), a PPO-based bounding-box refinement agent that incorporates a constant-velocity motion prior into the observation state and an action smoothness penalty into the reward function. The agent operates on 268-dimensional observations encoding the current proposal, a kinematic prediction, the previous action, and a 256-dimensional EfficientNet-B0 crop feature, and learns a five-dimensional policy controlling coordinate adjustments and a binary termination trigger. Evaluated on Pascal VOC 2012 and VisDrone 2019, MARLNet trains stably across all regularization strengths tested and achieves consistent gains in detection success rate at $\\text{IoU} \\geq 0.5$: up to $+0.011$ on VOC ($λ_\\text{phys}{=}0.10$), where the motion prior prevents the overshooting that causes plain PPO to regress on this metric, and $+0.007$ on VisDrone ($λ_\\text{phys}{=}0.70$), where unconstrained PPO achieves a larger gain ($+0.025$) owing to the weaker base detector. Through reward design ablations and training dynamics analysis, we identify a reward interference in which combining a constant-velocity deviation penalty with an absolute IoU term causes trigger collapse, and show that replacing it with the action smoothness penalty resolves this failure. We further characterize a representational ceiling facing crop-feature refinement agents that share a backbone with their base detector, confirmed through a global-plus-local observation ablation. Project page: https://prithviraj97.github.io/marl-net",
+      "authors": [
+        "Prithvi Raj Singh",
+        "Satyendra Singh"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-19T21:27:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.21764v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent",
+        "query:rl-papers"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "RL agent for object localization",
+      "llm_evidence_cn": "强化学习智能体用于目标定位",
+      "llm_evidence": "强化学习智能体用于目标定位",
+      "canonical_evidence": "强化学习智能体用于目标定位",
+      "llm_tldr_en": "Presents MARLNet, a PPO-based bounding-box refinement agent incorporating motion prior and action smoothness reward for object localization, achieving consistent gains on Pascal VOC and VisDrone.",
+      "llm_tldr_cn": "本文提出MARLNet，一种基于PPO的目标定位边界框精炼智能体，在观测中融入恒速运动先验并设计动作平滑惩罚奖励函数。在Pascal VOC和VisDrone上稳定训练，检测成功率（IoU≥0.5）提升显著。",
+      "llm_tldr": "本文提出MARLNet，一种基于PPO的目标定位边界框精炼智能体，在观测中融入恒速运动先验并设计动作平滑惩罚奖励函数。在Pascal VOC和VisDrone上稳定训练，检测成功率（IoU≥0.5）提升显著。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and their real world applications",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.16871v1",
+      "source": "arxiv",
+      "title": "Human-on-the-Bridge: Scalable Evaluation for AI Agents",
+      "abstract": "AI agents must be evaluated as behavioral systems, not as isolated response generators. They reason across turns, call tools, preserve context, follow policies, and act under uncertainty. Existing methods provide useful but fragmented signals: benchmarks measure fixed capabilities, Human-in-the-Loop review preserves expert judgment but does not scale easily, LLM-as-judge methods depend on evaluator design, red teaming is often episodic, and trace auditing requires explicit evidence rules. This paper introduces Human-on-the-Bridge (HOB), a scalable evaluation paradigm for agentic AI. HOB places human expertise upstream, where experts curate reusable evaluation intelligence before testing begins, including domain context, Red-Team Traps, Juror Personas, scoring guidelines, audit rules, and fallback policies. ProofAgent Harness then executes this curated intelligence repeatedly through multi-turn adversarial evaluations, trace capture, multi-juror scoring, and evidence-linked reporting. We evaluate HOB through symmetric and cost-efficient asymmetric settings across frontier LLM-based agents and Harness LLM tiers. The study covers 23,500 agent turns and produces evidence-linked findings across finance, healthcare, and code generation. The results show that HOB can amplify evaluation quality without requiring equally large evaluator models, allowing smaller Harness LLMs to challenge agents built on frontier LLM backbones. The evaluation surfaces failures often missed by static benchmarks and single-evaluator scoring, including phantom tool-call claims, missing mandatory tool calls, policy drift, manipulation paths, and safe but non-resolving refusals. These findings support HOB as a paradigm for scaling human-curated evaluation intelligence, where expert judgment is encoded upfront and reused across repeated agent evaluations rather than applied manually inside every run.",
+      "authors": [
+        "Fouad Bousetouane"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA"
+      ],
+      "published": "2026-06-15T15:47:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.16871v1",
+      "tags": [
+        "keyword:agent",
+        "keyword:rl-papers",
+        "query:agent"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "scalable evaluation paradigm for AI agents",
+      "llm_evidence_cn": "针对AI智能体的可扩展评估范式",
+      "llm_evidence": "针对AI智能体的可扩展评估范式",
+      "canonical_evidence": "针对AI智能体的可扩展评估范式",
+      "llm_tldr_en": "HOB places expert curation upstream to create reusable evaluation intelligence for agentic AI, addressing fragmented evaluation methods.",
+      "llm_tldr_cn": "现有AI智能体评估方法碎片化，缺乏可扩展的统一范式。本文提出Human-on-the-Bridge (HOB)评估范式，将专家知识前置，通过领域上下文、红队陷阱、陪审团角色和评分指南等可复用评估智能体来系统性地评价智能体行为。该方法在保持专家判断质量的同时大幅提升评估效率，为智能体系统的可靠评估提供了新路径。",
+      "llm_tldr": "现有AI智能体评估方法碎片化，缺乏可扩展的统一范式。本文提出Human-on-the-Bridge (HOB)评估范式，将专家知识前置，通过领域上下文、红队陷阱、陪审团角色和评分指南等可复用评估智能体来系统性地评价智能体行为。该方法在保持专家判断质量的同时大幅提升评估效率，为智能体系统的可靠评估提供了新路径。",
+      "llm_tags": [
+        "query:agent"
+      ],
+      "matched_query_tag": "query:agent",
+      "matched_query_text": "intelligent agent systems and architectures",
+      "matched_requirement_id": "req-1",
+      "selection_source": "carryover_cache",
+      "paper_id": "2606.16871v1",
+      "quick_tier": "8plus"
+    }
+  ]
+}

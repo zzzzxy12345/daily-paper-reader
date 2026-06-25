@@ -1,0 +1,2762 @@
+Title: The Two-Hump Problem: Bridging the Difficulty Gap in Mathematical Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2606.21611v1
+
+Published Time: Tue, 23 Jun 2026 01:10:51 GMT
+
+Number of Pages: 38
+
+Markdown Content:
+# The Two-Hump Problem: Bridging the Difficulty Gap in Mathematical Reinforcement Learning 
+
+Lucas Fagan * 1 Michele Tarquini * 1 Ali Shehper * 1 Maksymilian Manko 2 Angus Gruen 3 Coco Huang 4
+
+Giorgi Butbaia 1 Davide Passaro 1 Sergei Gukov 1
+
+## Abstract 
+
+Mathematical search problems present a unique challenge for Reinforcement Learning (RL) due to vast search spaces and sparse rewards. In pre-vious works, the Andrews-Curtis (AC) conjecture was established as an illustrative example of such problems. In this work, we identify a critical structural barrier in the AC landscape: a “Two-Hump” distribution, where problem instances are either trivially solvable or effectively impossi-ble, with a scarcity of intermediate “hard-but-solvable” instances required for effective learning. We tackle this challenge through two primary av-enues: novel data generation techniques to popu-late the difficulty gap, and significant algorithmic enhancements including the introduction of su-permoves and Transformer-based architectures. We demonstrate substantial performance improve-ments over previous baselines, and release new comprehensive benchmark datasets including AC-19 (125,192 AC-trivial presentations of varying difficulty with length at most 19) and AC-1M 
+
+(1,136,154 hard AC-trivial presentations of length at most 30), the first large-scale, publicly available datasets of this kind. 1
+
+## 1. Introduction 
+
+The application of reinforcement learning to mathematical reasoning presents challenges fundamentally different from classic domains like Go or StarCraft. In mathematical search problems, there is often no “early failure” signal; an agent 
+
+> *
+
+Equal contribution 1Department of Mathematics, California In-stitute of Technology, Pasadena, CA, USA 2Institute of Mathemat-ics, University of Zurich, Zurich, Switzerland 3Zero Latency Labs 
+
+> 4
+
+Department of Mathematics, Temple University, Philadelphia, PA, USA. Correspondence to: Lucas Fagan <lfagan@caltech.edu >.
+
+Proceedings of the 43 rd International Conference on Machine Learning , Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). 
+
+> 1
+
+Code and datasets: https://github.com/Math-A I-Caltech/ACSolverX 
+
+can wander indefinitely without knowing if it is making progress. The Andrews–Curtis (AC) conjecture (Andrews & Curtis, 1965) offers a distilled environment for studying these chal-lenges. It posits that any balanced presentation of the trivial group can be transformed into the trivial presentation via a specific set of moves. Previous work (Shehper et al., 2025) framed this as a Reinforcement Learning (RL) environment, highlighting the difficulty of finding rare trivialization paths. In this work, we present a deeper analysis of why the AC problem is so difficult for RL agents and propose a compre-hensive suite of improvements to address these challenges. We combine three key insights: (1) a characterization of the fundamental structure of the problem’s difficulty landscape, (2) algorithmic innovations that exploit the mathematical symmetries of group presentations, and (3) targeted data generation techniques to populate the sparse regions of the problem space. Together, these contributions enable us to trivialize over 100 previously unsolved presentations from a standard benchmark and make concrete progress toward resolving this longstanding mathematical conjecture. 
+
+Figure 1. The “Two-Hump” Distribution is a general phenomenon: most presentations are either trivial or practically impossible for current agents. The scarcity of data in the middle region hinders learning. 
+
+1.1. Contributions 
+
+Our specific contributions are: 1
+
+> arXiv:2606.21611v1 [cs.LG] 19 Jun 2026 The Two-Hump Problem
+
+Identification of the “Two-Hump” difficulty distribution. 
+
+We characterize a fundamental challenge in the AC prob-lem: a bimodal difficulty distribution with a large mass of “easy” presentations solvable by greedy length reduction, a large mass of “effectively unsolvable” presentations where no current algorithm makes meaningful progress, and a sparsely populated “valley” containing presentations that re-quire sophisticated planning but remain within algorithmic reach (Figure 1). This lack of intermediate stepping stones makes standard curriculum learning ineffective and moti-vates our approach combining algorithmic improvements with targeted data generation. 
+
+Substitution supermoves as the right action space. We identify that substitutions —a way of combining many prim-itive AC-moves into a single move—form the right action space for the AC problem. Using substitutions allows for much larger steps and a significantly reduced state space at the cost of an expanded action space. This insight is critical to all of our subsequent improvements. 
+
+Scaling RL to large action spaces with domain-specific architecture. Using substitutions presents an opportunity as it creates a larger but also more highly structured action space. To take advantage of this, we developed the Dual-Ring Transformer , a specialized architecture that processes the two relators as cyclic sequences with explicit cross-attention mechanisms to identify optimal substitution moves. Despite the significantly larger action space, our PPO agent achieves substantial improvements over the prior approach (Shehper et al., 2025), and consistently finds shorter solu-tion paths than classical searches, with the improvement especially pronounced on harder presentations. This demon-strates that reinforcement learning can discover non-obvious mathematical structure even in challenging search spaces. 
+
+Targeted data generation and novel benchmark datasets. 
+
+We obtain high-quality training data in the difficulty “val-ley.” In particular, we use exhaustive enumeration to produce 
+
+AC-19 , the largest known dataset of short AC-trivial pre-sentations. It consists of 125,192 presentations of varying difficulty and length ≤ 19, which were verified through our improved substitution-based classical search methods. We also show how automorphisms can be used to generate hard-but-solvable presentations by classical methods and by an ML-based generator-solver game, and combine these methods to produce AC-1M , a dataset of 1,136,154 hard AC-trivial presentations of length at most 30. 
+
+Concrete mathematical progress. This work makes con-crete progress on the Andrews–Curtis conjecture itself through organizing and reducing the hard hump. Our tech-nical improvements allowed us to successfully trivialize over 100 new presentations in a benchmark dataset from the Miller–Schupp family—a famous two-parameter fam-ily of potential counterexamples—whose status was previ-ously unknown. Among the 550 remaining unsolved exam-ples, we discover AC-equivalences that reduce these to just 261 equivalence classes and determine minimal representa-tives for each class, providing the community with a dataset against which to measure meaningful progress. 
+
+1.2. Related Work Computational Approaches to Andrews–Curtis. The AC conjecture has attracted algorithmic attention since its formulation (Andrews & Curtis, 1965). Bridson (Bridson, 2015) and Lishak (Lishak, 2017) established that certain AC-trivial presentations require superexponentially long trivi-alization paths, revealing the fundamental computational difficulty. Havas and Ramsay (Havas & Ramsay, 2003) used exhaustive enumeration to classify all presentations up to length 13. Miasnikov (Miasnikov, 1999) and Bow-man and McCaul (Bowman & McCaul, 2006) developed heuristic search methods. Most directly related, Shehper et al. (Shehper et al., 2025) framed AC as an RL environment and established PPO and greedy search baselines, on which our work builds. Concurrent work (Zhang et al., 2025) com-bines Lean-based formal verification and LLM-extracted lemmas with RL for AC trivialization. 
+
+Sparse Rewards and Hard Exploration. RL in sparse-reward environments remains challenging. Approaches in-clude intrinsic motivation (Pathak et al., 2017; Badia et al., 2020), systematic exploration via archiving (Ecoffet et al., 2021), and hierarchical methods (Sutton et al., 1999; Vezhn-evets et al., 2017). The Rubik’s cube was solved via deep RL and search (Agostinelli et al., 2019), but this approach relies on the finite state space and the ability to generate training data via scrambling from the solved state. In contrast, the AC graph is infinite, and scrambling produces either triv-ially easy presentations or presentations that reduce back to known hard instances, providing no useful training signal. 
+
+Related Mathematical Domains. The unknotting problem shares structural similarities with AC (Gukov et al., 2021; Burton et al., 2024): both involve simplifying combinato-rial objects through local moves with potentially deceptive length-based heuristics. Techniques may transfer between domains. In formal theorem proving (Yang & Deng, 2019; Polu & Sutskever, 2020; Yang et al., 2023; DeepMind, 2024; Trinh et al., 2024), curriculum learning has proven essential (Polu et al., 2023). However, these settings provide interme-diate verification signals, whereas AC provides reward only upon complete trivialization, making curriculum generation more critical. 
+
+Conflict of Interest Disclosure 
+
+The authors declare no financial conflicts of interest. 2The Two-Hump Problem 
+
+## 2. The Andrews–Curtis Conjecture and Substitutions 
+
+The Andrews–Curtis conjecture (Andrews & Curtis, 1965) is among the most prominent open problems in combinato-rial group theory, and connects directly to low-dimensional topology: every potential AC counterexample yields a poten-tial counterexample to the Smooth Poincar ´e Conjecture in di-mension 4 (Freedman et al., 2010), and validating one would disprove the Generalized Property R conjecture (Gompf et al., 2010). Unlike many open problems at its level, AC admits an immediate, discrete, efficiently-checkable formu-lation as a pure search problem—making it an unusually strong testbed for AI-driven mathematical search. The Andrews–Curtis conjecture concerns balanced presen-tations of the trivial group ⟨x, y | r1, r 2⟩, where x and y are called generators and r1 and r2 are called relators (words in the generators that the presentation declares to equal the identity). The conjecture states that any such presentation can be transformed into the trivial presentation ⟨x, y | x, y ⟩
+
+using a finite sequence of the following moves (called AC-moves): • (AC1) Replace a relator ri with its inverse r−1 
+
+> i
+
+.• (AC2) Replace a relator ri with rirj for i̸ = j.• (AC3) Replace a relator ri with wr iw−1 for any word 
+
+w in the generators. Any presentation that can be connected to the trivial pre-sentation using these moves is called AC-trivial . We call 
+
+|r1| + |r2| the length of the presentation. This gives rise to a graph structure where vertices are bal-anced presentations of the trivial group and edges connect presentations related by a single AC-move. The problem of trivializing a presentation becomes a graph search prob-lem: finding a path from the given presentation to the trivial presentation. The Andrews–Curtis conjecture asserts that this graph has only one connected component—that is, ev-ery balanced presentation of the trivial group can reach the trivial presentation through some sequence of AC-moves. 
+
+2.1. Potential Counterexamples and Benchmark Data 
+
+Mathematicians have proposed several families of balanced presentations that are suspected to be counterexamples to the Andrews–Curtis conjecture. The most famous such family is the Akbulut–Kirby family (Akbulut & Kirby, 1985): AK (n) = ⟨x, y | xyx = yxy, x n = yn+1 ⟩.
+
+While AK (1) and AK (2) are known to be trivializable, the status of AK (n) for n ≥ 3 remains open. The presentation AK (3) is the shortest potential two-generator counterex-ample: in (Havas & Ramsay, 2003), it was shown that all presentations of length up to 13 are trivializable or AC-equivalent to AK (3) .A second family containing many potential counterexamples is the Miller–Schupp series (Miller & Schupp, 1999), de-fined for integers n and words w in x and y with 0 exponent sum on x:MS (n, w ) = ⟨x, y | x−1ynx = yn+1 , x = w⟩.
+
+Note that the MS series contains the AK series: AK (n)
+
+is AC-equivalent to MS (n, y −1x−1yxy ) (Myasnikov et al., 2002). 
+
+Validation Benchmark. Prior work (Shehper et al., 2025) established a dataset of 1190 MS presentations as a bench-mark for evaluating AC trivialization methods. We adopt this dataset as our primary validation set throughout this work, enabling direct comparison with previous results. However, we find that most presentations in this dataset are either easy or too hard, as shown in Figure 3. This is discussed further in Section 3, where we also describe novel data generation methods designed to populate the difficulty gap and facilitate robust training. 
+
+2.2. Baseline Algorithms 
+
+Prior work (Shehper et al., 2025) established two baselines for AC trivialization: greedy search and Proximal Policy Optimization (PPO). We briefly describe these methods here, as they form the foundation for our improvements. 
+
+Greedy Search. A natural baseline for exploring the AC graph is greedy search : a best-first search that prioritizes moves reducing the presentation length. The intuition is that shorter presentations are “closer” to the trivial presenta-tion. In practice, greedy search expands nodes in order of length, exploring shorter presentations before longer ones, up to a fixed budget of visited nodes. Despite its simplicity, greedy search outperforms other classical approaches includ-ing breadth-first search and genetic algorithms (Miasnikov, 1999; Bowman & McCaul, 2006) on the AC problem. How-ever, greedy search fundamentally struggles with instances requiring length-increasing intermediate steps, when presen-tations along the path must temporarily grow longer before eventually reaching the trivial presentation. 
+
+Proximal Policy Optimization (PPO). PPO (Schulman et al., 2017) is a policy gradient method for reinforce-ment learning that has demonstrated strong empirical per-formance across diverse domains. In (Shehper et al., 2025), PPO was established as the best-performing reinforcement learning algorithm for the AC problem, outperforming other RL methods including DQN and AlphaZero. The prior work used a ResNet architecture to represent the policy and value 3The Two-Hump Problem yy    
+
+> x
+> y−1
+> y−1x
+> y
+> y
+> r1
+> xy−1
+> y−1
+> y−1
+> xx
+> y−1
+> x
+> r2
+> x
+> y−1
+> y−1
+> xy
+> x
+> x
+> y−1
+> xx
+> r1r2
+> Figure 2. Substitution move visualization. Both relators are viewed as cyclic sequences (rings). A substitution selects insertion points in each relator where one can be inserted into the other with at least one element canceling, combining many AC1, AC2, and AC3 moves into a single action.
+
+functions, operating on elementary AC-moves. 
+
+2.3. Substitutions 
+
+While the conjecture is defined in terms of elementary AC-moves, more efficient graph traversal can be achieved through supermoves —composite sequences of AC-moves applied as a single action. We identify substitution moves as particularly effective: a substitution, as shown in Figure 2, views both relators as cyclically symmetric strings and se-lects a point in each relator to insert one into the other such that at least one element cancels. Formally: 
+
+Definition 2.1 (Substitution Move) . A substitution move is parametrized by a tuple (i, j, k 1, k 2) ∈ { 1, 2} × {− 1, 1} × 
+
+Z × Z and replaces the relator ri by: rot k1 (ri) rot k2 (r j
+
+> 3−i
+
+),
+
+where rot k(r) means rotating r cyclically k steps. We con-sider valid substitutions to be only those where the last element of rot k1 (ri) is the inverse of the first element of rot k2 (r j
+
+> 3−i
+
+) (leading to a cancellation). Because substitutions are indifferent to cyclic permutation, we can choose a canonical representative (classical algo-rithms) or use an architecture that is equivariant to cyclic permutations (RL). This dramatically reduces the effective state space while allowing algorithms to take larger, more meaningful steps through the AC graph. The rigorous defi-nition of canonical form and its properties are provided in Appendix E. Importantly, Ivanov (Ivanov, 2018) proved that if the AC conjecture is true, substitutions suffice to realize all AC-transformations. 
+
+Implications for algorithms. Substitution moves enable improvements to both classical search and reinforcement learning approaches. They allow for bigger steps in the graph and are indifferent to cyclic permutations of the rela-tors, allowing us to significantly reduce the effective state space. • Improved Greedy Search: We substantially improved greedy search by using substitution moves and reduc-ing the state space by implementing a canonical form of the presentation, explained in detail in Appendix E. This new greedy search yields an approximately 1600 ×
+
+exploration efficiency improvement over the baseline from (Shehper et al., 2025). Precisely, our greedy search with substitutions can solve all presentations that required 1M nodes in the prior work using only 614 nodes. Throughout the remainder of this paper, “greedy search” or “GS” refers to greedy search with substitution moves unless explicitly stated otherwise. • PPO with Large Action Spaces: Extending PPO to use substitution moves requires a specialized architec-ture designed to respect the cyclic invariance of the relators while handling the significantly increased size of the action space. We develop the Dual-Ring Trans-former, introduced in Section 4, to address this chal-lenge and produce a more effective agent compared to the PPO baseline with basic AC-moves (Shehper et al., 2025). 
+
+## 3. The Landscape and Data Generation 
+
+With the improved tools discussed in Section 2.3, we can now systematically analyze the difficulty landscape of the Andrews–Curtis graph. 
+
+3.1. The Two-Hump Phenomenon on the Miller–Schupp Benchmark 
+
+Our experiments on the 1190-presentation Miller–Schupp benchmark dataset from (Shehper et al., 2025) reveal a stark bimodal distribution we call the “Two-Hump” phenomenon. As shown in Figure 3, presentations exhibit a polarized outcome: they are usually either easily trivializable or ef-fectively impossible to solve with current methods. Using our improved greedy search with substitutions (see Table 1 for performance details), we find that 604 presentations are solved within 10,000 nodes. However, increasing the node budget 100 × to 1 million nodes solves only 36 additional presentations and extending the budget to 10M gives no additional improvement, leaving 550 still unsolved. In other 4The Two-Hump Problem 
+
+words, there are very few hard-but-solvable presentations in the intermediate “valley” between the two humps.        
+
+> Figure 3. Empirical validation of the Two-Hump phenomenon on the 1190-presentation Miller–Schupp benchmark. The his-togram shows solve difficulty (measured by greedy search node count) using logarithmic scales on both axes , suggesting a super-exponential difficulty distribution with a potentially unsolvable end. Difficulty exhibits a stark bimodal distribution: most pre-sentations are either trivially easy (solvable in <1000 nodes) or effectively unsolvable (no method solves them within 10M nodes), with very few presentations in the intermediate “valley” range. The improved greedy search with substitutions achieves a 1600 ×
+> efficiency improvement over baseline methods (see Table 1), yet the two-hump structure persists.
+
+This bimodal distribution explains the failure of naive data generation strategies. For example, generating data by “scrambling” the trivial presentation (similar to shuffling a Rubik’s cube from the completed state) produces presen-tations which are easily trivializable through greedy length reduction. Similarly, scrambling known hard presentations like AK (3) produces presentations trapped in the same lo-cal minimum: our algorithms simply reduce them back to AK (3) , providing no useful signal for learning. 
+
+3.2. AC-19: Exhaustive Enumeration Reveals Persistent Two-Humps 
+
+Given the sparsity of intermediate-difficulty presentations in the Miller–Schupp benchmark, we needed a larger and more comprehensive dataset. We enumerated 213,946 balanced presentations of the trivial group of length at most 19 using techniques first introduced in (Havas & Ramsay, 2003). We then ran greedy search with substitutions (10M node budget) on the entire enumeration and retained the 125,192 presentations that were successfully solved. This AC-19 dataset represents the largest known collection of short AC-trivial presentations, providing significantly more presentations overall and many more hard presenta-tions than the Miller–Schupp benchmark. Yet, as shown in Figure 4, the two-hump phenomenon persists: while the dataset contains presentations spanning a wide range of difficulties, the bimodal structure remains evident. The dis-tribution shows strong concentration in the easy regime with a second hump of unsolved presentations that would require at least 10M nodes to potentially solve.    
+
+> Figure 4. AC-19 Dataset Difficulty Distribution. Node counts required to solve the 125,192 verified trivial group presentations using greedy search with substitutions, displayed with logarithmic scales on both axes . Although AC-19 is a much larger dataset with many more hard presentations than the Miller–Schupp benchmark, the two-hump phenomenon persists: strong concentration in the easy regime (median: 51 nodes) with a substantial tail extending to 10M nodes, and a second hump of unsolved presentations requiring at least 10M nodes.
+
+3.3. Populating the Valley: Automorphisms and the Generator-Solver Game 
+
+The persistence of the two-hump phenomenon across both the Miller–Schupp benchmark and the much larger AC-19 
+
+dataset suggests this feature is inherent to the Andrews– Curtis problem landscape itself, rather than an artifact of insufficient data. The scarcity of hard-but-solvable presenta-tions in the intermediate valley represents one of the biggest barriers to an agent that is able to learn general behavior to trivialize presentations in the second hump. To address this fundamental challenge and continue build-ing on AC-19 , we develop a technique that leverages the mathematical structure of the problem to systematically gen-erate presentations that populate the sparse middle difficulty region. These datasets improve PPO agents and establish a foundation for scaling to more capable learners. As algo-rithms improve, the availability of diverse, well-calibrated training data will become increasingly critical. 
+
+Automorphism Perturbation. An automorphism ϕ is a mapping from a presentation of the trivial group P = ⟨x, y |
+
+r1, r 2⟩ to another ϕ(P ). In particular, if P is trivializable via a path γ, then ϕ(P ) is trivializable via ϕ(γ).2 However, the characteristics of such paths may differ drastically. In particular, it is often the case that short paths from automor-phic images require steps of large length increase. Figure 5 demonstrates this phenomenon empirically: start-ing from the easily-solvable AK (2) presentation, we apply different automorphisms ϕi to generate AC-equivalent pre-      
+
+> 2With a few extra steps added at the end to go from ⟨x, y |
+> ϕ(x), ϕ (y)⟩to ⟨x, y |x, y ⟩. The mathematical background re-garding automorphisms is explained in Appendix D.
+
+5The Two-Hump Problem     
+
+> Figure 5. Automorphisms transform easy presentations into hard ones. While a greedy heuristic can easily find a trivialization path for AK (2) , it struggles on automorphisms of AK (2) whose short trivialization paths (shown in red) involve length-increasing steps.
+
+sentations with dramatically different path characteristics. While short paths exist for all three presentations, if we do not use our knowledge of the automorphism, the short paths for ϕ1(AK (2)) and ϕ2(AK (2)) are very difficult to find. Thus, by applying automorphisms to simple presenta-tions, we can generate a range of more difficult presentations which we know are AC-trivial. 
+
+The Generator-Solver Game. Given the success in using automorphisms to make easy presentations more difficult, we formulated a two-player asymmetric game where a Gen-erator applies automorphisms to increase the difficulty of presentations while a Solver attempts to trivialize them. This setup relies on the fact that all automorphisms can be generated by a sequence of elementary automorphisms, as discussed in Appendix D. The Generator is a PPO agent with a dual-head feedfor-ward architecture. One head outputs the number of auto-morphisms to apply, while the other samples from generat-ing automorphisms: inversion ( xi 7 → x−1 
+
+> i
+
+), or concatena-tion ( xi 7 → xixj for i̸ = j). To prevent length explosion from repeated concatenation moves, we impose hard con-straints on presentation length. The Generator’s reward com-bines three complexity measures from the Solver’s feedback: whether the presentation was solved (incurring a penalty), path length if solved, and maximum length increase along the solution path. We use greedy search as the Solver . In Figure 6, we show a small example on 200 presentations with a 10,000 node budget, where the generator is able to generate significantly harder presentations, including when compared to random automorphisms. By construction, every Generator output is an automorphic image of a known-trivial presentation and therefore carries a known solution path. In order to populate the “valley,” we train a generator using this method on all presentations from AC-19 solvable within 5–10k nodes, and then use it to generate 10 automorphic images of each presentation by applying sequences of auto-morphisms, retaining only those of length at most 30. This     
+
+> Figure 6. Comparison of difficulty distributions for 200 AC-trivial presentations from AC-19 under different transformations (mea-sured by greedy search path length, 10K-node budget). Original :Baseline presentations. Random : Applying up to 10 random el-ementary automorphisms (capped at length 30). Best : Applying automorphisms selected by the trained PPO generator network. The trained generator successfully shifts the distribution rightward (harder presentations) and makes many presentations unsolvable within budget, demonstrating it learns to produce systematically harder instances than random automorphisms; this pattern persists at scale.
+
+gives a new dataset of hard presentations, AC-1M , all of which are AC-trivial by construction. See Appendix C for full architectural details and training procedures. 
+
+## 4. The Dual-Ring Transformer 
+
+To operate effectively in the large substitution action space while respecting the mathematical structure of the Andrews– Curtis problem, we develop the Dual-Ring Transformer .The key insight is that relators are cyclic sequences, not lin-ear ones, as illustrated in Figure 2. A network that respects this cyclic symmetry can dramatically reduce the effective state space and generalize better across presentations. 
+
+4.1. Architecture Overview 
+
+The Dual-Ring Transformer processes a presentation ⟨x, y |
+
+r1, r 2⟩ through three stages: 
+
+1. Embedding. Each relator is represented as an array of length 24 where x, y, x −1, y −1 become 1, 2, −1, −2, re-spectively, and padded with 0s if necessary. Each token is then embedded into a learned vector of dimension D. We do not consider presentations with a relator of length greater than 24 (less than 1% of AC-1M); note this is distinct from 
+
+presentation length |r1| + |r2|, capped at 30 in AC-1M. 
+
+2. Dual-Ring Transformer Blocks. A stack of transformer blocks processes both relators in parallel. Each block con-sists of: • Self-attention with relative positional encoding: 
+
+Each relator attends to itself using cyclic relative posi-tion embeddings. For tokens at positions i and j in a 6The Two-Hump Problem 
+
+relator of unpadded length L, the cyclic distance along the relator is d(i, j ) = ( i − j) mod L. The attention score combines content and relative position: 
+
+Ahij = ( Qhi · Khj ) + ( Qhi · Ehd(i,j ))
+
+where Eh ∈ RL×Dh is a learnable embedding table per head. This gives the self-attention layer a cyclic-rotation-equivariant inductive bias. • Cross-attention: The two relators attend to each other via cross-attention. This allows the network to iden-tify matching substrings between r1 and r2, which is critical for determining valid substitution moves. • Feed-forward layers: Standard MLP blocks with residual connections and layer normalization. 
+
+3. Policy and Value Heads. After k transformer blocks, we obtain contextual embeddings for each position in both relators. 
+
+Value head: For each relator, we apply masked mean pool-ing over the sequence dimension (averaging only over non-padding positions). The resulting two pooled vectors are concatenated and passed through a 2-layer MLP to output a single scalar value estimate. 
+
+Policy head: For each pair of positions (k1, k 2) in r1 and 
+
+r2, we concatenate the corresponding embeddings and pass through an MLP to produce logits for 4 possible actions: • Which relator to replace: i ∈ { 1, 2}
+
+• Whether to invert r2: j ∈ {− 1, 1} (corresponding to using rj
+
+> 2
+
+)This gives a distribution over |r1| × | r2| × 4 possible sub-stitution moves. Crucially, we apply a semantic mask that sets invalid actions to probability zero: only positions (i, j )
+
+where r1[i] = ±r2[j] (enabling cancellation) receive non-zero probability. This enforces the mathematical constraints of valid substitution moves. Full architectural details are provided in Appendix A. 
+
+## 5. Experiments 
+
+We evaluate our methods on the 1190-presentation Miller– Schupp benchmark dataset from (Shehper et al., 2025). Our experiments are designed to isolate the contributions of our key innovations: substitution supermoves with the Dual-Ring Transformer architecture, targeted training data from 
+
+AC-19 and AC-1M , and enforcing cyclic symmetry through the Dual-Ring Transformer as opposed to absolute posi-tional encoding and canonical form. 
+
+5.1. Experimental Setup PPO Training. We train PPO agents using the Dual-Ring Transformer architecture (Section 4, full details in Ap-pendix A) on data from the benchmark dataset and from Section 3. The key training details are: • Reward function: We use a length-based reward: 
+
+r(s, a, s ′) = 1000 for reaching the trivial presentation, and max( −(|r′
+
+> 1
+
+| + |r′
+
+> 2
+
+|), −10) at each step otherwise, where |r′
+
+> i
+
+| denotes relator length in state s′. This en-courages length reduction close to the trivial presenta-tion and incentivizes finding shorter paths. It is similar to the most effective reward function in (Shehper et al., 2025). • Setup: We train for 250M environment interactions across 2,380 parallel environments. Episodes termi-nate after 96 steps without trivialization, after which the environment resets. The first 640 parallel environ-ments are reserved for the 640 presentations from the benchmark known to be AC-trivial (determined via greedy search). The remaining environments sample from AC-19 or AC-1M using an adaptive sampling strategy (Appendix B). We found that this allocation outperformed using all 1190 benchmark presentations: we never solved any presentation outside the initial 640 AC-trivial set. More experiment details can be found in Appendix B. • Evaluation: We report the min, max, and mean num-ber of solved presentations from the benchmark dataset over 5 random seeds in Table 1. 
+
+Implementation: All algorithms are implemented in JAX (Bradbury et al., 2018) and our PPO is based on the Pure-JaxRL implementation (Lu et al., 2022). Code is available at https://github.com/Math-AI-Caltech/A CSolverX .
+
+5.2. Main Results: Substitutions, Architecture, and Data 
+
+Our experiments demonstrate five main results: 
+
+1. Substitutions + Dual-Ring Transformer yield a large performance increase. The combination of substitution su-permoves with the Dual-Ring Transformer yields dramatic improvements: PPO solves 591 presentations (max over 5 seeds) compared to 457 for the baseline, an increase of 134 presentations. This validates that the architecture can effectively handle the large O(|r1| · | r2|) action space. 
+
+2. Targeted data provides a meaningful boost. Adding 
+
+AC-19 and AC-1M data improves PPO performance from 591 to 610 presentations (max over 5 seeds), an additional 19 solves. Given that we are operating in the hard regime 7The Two-Hump Problem 
+
+Table 1. Performance on the 1190-presentation Miller–Schupp benchmark. GS-AC (previous SOTA, greedy) : Greedy search with AC-moves from (Shehper et al., 2025). GS-Sub : Our greedy search with substitution supermoves at varying node budgets (parentheses indicate search budget). PPO-AC-ResNet (previ-ous SOTA, RL) : PPO with AC-moves and ResNet architecture from (Shehper et al., 2025). PPO-Sub-DRT : Our PPO with sub-stitutions and Dual-Ring Transformer. + AC-19/AC-1M : Trained with additional data from AC-19 or AC-1M datasets (Section 3). 
+
+PPO-Sub-Canon : Variant using canonical form preprocessing instead of cyclic relative positional encodings (Appendix E). For PPO methods, we report the mean over 5 seeds with min–max range in parentheses. GS is deterministic. METHOD PRESENTATIONS SOLVED 
+
+PPO Agents (mean over 5 seeds) 
+
+PPO-AC-R ES NET 457 PPO-S UB -C ANON 562.6 (557–567) PPO-S UB -C ANON + AC-19 575.5 (572–579) PPO-S UB -DRT 588.2 (585–591) PPO-S UB -DRT + AC-1M 605.4 (600–610) PPO-S UB -DRT + AC-19 607.2 (605–610) 
+
+Greedy Search (deterministic) 
+
+GS-AC (1M) 533 GS-S UB (614) 533 GS-S UB (10K) NODES 604 GS-S UB (100K) NODES 634 GS-S UB (1M) NODES 640 GS-S UB (10M) NODES 640 
+
+where each additional solve is valuable, this 19-presentation improvement demonstrates our data generation techniques successfully help the agent learn general strategies for solv-ing hard presentations. 
+
+3. PPO finds substantially better paths than GS, espe-cially on hard presentations. While greedy search solves more presentations (640 vs 610), PPO discovers signifi-cantly shorter solution paths, as shown in Figures 7 and 8 (all path lengths can be found in Appendix G). This ad-vantage is especially pronounced on harder presentations (Figure 8), where PPO’s learned value function identifies length-increasing detours that greedy search would not con-sider. The two approaches are complementary: GS’s parallel exploration maximizes raw coverage, while PPO’s learned value function finds the structurally efficient paths. 
+
+4. Cyclic relative positional encodings outperform canon-ical form preprocessing. Comparing PPO-Sub-DRT (588 presentations) with PPO-Sub-Canon (563 presentations) iso-lates the architectural choice for handling cyclic symmetry. The Dual-Ring Transformer’s learned cyclic relative posi-tional encodings provide a 25-presentation improvement over preprocessing inputs into canonical form with standard absolute positional encodings. 
+
+Further Experiments As a preliminary test of the comple-
+
+Figure 7. Distribution of solution path lengths for presentations solved by each method. Substitution-based approaches find dra-matically shorter paths, with PPO leveraging the learned value function to identify even more efficient solutions. Path lengths are reported in substitution steps (supermoves); each step is a compo-sition of AC1, AC2, and AC3 primitive moves. 
+
+Figure 8. Comparison of solution path lengths for hard presen-tations solved by both greedy search and PPO (restricted to pre-sentations where both methods required ≥50 steps). PPO consis-tently discovers substantially shorter solution paths than greedy search, with GS finding a shorter path on only 2 instances. This demonstrates that PPO’s learned value function successfully iden-tifies length-increasing detours that lead to more efficient overall solutions—moves that greedy search’s myopic length-reduction heuristic would reject. 
+
+mentarity above, we ran a beam search using PPO’s policy as the heuristic. The hybrid solves the same 610 presenta-tions as PPO alone, with the mean substitution path length reduced from 13.77 to 12.39 (a 10% reduction). On the 610 instances solved by both methods, the hybrid finds a strictly shorter path on 41% and matches PPO’s length on 56%, sug-gesting that learned heuristics can improve solution quality on top of classical search. Full details of the beam search procedure are provided in Appendix I. We also explored using automorphic numbers as an alter-native reward signal for greedy search (see Appendix D for details). While this approach can recognize a broader set of terminal states and sometimes finds shorter paths, the computational overhead ( ∼100 × per step) makes it cur-rently infeasible for large-scale RL training and did not yield additional solves on the benchmark. 8The Two-Hump Problem 
+
+## 6. Conclusion 
+
+We have shown that progress on the Andrews-Curtis conjec-ture requires understanding the problem’s inherent difficulty structure. The “Two-Hump” phenomenon—where presen-tations are either trivially easy or effectively impossible— explains why previous approaches struggled and motivates our three-pronged solution: substitution supermoves to take larger steps, the Dual-Ring Transformer to handle cyclic symmetry, and targeted data generation to populate the sparse difficulty valley. Our PPO agent solves 153 more presentations than the prior baseline (610 vs 457) and finds shorter paths than classical search algorithms. This progress shows the benefit of using mathematical structure to guide architectural design. Critically, our progress is valuable regardless of whether the AC conjecture turns out to be true: if true, every new trivialization contributes toward a proof; if false, trivializing apparent counterexamples narrows the search for genuine ones. The Two-Hump structure is not unique to AC: bimodal difficulty distributions and the need for progress-violating moves recur across mathematical search. Our techniques transfer naturally to these settings. Looking forward, the generator-solver game and exhaustive enumeration establish systematic methods for data genera-tion in the AC problem. These datasets provide immediate gains, and they become increasingly critical as model ca-pability improves. Our code and datasets are available at 
+
+https://github.com/Math-AI-Caltech/ACS olverX . We also provide a classification of minimal repre-sentatives for the Miller–Schupp benchmark in Appendix F. Significant challenges remain: many benchmark presen-tations are unsolved, and famous potential counterexam-ples like AK(3) lie beyond current reach. However, this work makes concrete progress on a problem that has re-sisted human proof for over 60 years and provides tools and datasets for making future progress. It also shows that further progress will not come from marginal improvements in classical search, and instead will require learning-based methods that can exploit structure beyond what fixed heuris-tics can capture. 
+
+## Acknowledgments 
+
+The project was sponsored by the Defense Advanced Research Projects Agency under cooperative agreement HR0011262E017, by the NSF AIMing grant 2522494, by the DRW Foundation, and by a philanthropic gift from Les Kohn. Additionally, this work was supported with Cloud TPUs from Google’s TPU Research Cloud (TRC), with GPUs from the NVIDIA Academic Grant Program, by cloud computing resources provided by Nebius through the Re-search Program of Nebius Academy, and by Advanced Mi-cro Devices, Inc. under the AMD University Program’s AI & HPC Cluster. M.T. is supported by the U.S. Department of Energy (Grant No. DE-SC0011632) and by the Walter Burke Institute for Theoretical Physics. The content of the information does not necessarily reflect the position or the policy of the Government, and no official endorsement should be inferred. Approved for public release; distribution is unlimited. 
+
+## Impact Statement 
+
+This work contributes to the application of machine learn-ing to open problems in pure mathematics, specifically the Andrews-Curtis conjecture. We view mathematics as a valu-able and challenging testbed for advancing machine learning methods, offering several unique advantages over traditional benchmarks. First, mathematical problems provide objec-tively verifiable success criteria. This eliminates concerns about evaluation metrics, human preference alignment, or subjective quality assessments that complicate other do-mains. Furthermore, problems like the Andrews-Curtis conjecture have resisted human mathematical effort for over 60 years despite their simple statement. The combinatorial search spaces are vast, and the solution landscape exhibits superexponential difficulty drop-offs that challenge standard RL techniques. Progress on the Andrews-Curtis conjecture demonstrates that RL can succeed in extremely sparse re-ward environments where solutions may require hundreds of precise sequential decisions, providing algorithmic in-sights transferable to robotics, theorem proving, program synthesis, and other domains where rewards are rare and delayed. We also note that progress on pure mathematical conjectures poses essentially no risks of harmful applications, such as generating misinformation, enabling surveillance, or au-tomating problematic decisions. The primary impact is ad-vancing human mathematical knowledge and ML capabili-ties. We believe mathematics represents an ideal playground for developing more capable AI systems. 
+
+## References 
+
+Agostinelli, F., McAleer, S., Shmakov, A., and Baldi, P. Solving the Rubik’s cube with deep reinforcement learn-ing and search. Nature Machine Intelligence , 1(8):356– 363, 2019. Akbulut, S. and Kirby, R. A potential smooth counterex-ample in dimension 4 to the Poincar ´e conjecture, the Schoenflies conjecture, and the Andrews–Curtis conjec-ture. Topology , 24(4):375–390, 1985. 9The Two-Hump Problem 
+
+Andrews, J. J. and Curtis, M. L. Free groups and handlebod-ies. Proceedings of the American Mathematical Society ,16(2):192–195, 1965. Badia, A. P., Sprechmann, P., Vitvitskyi, A., Guo, D., Piot, B., Kapturowski, S., Tieleman, O., Arjovsky, M., Pritzel, A., Bolt, A., and Blundell, C. Never give up: Learning di-rected exploration strategies. In International Conference on Learning Representations (ICLR) , 2020. Bowman, R. S. and McCaul, S. B. Fast searching for Andrews–Curtis trivializations. Experimental Mathemat-ics , 15(2):193–197, 2006. Bradbury, J., Frostig, R., Hawkins, P., Johnson, M. J., Leary, C., Maclaurin, D., Necula, G., Paszke, A., VanderPlas, J., Wanderman-Milne, S., and Zhang, Q. JAX: composable transformations of Python+NumPy programs. http: //github.com/google/jax , 2018. Bridson, M. R. The complexity of balanced presenta-tions and the Andrews–Curtis conjecture. arXiv preprint arXiv:1504.04187 , 2015. Burton, B. A., Chang, H.-C., L ¨offler, M., Maria, C., de Mes-may, A., Schleimer, S., Sedgwick, E., and Spreer, J. Hard diagrams of the unknot. Experimental Mathematics , 33 (3):482–500, 2024. DeepMind. AI solves IMO problems at silver-medal level, 2024. URL https://deepmind.google/disc over/blog/ai-solves-imo-problems-at-s ilver-medal-level/ . Accessed: 2025-01-30. Ecoffet, A., Huizinga, J., Lehman, J., Stanley, K. O., and Clune, J. First return, then explore. Nature , 590(7847): 580–586, 2021. Freedman, M. H., Gompf, R. E., Morrison, S., and Walker, K. Man and machine thinking about the smooth 4-dimensional Poincar ´e conjecture. Quantum Topology ,1(2):171–208, 2010. Gompf, R. E., Scharlemann, M., and Thompson, A. Fibered knots and potential counterexamples to the Property 2R and slice-ribbon conjectures. Geometry & Topology , 14 (4):2305–2347, 2010. Gukov, S., Halverson, J., Ruehle, F., and Sułkowski, P. Learning to unknot. Machine Learning: Science and Technology , 2(2):025035, 2021. doi: 10.1088/2632-215 3/abe91f. Havas, G. and Ramsay, C. Breadth-first search and the Andrews–Curtis conjecture. International Journal of Algebra and Computation , 13(1):61–68, 2003. Ivanov, S. On conjectures of Andrews and Curtis. Pro-ceedings of the American Mathematical Society , 146(6): 2283–2298, 2018. Lishak, B. Balanced finite presentations of the trivial group. 
+
+Journal of Topology and Analysis , 9(2):363–378, 2017. Lu, C., Kuba, J., Letcher, A., Metz, L., Schroeder de Witt, C., and Foerster, J. Discovered policy optimisation. Ad-vances in Neural Information Processing Systems , 35: 16455–16468, 2022. Lyndon, R. C. and Schupp, P. E. Combinatorial Group Theory . Classics in Mathematics. Springer-Verlag, Berlin, 2001. ISBN 3-540-41158-5. Reprint of the 1977 edition. Miasnikov, A. D. Genetic algorithms and the Andrews– Curtis conjecture. International Journal of Algebra and Computation , 9(6):671–686, 1999. Miller, C. F. and Schupp, P. E. Some presentations of the trivial group. In Groups, Languages and Geometry (South Hadley, MA, 1998) , volume 250 of Contemporary Math-ematics , pp. 113–115. American Mathematical Society, Providence, RI, 1999. Myasnikov, A. D., Myasnikov, A. G., and Shpilrain, V. On the Andrews–Curtis equivalence. Contemporary Mathe-matics , 296:183–198, 2002. Pathak, D., Agrawal, P., Efros, A. A., and Darrell, T. Curiosity-driven exploration by self-supervised predic-tion. In International conference on machine learning ,pp. 2778–2787. PMLR, 2017. Polu, S. and Sutskever, I. Generative language model-ing for automated theorem proving. arXiv preprint arXiv:2009.03393 , 2020. Polu, S., Han, J. M., Zheng, K., Baksys, M., Babuschkin, I., and Sutskever, I. Formal mathematics statement curricu-lum learning. In International Conference on Learning Representations (ICLR) , 2023. Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. Proximal policy optimization algorithms. 
+
+arXiv preprint arXiv:1707.06347 , 2017. Shehper, A., Medina-Mardones, A., Fagan, L., Lewandowski, B., Gruen, A., Qiu, Y., Kucharski, P., Wang, Z., and Gukov, S. What makes math problems hard for reinforcement learning: A case study. Poster presented at the Conference on Neural Information Processing Systems (NeurIPS), December 2025. URL 
+
+https://arxiv.org/abs/2408.15332 . Poster presentation. 10 The Two-Hump Problem 
+
+Sutton, R. S., Precup, D., and Singh, S. Between MDPs and semi-MDPs: A framework for temporal abstraction in reinforcement learning. Artificial Intelligence , 112 (1):181–211, 1999. ISSN 0004-3702. doi: https://doi. org/10.1016/S0004-3702(99)00052-1. URL https: //www.sciencedirect.com/science/arti cle/pii/S0004370299000521 .Trinh, T. H., Wu, Y., Le, Q. V., He, H., and Luong, T. Solv-ing olympiad geometry without human demonstrations. 
+
+Nature , 625(7995):476–482, 2024. Vezhnevets, A. S., Osindero, S., Schaul, T., Heess, N., Jader-berg, M., Silver, D., and Kavukcuoglu, K. Feudal net-works for hierarchical reinforcement learning. In Interna-tional conference on machine learning , pp. 3540–3549. PMLR, 2017. Yang, K. and Deng, J. Learning to prove theorems via inter-acting with proof assistants. In International Conference on Machine Learning (ICML) , 2019. Yang, K., Swope, A., Gu, A., Chalamala, R., Song, P., Yu, S., Godil, S., Prenger, R. J., and Anandkumar, A. LeanDojo: Theorem proving with retrieval-augmented language models. In Advances in Neural Information Processing Systems , volume 36, 2023. Zhang, C., Zhou, A., George, R. J., Gukov, S., and Anand-kumar, A. AI-driven mathematical discovery for the Andrews–Curtis conjecture. In NeurIPS 2025 Workshop MATH-AI , 2025. URL https://openreview.net /forum?id=lt3Lpa4d2d .
+
+## A. The Dual-Ring Transformer: Architectural Details 
+
+This appendix provides complete architectural specifica-tions for the Dual-Ring Transformer (PPO-Sub-DRT) intro-duced in Section 4. Note that we also evaluate a baseline variant (PPO-Sub-Canon) that uses canonical form prepro-cessing instead of cyclic relative positional encodings—see Appendix E for details on that alternative approach. 
+
+A.1. Input Representation 
+
+The network input consists of two integer arrays represent-ing the relators r1 and r2. We map generators to integers: 
+
+x 7 → 1, x−1 7 → − 1, y 7 → 2, y−1 7 → − 2. The arrays are padded with zeros to a maximum length of L = 24 .
+
+A.2. Embedding 
+
+Each integer token (shifted by +2 to handle the range 
+
+{− 2, −1, 0, 1, 2}) is passed through a learned embedding layer with vocabulary size 5 and embedding dimension 
+
+D = 32 . The embedding dimension equals num heads ×
+
+head dim = 4 × 8 = 32 .
+
+A.3. Dual-Ring Transformer Blocks 
+
+The core of the architecture is a stack of 2 transformer blocks. Each block processes both relators in parallel with self-attention, cross-attention, and feed-forward lay-ers, all using pre-normalization (LayerNorm before each sub-layer): 1. Self-Attention with Cyclic Relative Positional En-coding: Each relator attends to itself using 4-head multi-head attention with head dimension 8. For to-kens at positions i and j in a relator of unpadded length 
+
+L, the cyclic distance is d(i, j ) = ( i − j) mod L. The attention score combines content and relative position: 
+
+Ahij = ( Qhi · Khj ) + ( Qhi · Ehd(i,j )) (1) where Eh ∈ RL×Dh is a learnable position embed-ding table per head, initialized with normal distribution (stddev=0.02). This gives the self-attention layer a cyclic-rotation-equivariant inductive bias. 2. Cross-Attention: The two relators attend to each other via symmetric cross-attention (4 heads, head dimension 8). This uses standard dot-product attention without relative position bias. This allows the network to iden-tify matching substrings between r1 and r2, critical for determining valid substitution moves. 3. Feed-Forward Networks: Standard FFN with GELU activation and hidden dimension 32. 11 The Two-Hump Problem 
+
+All sub-layers use pre-normalization (LayerNorm applied before the sub-layer) and residual connections. 
+
+A.4. Policy Head 
+
+The policy head outputs a distribution over valid substitution moves. For each pair of positions (k1, k 2) in relators r1 and 
+
+r2:1. Concatenate the embeddings at positions k1 and k2:
+
+[h1[k1]; h2[k2]] (dimension 2D = 64 )2. Pass through a 2-layer MLP with GELU activation: • First layer: Linear (64 → 128) + GELU • Output layer: Linear (128 → 4) producing 4 logits corresponding to: 
+
+– Which relator to replace: i ∈ { 1, 2}
+
+– Whether to invert r2: j ∈ {− 1, 1} (using rj
+
+> 2
+
+)3. Apply a semantic mask that sets invalid actions to probability zero: only positions where r1[k1] = 
+
+±r2[k2] (enabling cancellation) receive non-zero prob-ability. This gives a distribution over |r1| × | r2| × 4 possible sub-stitution moves, with invalid moves automatically masked out. 
+
+A.5. Value Head 
+
+The value head estimates the expected return. It applies masked mean pooling over each relator (averaging only non-padding positions), concatenates the two pooled vectors (dimension 2D = 64 ), and passes through a 3-layer MLP with GELU activation: • First layer: Linear (64 → 256) + GELU • Second layer: Linear (256 → 256) + GELU • Output layer: Linear (256 → 1) producing the scalar value estimate 
+
+A.6. Hyperparameters 
+
+• Embedding dimension D: 32 (= num heads ×
+
+head dim = 4 × 8)• Number of transformer blocks: 2 • Number of attention heads (per block): 4 • Head dimension: 8 • Feed-forward hidden dimension: 32 • Maximum sequence length L: 24 • Vocabulary size: 5 (tokens {− 2, −1, 0, 1, 2} with +2 shift) • Activation function: GELU • Policy head MLP: (2 D → 128 → 4) 
+
+• Value head MLP: (2 D → 256 → 256 → 1) 
+
+Training details including PPO hyperparameters, reward function, and environment allocation are in Appendix B. 
+
+## B. PPO Training Details 
+
+This appendix provides complete details on the PPO training setup used for the results in Section 5. 
+
+B.1. Reward Function 
+
+We use a length-based reward function: 
+
+r(s, a, s ′) = 
+
+(
+
+1000 if s′ trivial 
+
+max( −(|r′
+
+> 1
+
+| + |r′
+
+> 2
+
+|), −10) otherwise (2) where |r′
+
+> i
+
+| denotes the length of relator i in state s′. This encourages length reduction close to the trivial presentation and incentivizes finding shorter paths. It is similar to the most effective reward function in (Shehper et al., 2025). 
+
+B.2. Environment Allocation and Sampling Strategy Parallel Environment Setup. We train with 2,380 parallel environments. The first 640 environments are reserved for the 640 presentations from the Miller-Schupp benchmark known to be AC-trivial (determined via greedy search). The remaining 1,740 environments sample from AC-19 or AC-1M using adaptive sampling (described below). We found that this allocation outperformed using all 1190 benchmark presentations: we never solved any presenta-tion outside the initial 640 AC-trivial set, suggesting the remaining 550 presentations may be substantially harder or potentially not AC-trivial. 
+
+Adaptive Sampling Function. For the 1,740 sampling environments, we use an adaptive sampling strategy that balances exploration (trying rarely-attempted presentations) with exploitation (focusing on presentations near the bound-ary of solvability). Each presentation p ∈ AC-19 or 
+
+p ∈ AC-1M is assigned a sampling weight: 
+
+w(p) = 1 − (s(p)) (1 + n(p)) 1/2 (3) where s(p) = nsolved (p) 
+
+> n(p)+5
+
+approximates the historical solve rate for presentation p, nsolved (p) is the number of times p has 12 The Two-Hump Problem 
+
+been solved, and n(p) is the total number of times p has been attempted. This function is a natural choice because: • The numerator (1 −s(p)) prioritizes unsolved or rarely-solved presentations, which are more informative for learning than repeatedly solving easy presentations. • The offset +5 ensures that presentations are solved many times before being passed on for harder presen-tations. • The denominator (1 + n(p)) 1/2 down-weights presen-tations that have been attempted many times, encour-aging diversity and preventing over-sampling of pre-sentations that happen to be at the current difficulty frontier. This sampling strategy effectively implements a form of curriculum learning that automatically adapts to the agent’s current capability level, focusing training on the “valley” between trivially easy and impossibly hard presentations. 
+
+B.3. PPO Hyperparameters and Training Settings 
+
+We use Proximal Policy Optimization (Schulman et al., 2017) based on the PureJaxRL implementation (Lu et al., 2022). All training is done in JAX (Bradbury et al., 2018). 
+
+Training hyperparameters: 
+
+• Total training steps: 250M environment interactions • Horizon length (rollout length per update): 96 steps • Number of parallel environments: 2,380 (640 fixed + 1,740 sampling) • Learning rate: 2.5 × 10 −3 (constant, no annealing) • Number of update epochs per rollout: 3 • Number of minibatches per update: 8 • PPO clip parameter ϵ: 0.2 • Discount factor γ: 0.999 • GAE lambda λ: 0.95 • Entropy coefficient: 0.01 • Value function coefficient: 0.5 • Maximum gradient norm (gradient clipping): 0.5 
+
+Evaluation: 
+
+• We train 5 independent agents with different random seeds • We report mean, min, and max number of solved pre-sentations over the 5 seeds 
+
+B.4. Compute and Reproducibility Hardware. 
+
+• Greedy search experiments: a single AMD EPYC 7502P (2.50 GHz, 32 cores, 512 GB RAM), paral-lelized into 60 subprocesses. • PPO experiments: a single AMD Instinct MI210 GPU (64 GB HBM). 
+
+Wall-clock time. 
+
+• PPO training (250M environment interactions): ap-proximately 11 hours. • Greedy search with a 10M-node budget: up to 60 min-utes per presentation. • Generator-solver training: approximately 36 hours on the GS hardware above. • AC-19 enumeration: approximately 20,000 CPU-hours. • AC-1M generation: approximately 2,900 CPU-hours. 
+
+Training stability. As a representative figure, PPO-Sub-DRT + AC-19 achieves 607 .2 ± 2.2 solves over the 5 seeds (range 605–610), indicating stable training. Full per-method statistics appear in Table 1. 
+
+## C. Generator-Solver Game 
+
+We formulated a two-player asymmetric game to generate more “hard-but-solvable” data for curriculum training. The 
+
+Generator applies automorphisms to an existing solved pre-sentation, with the primary reward being the transformation of the presentation into one that the Solver can no longer solve, while also increasing its difficulty in terms of path length, and length growth. The Solver , implemented either as a reinforcement-learning agent or via greedy search, then attempts to trivialize the resulting presentation. As explained in Section 3, if a presentation P is trivialized by a Solver, then its automorphic image ϕ(P ) is also AC-trivial. However, a trivialization path for ϕ(P ) may be harder to find than that of P due to different length statistics. 13 The Two-Hump Problem 
+
+C.1. Setup Generator: We implement the Generator as a PPO Actor-Critic agent. The value head is a feed-forward network with two hidden layers of 128 units each. The actor is a dual-head feed-forward network, also with two hidden layers of 128 units each: one head outputs logits for the number of automorphisms n to apply, while the other outputs the logits for sampling each automorphism ai. Each automorphism is either inversion ( xi 7 → x−1 
+
+> i
+
+) or concatenation ( xi 7 → xixj
+
+for i̸ = j). To mitigate potential length explosion from concatenation moves, we impose a hard constraint on presentation length. At each step i, a candidate automorphism ai is sampled from the actor policy and applied to the current presentation only if the resulting presentation P does not exceed a fixed length threshold Lmax ; otherwise, ai is discarded and the presentation remains unchanged. An action a is thus defined as the subsequence of valid elements of (a1, · · · , a i).The reward for the generator rgen (s, a, s ′) is evaluated using a complexity measure score, defined as a linear combination of feedback signals returned by the Solver: 
+
+rgen (s, a, s ′) = −ws s + wl l + wi i + wn n. 
+
+Here: • s (solved indicator): equals 1 if the Solver successfully solves the presentation and 0 otherwise. Note that a solved presentation incurs a penalty. • l (solution path length): the length of the Solver’s solution path when the instance is solved, 0 otherwise. • i (intermediate length increase): the maximum length attained by any intermediate presentation along the Generator’s trajectory. If no path was found, i is given by the difference between the lengths of the initial presentation and the maximum length among all pre-sentations considered. For greedy search, this puts a lower bound on length increase for any path that could be potentially discovered. • n (nodes visited): the number of nodes explored by the Solver’s greedy search, when applicable. 
+
+Solver: The Solver can be a greedy search solver or a re-inforcement agent equipped with Dual-Ring Transformer policy and value heads. In the experiments, we used exclu-sively the greedy search solver. 
+
+C.2. Generating AC-1M 
+
+To generate AC-1M , we employ greedy search with a maxi-mum of 10,000 nodes as the Solver. The trained Generator generates 10 actions per episode and the length threshold 
+
+Lmax = 30 .
+
+Training: The training data and validation data are taken from the 1007 presentations from AC-19 requiring between 5,000 and 10,000 nodes to trivialize, with a train-test split of 80% to 20%. Evaluation is performed after each PPO optimization step. Reward features are saved after training and validation. We set the weights at ws = 10 ,000 , wl = 1 , wi = 1 ,000 
+
+and wn = 10 . This is meant to incentivize presentations that challenge the solver, push the left hump rightwards, and populate the “valley.” We also explicitly reward presenta-tions where the length increase is large, since solving any potential counterexample requires taking a path with this property. Finally, ws and wn are used to balance the fact that l = 0 for unsolved presentations. The hyperparameters used for training were as follows: • Learning rate: 2.5 × 10 −4 with linear decay • Clip parameter ϵ: 0.2 • Value function coefficient: 0.5 • Entropy coefficient: 0.01 • GAE λ: 0.95 • Discount factor γ: 0.99 • Batch size: 40000 • Number of epochs per update: 2 
+
+Result: To construct AC-1M , the trained network is applied to the entire AC-19 , producing 10 automorphic images for each presentation. 
+
+## D. Automorphisms and the Automorphic Number 
+
+This appendix provides minimal mathematical background on automorphisms of free groups for readers with limited mathematical background. 
+
+D.1. Automorphisms of Free Groups 
+
+An automorphism of the free group F2 = ⟨x, y ⟩ is an isomorphism ϕ : F2 → F2—a bijective homomorphism from the group to itself. Every automorphism is uniquely determined by where it sends the generators x and y.The automorphism group Aut (F2) can be generated by four 14 The Two-Hump Problem 
+
+elementary automorphisms: 
+
+α1 : ( x, y ) 7 → (x−1, y ) (invert first generator) (4) 
+
+α2 : ( x, y ) 7 → (x, y −1) (invert second generator) (5) 
+
+α3 : ( x, y ) 7 → (y, x ) (swap generators) (6) 
+
+α4 : ( x, y ) 7 → (xy, y ) (multiply first by second) (7) Any automorphism can be expressed as a composition of these elementary operations. 
+
+D.2. The Automorphic Number 
+
+Given a presentation P = ⟨x, y | r1, r 2⟩, its automorphic number m(P ) (or m(r) for a single relator) is: 
+
+m(r) = min  
+
+> ϕ∈Aut (F2)
+
+|ϕ(r)| (8) where |r| denotes word length. Intuitively, m(r) is the shortest length we can achieve for relator r by applying any automorphism. 
+
+Key property: If m(r) = 1 , then the relator r can be reduced to a single generator (say x) under some automor-phism. This means the presentation ⟨x, y | r, r 2⟩ is AC-trivial, because after applying the automorphism we can use AC2 moves to eliminate all occurrences of x from r2.Computing m(r) exactly can be done using Whitehead’s algorithm (Lyndon & Schupp, 2001), though this is compu-tationally expensive. 
+
+D.3. Automorphic Reward for Greedy Search 
+
+We experimented with using the automorphic number as an alternative heuristic for greedy search. Instead of prioritiz-ing presentations with small total length |r1| + |r2|, we can prioritize presentations with small automorphic complexity 
+
+m(r1) + m(r2).The automorphic reward function is defined as: 
+
+r(s) = 
+
+(
+
+−m(r1) − m(r2), if min( m(r1), m (r2)) > 1,H, otherwise, (9) where H is a large terminal reward. A state is terminal if either m(r1) = 1 or m(r2) = 1 , since such presentations are guaranteed to be AC-trivial. 
+
+Results: This reward function has both advantages and disadvantages: • Advantage: Expands the set of recognized terminal states. On the 1190-presentation Miller–Schupp bench-mark, 98 presentations are already terminal under the automorphic criterion (compared to only the trivial pre-sentation for length-based search). For presentations solved by both methods, the automorphic reward often finds shorter solution paths. • Disadvantage: Computing m(r) using Whitehead’s algorithm incurs approximately 100 × computational overhead per step. This makes the approach compu-tationally expensive and currently infeasible for RL training. Despite the theoretical advantages, the au-tomorphic greedy search did not solve any additional presentations on the Miller–Schupp benchmark com-pared to length-based greedy search, likely due to the restricted computational budget imposed by the expen-sive reward computation. Figure 9 compares the number of search nodes required by length-based versus automorphic greedy search for presen-tations solved by both methods.  
+
+> Figure 9. Comparison of greedy search with substitutions using length-based vs automorphic rewards on the Miller–Schupp dataset (in the figure, AGS denotes automorphic greedy search). Plotted are the number of nodes required for presentations solved by both approaches. The automorphic reward often requires fewer nodes but has much higher computational cost per node.
+
+## E. Canonical Form 
+
+Relators in group presentations are topologically cyclic ob-jects—rotation does not change the underlying structure. Similarly, inversion and relator ordering are symmetries that do not affect AC-triviality. There are two main approaches to handling these symmetries in neural architectures: 1. Canonical form preprocessing (PPO-Sub-Canon): 
+
+Reduce all presentations to a unique canonical repre-sentative before feeding to a standard Transformer with absolute positional encodings. 2. Learned symmetry-aware representations (PPO-Sub-DRT): Use cyclic relative positional encodings that allow the network to flexibly attend to cyclically-related positions throughout processing. 15 The Two-Hump Problem 
+
+As shown in Table 1, the learned approach (PPO-Sub-DRT) outperforms canonical form preprocessing (PPO-Sub-Canon) by approximately 25 presentations. This section describes the canonical form approach used in the baseline comparison. 
+
+E.1. Canonical Form Definition 
+
+As discussed in Section 2.3, AC1 and AC3 moves preserve the set of available substitutions, allowing us to mod out by these symmetry operations. We achieve this by maintaining all presentations in a canonical form, which uniquely repre-sents each equivalence class under cyclic rotation, inversion, and relator ordering. 
+
+Definition E.1 (Canonical Form) . A balanced presentation 
+
+⟨x, y | r1, r 2⟩ is in canonical form if: 1. Each relator ri is the lexicographically minimal el-ement among all its cyclic rotations and the cyclic rotations of its inverse: 
+
+ri = min 
+
+> lex
+
+rot k(ri), rot k(r−1 
+
+> i
+
+) | k ∈ Z
+
+2. The relators are ordered lexicographically: r1 ≤lex r2
+
+Every presentation can be reduced to a canonical form. 
+
+Implication for substitutions. Note that the relators r1r−12 ,
+
+r−12 r1, r−11 r2 and r2r−11 all have the same canonical form. This is why, for substitution moves, we only need to in-vert r2 and only append r±12 onto r1—the canonical form automatically handles the other variants. This observation significantly reduces the effective action space while main-taining completeness. 
+
+## F. Benchmark Dataset Classification 
+
+This appendix provides a complete classification of the 1,190-presentation Miller–Schupp benchmark into equiva-lence classes and minimal representatives. 
+
+F.1. Full Classification Table 
+
+The first table (Table 2) classifies all 1,190 presentations from the Miller–Schupp benchmark, indexed by family pa-rameters (n, w ). Entries marked trivial are the 640 presen-tations we successfully trivialized using greedy search with substitutions. The remaining entries give a counterexam-ple class label, where the number is the minimal length of the class and the subscript is the class index; the minimal representatives of these classes are listed in Table 3. 16 The Two-Hump Problem 
+
+Table 2. Classification results for benchmark dataset. Presentations indexed by n and word w. For unsolved presentations, the counterexample class is given, where the number refers to the minimal length and the subscript to the index. The list of minimal representatives for each class is given in Table 3. 
+
+w n = 1 n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 
+
+y−1 trivial trivial trivial trivial trivial trivial trivial 
+
+y trivial trivial trivial trivial trivial trivial trivial 
+
+y2 trivial trivial trivial trivial trivial trivial trivial 
+
+y−2 trivial trivial trivial trivial trivial trivial trivial 
+
+y3 trivial trivial trivial trivial trivial trivial trivial 
+
+y−3 trivial trivial trivial trivial trivial trivial trivial 
+
+y−4 trivial trivial trivial trivial trivial trivial trivial 
+
+x−1y−1xy trivial trivial trivial trivial trivial trivial trivial 
+
+x−1y−1xy −1 trivial trivial 13 1 15 1 16 1 20 9 22 14 
+
+yxyx −1 trivial trivial 13 1 15 1 16 1 20 8 22 13 
+
+y4 trivial trivial trivial trivial trivial trivial trivial 
+
+yxy −1x−1 trivial trivial trivial trivial trivial trivial trivial 
+
+x−1y−1xy 2 trivial trivial trivial 14 1 trivial 19 34 19 38 
+
+yx −1y−1xy trivial trivial trivial trivial trivial trivial trivial 
+
+yxyx −1y−1 trivial trivial 13 1 15 1 16 1 17 1 21 1
+
+yxyx −1y trivial trivial 13 1 15 1 16 1 20 8 23 21 
+
+x−1y−1xy −2 trivial trivial trivial 15 11 14 1 17 36 21 37 
+
+yxy −1x−1y trivial trivial trivial trivial trivial trivial trivial 
+
+y−1xy −1x−1y−1 trivial trivial 13 1 15 1 16 1 17 1 23 24 
+
+yxy −2x−1 trivial trivial trivial 14 1 trivial 19 33 19 37 
+
+y−1xyx −1y−1 trivial trivial trivial trivial trivial trivial trivial 
+
+y2xyx −1 trivial trivial trivial trivial 17 30 16 6 23 22 
+
+y2xy −1x−1 trivial trivial 13 1 trivial 17 31 16 7 21 35 
+
+x−1y−2xy −1 trivial trivial trivial trivial 17 33 16 9 23 23 
+
+yxy 2x−1 trivial trivial trivial 15 10 14 1 17 34 21 34 
+
+yxy −1x−1y−1 trivial trivial trivial trivial trivial trivial trivial 
+
+y5 trivial trivial trivial trivial trivial trivial trivial 
+
+y−5 trivial trivial trivial trivial trivial trivial trivial 
+
+yx −1y−1xy −1 trivial trivial 13 1 15 1 16 1 17 35 21 36 
+
+x−1y−2xy trivial trivial 13 1 trivial 17 32 16 8 21 38 
+
+yx −1y−1xy 2 trivial trivial trivial 14 1 trivial 19 34 17 42 
+
+yxy −2x−1y trivial trivial trivial 14 1 trivial 19 33 19 37 
+
+y−1xy −2x−1y−1 trivial trivial trivial 15 11 14 1 17 36 21 37 
+
+y−1xy −1x−1y−2 trivial trivial 13 1 15 1 16 1 17 1 18 7
+
+yx −1y−1xy −2 trivial trivial trivial 15 11 14 1 17 36 15 13 
+
+y2xy −2x−1 trivial trivial trivial trivial trivial trivial trivial 
+
+y−1xy 2x−1y−1 trivial trivial trivial 14 1 trivial 19 34 20 12 
+
+y2x−1y−1xy −1 trivial trivial 13 1 15 1 16 1 17 35 18 6
+
+y2xy −1x−1y trivial trivial 13 1 trivial 17 31 16 7 21 35 
+
+y2xy −1x−1y−1 trivial trivial 13 1 trivial 17 31 16 7 21 35 
+
+y6 trivial trivial trivial trivial trivial trivial trivial 
+
+yx −1y−2xy −1 trivial trivial trivial trivial 17 33 16 9 23 23 
+
+y2x−1y−1xy trivial trivial trivial trivial trivial trivial trivial 
+
+yx −1y−2xy trivial trivial 13 1 trivial 17 32 16 8 21 38 
+
+yxy −1x−1y2 trivial trivial trivial trivial trivial trivial trivial 
+
+y−1xyx −1y−2 trivial trivial trivial trivial trivial trivial trivial 
+
+yxy −2x−1y−1 trivial trivial trivial 14 1 trivial 19 33 17 41 
+
+y2xyx −1y−1 trivial trivial trivial trivial 17 30 16 6 23 22 
+
+x−1y−2xy −2 trivial trivial trivial trivial 16 5 19 36 20 11 
+
+Continued on next page 17 The Two-Hump Problem 
+
+Table 2 – continued from previous page 
+
+w n = 1 n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 
+
+yxyx −1y−2 trivial trivial 13 1 15 1 16 1 17 1 18 7
+
+x−2y−1x2y−1 trivial 14 1 16 2 18 3 20 3 22 4 24 4
+
+x−2y−1x2y trivial 14 2 16 3 18 2 20 2 22 3 24 3
+
+yx 2yx −2 trivial 14 1 16 2 18 1 20 1 22 1 24 1
+
+yxyx −1y2 trivial trivial 13 1 15 1 16 1 17 35 18 6
+
+y3xyx −1 trivial trivial trivial trivial 17 32 trivial 19 40 
+
+x−1y−3xy −1 trivial trivial trivial trivial 17 31 trivial 19 42 
+
+y3xy −1x−1 trivial trivial trivial 15 1 17 33 trivial 18 9
+
+x−1y−3xy trivial trivial trivial 15 1 17 30 trivial 18 11 
+
+yxy −3x−1 trivial trivial 13 1 15 10 trivial 17 38 18 8
+
+yx 2y−1x−2 trivial 14 2 16 3 18 2 20 2 22 2 24 2
+
+x−1y−2xy 2 trivial trivial trivial trivial trivial trivial trivial 
+
+yxy −1x−1y−2 trivial trivial trivial trivial trivial trivial trivial 
+
+yxy 2x−1y−1 trivial trivial trivial 15 10 14 1 17 34 15 12 
+
+y−6 trivial trivial trivial trivial trivial trivial trivial 
+
+yxy 2x−1y trivial trivial trivial 15 10 14 1 17 34 21 34 
+
+x−1y−1xy 3 trivial trivial 13 1 15 11 trivial 17 39 18 10 
+
+y2xy 2x−1 trivial trivial trivial trivial 16 4 19 35 20 10 
+
+y−1x−1y−2xy trivial trivial 13 1 trivial 17 32 16 8 21 38 
+
+yxy 3x−1 trivial trivial trivial 14 1 trivial 17 37 19 39 
+
+x−1y−1xy −3 trivial trivial trivial 14 1 trivial 17 40 19 41 
+
+y2xyx −1y trivial trivial trivial trivial 17 30 16 6 23 22 
+
+y−1x−1y−2xy −1 trivial trivial trivial trivial 17 33 16 9 23 23 
+
+yxyx −1y−3 trivial trivial 13 1 15 1 16 1 17 1 18 7
+
+yxy 4x−1 trivial trivial trivial trivial trivial 17 38 trivial 
+
+yxy 3x−1y trivial trivial trivial 14 1 trivial 17 37 19 39 
+
+yxyxy −1x−2 trivial 15 7 17 13 19 12 21 11 23 6 25 12 
+
+yxyxyx −2 trivial 15 6 17 12 19 11 21 10 23 5 25 11 
+
+yxy 2x−1y2 trivial trivial trivial 15 10 14 1 17 34 21 34 
+
+yxy 2x−1y−2 trivial trivial trivial 15 10 14 1 17 34 15 14 
+
+yxyx −1y3 trivial trivial 13 1 15 1 16 1 17 35 18 6
+
+yxy 3x−1y−1 trivial trivial trivial 14 1 trivial 17 37 19 39 
+
+x−2y−2x2y−1 trivial trivial 17 9 19 28 21 26 23 19 25 28 
+
+y2x−1y−2xy trivial trivial 13 1 trivial 17 32 16 8 21 38 
+
+y4xyx −1 trivial trivial 13 1 trivial trivial 16 8 19 46 
+
+y4xy −1x−1 trivial trivial trivial trivial 16 1 16 9 19 47 
+
+y3xy 2x−1 trivial trivial trivial 14 1 trivial trivial 21 40 
+
+y3xyx −1y trivial trivial trivial trivial 17 32 trivial 19 40 
+
+y3xyx −1y−1 trivial trivial trivial trivial 17 32 trivial 19 40 
+
+y3xy −2x−1 trivial trivial trivial 15 11 16 5 trivial 19 45 
+
+y3xy −1x−1y trivial trivial trivial 15 1 17 33 trivial 18 9
+
+y3xy −1x−1y−1 trivial trivial trivial 15 1 17 33 trivial 18 9
+
+y3x−1y−1xy trivial trivial trivial trivial trivial trivial trivial 
+
+y3x−1y−1xy −1 trivial trivial 13 1 15 1 16 1 17 35 18 6
+
+y2xy 3x−1 trivial trivial 13 1 trivial trivial 18 4 21 39 
+
+y2xy 2x−1y trivial trivial trivial trivial 16 4 19 35 20 10 
+
+y2xy 2x−1y−1 trivial trivial trivial trivial 16 4 19 35 20 10 
+
+y2xyx −1y2 trivial trivial trivial trivial 17 30 16 10 23 22 
+
+y2xyx −1y−2 trivial trivial trivial trivial 17 30 16 6 19 43 
+
+y2x2yx −2 trivial trivial 17 16 19 15 21 14 23 9 25 15 
+
+y2x2y−1x−2 trivial trivial 17 17 19 16 21 15 23 10 25 16 
+
+Continued on next page 18 The Two-Hump Problem 
+
+Table 2 – continued from previous page 
+
+w n = 1 n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 
+
+y2xy −3x−1 trivial trivial trivial trivial trivial trivial 19 44 
+
+y2xy −2x−1y−1 trivial trivial trivial trivial trivial trivial trivial 
+
+y2xy −1x−1y2 trivial trivial 13 1 trivial 17 31 16 7 21 35 
+
+y2xy −1x−1y−2 trivial trivial 13 1 trivial 17 31 16 7 21 35 
+
+y2x−1y−1xy 2 trivial trivial trivial 14 1 trivial 19 34 17 42 
+
+y2x−1y−1xy −2 trivial trivial trivial 15 11 14 1 17 36 15 15 
+
+y2x−1y−2xy −1 trivial trivial trivial trivial 17 33 16 9 19 48 
+
+y2xy −2x−1y trivial trivial trivial trivial trivial trivial trivial 
+
+yxy −1x−1y3 trivial trivial trivial trivial trivial trivial trivial 
+
+yx 2yx −1yx −1 trivial 15 3 17 3 19 2 20 4 21 30 25 2
+
+y−1xy −1x−1y−3 trivial trivial 13 1 15 1 16 1 17 1 18 7
+
+y−2xyx −1y−2 trivial trivial 13 1 trivial 17 32 16 8 21 38 
+
+y−2xy −1x−1y−2 trivial trivial trivial trivial 17 33 16 9 23 23 
+
+y−7 trivial trivial trivial trivial trivial trivial trivial 
+
+y−1x−1y−2xy 2 trivial trivial trivial trivial trivial trivial trivial 
+
+y−1x−1y−2xy −2 trivial trivial trivial trivial 16 5 19 36 20 11 
+
+y−1x−1y−3xy trivial trivial trivial 15 1 17 30 trivial 18 11 
+
+y−1x−1y−3xy −1 trivial trivial trivial trivial 17 31 trivial 19 42 
+
+x−1y−1xy 4 trivial trivial trivial 15 1 14 1 17 40 trivial 
+
+x−1y−1x2yx −1y−1 trivial 15 8 17 26 19 29 21 27 23 20 25 29 
+
+x−1y−1x2y−1x−1y−1 trivial 15 9 17 27 19 30 20 7 21 33 25 30 
+
+x−1y−1xy −4 trivial trivial trivial trivial trivial 17 39 trivial 
+
+x−1y−2xy 3 trivial trivial trivial trivial trivial trivial 19 49 
+
+x−1y−2xy −3 trivial trivial 13 1 trivial trivial 18 5 21 41 
+
+x−1y−3xy 2 trivial trivial trivial 15 10 16 4 trivial 19 50 
+
+x−1y−3xy −2 trivial trivial trivial 14 1 trivial trivial 21 42 
+
+x−1y−4xy trivial trivial trivial trivial 16 1 16 6 19 51 
+
+x−1y−4xy −1 trivial trivial 13 1 trivial trivial 16 7 19 52 
+
+x−1y−1x−1y−1x2y trivial 14 1 17 28 19 31 21 28 22 11 25 31 
+
+x−1y−1x−1y−1x2y−1 trivial 14 2 17 29 19 32 21 29 22 12 25 32 
+
+x−2y−1xyxy trivial 15 3 17 22 19 23 21 21 23 14 25 23 
+
+x−2y−1xyxy −1 trivial 15 5 17 23 19 24 21 22 23 15 25 24 
+
+x−2y−1x2y2 trivial 15 9 17 20 19 21 21 19 23 12 25 21 
+
+x−2y−1x2y−2 trivial 15 6 17 21 19 22 21 20 23 13 25 22 
+
+x−2y−1xy −1xy trivial 15 4 17 24 19 25 21 23 23 16 25 25 
+
+x−2y−1xy −1xy −1 trivial 15 2 17 25 19 26 21 24 23 17 25 26 
+
+x−2y−2x2y trivial trivial 17 5 19 27 21 25 23 18 25 27 
+
+y−1xy −2x−1y−2 trivial trivial trivial 15 11 14 1 17 36 21 37 
+
+yx 2y2x−2 trivial 15 2 17 2 19 1 21 2 23 1 25 1
+
+y−1xy −3x−1y−1 trivial trivial trivial 14 1 trivial 17 40 19 41 
+
+y−1xy 2x−1y−2 trivial trivial trivial 14 1 trivial 19 34 20 12 
+
+yx 2yx −1y−1x−1 trivial 15 4 17 6 19 5 21 5 23 2 25 5
+
+yx 2yx −2y trivial 14 2 17 4 19 3 21 3 22 5 25 3
+
+yx 2yx −2y−1 trivial 14 2 17 5 19 4 21 4 22 6 25 4
+
+yx 2y−2x−2 trivial 15 3 17 11 19 10 21 9 23 4 25 10 
+
+yx 2y−1x−1yx −1 trivial 15 5 17 7 19 6 21 6 23 3 25 6
+
+yx 2y−1x−1y−1x−1 trivial 15 2 17 10 19 9 20 5 21 31 25 9
+
+yx 2y−1x−2y trivial 14 1 17 8 19 7 21 7 22 7 25 7
+
+yx 2y−1x−2y−1 trivial 14 1 17 9 19 8 21 8 22 8 25 8
+
+yxy −1xyx −2 trivial 15 8 17 14 19 13 21 12 23 7 25 13 
+
+yxy −1xy −1x−2 trivial 15 9 17 15 19 14 21 13 23 8 25 14 
+
+Continued on next page 19 The Two-Hump Problem 
+
+Table 2 – continued from previous page 
+
+w n = 1 n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 
+
+yxy −4x−1 trivial trivial trivial 15 1 14 1 17 37 trivial 
+
+yxy −3x−1y trivial trivial 13 1 15 10 trivial 17 38 18 8
+
+yxy −3x−1y−1 trivial trivial 13 1 15 10 trivial 17 38 18 8
+
+yxy −2x−1y2 trivial trivial trivial 14 1 trivial 19 33 19 37 
+
+yxy −2x−1y−2 trivial trivial trivial 14 1 trivial 19 33 17 41 
+
+yxy −1x−1y−3 trivial trivial trivial trivial trivial trivial trivial 
+
+yx −1y−1xy 3 trivial trivial 13 1 15 11 trivial 17 39 18 10 
+
+yx −1y−1x2yx −1 trivial 14 1 17 16 19 19 21 17 22 9 25 19 
+
+yx −1y−1x2y−1x−1 trivial 14 2 17 17 19 20 21 18 22 10 25 20 
+
+yx −1y−1xy −3 trivial trivial trivial 14 1 trivial 17 40 19 41 
+
+yx −1y−2xy 2 trivial trivial trivial trivial trivial trivial trivial 
+
+yx −1y−2xy −2 trivial trivial trivial trivial 16 5 19 36 20 11 
+
+yx −1y−3xy trivial trivial trivial 15 1 17 30 trivial 18 11 
+
+yx −1y−3xy −1 trivial trivial trivial trivial 17 31 trivial 19 42 
+
+yx −2y−1x2y trivial 15 6 17 18 19 17 20 6 21 32 25 17 
+
+yx −2y−1x2y−1 trivial 15 7 17 19 19 18 21 16 23 11 25 18 
+
+y−1xy 3x−1y−1 trivial trivial 13 1 15 11 trivial 17 39 18 10 
+
+y−1xyx −1y−3 trivial trivial trivial trivial trivial trivial trivial 
+
+y7 trivial trivial trivial trivial trivial trivial trivial 
+
+F.2. Unsolved Presentations: Equivalence Classes 
+
+The second table classifies the remaining 550 unsolved presentations into 261 distinct AC-equivalence classes. For each equivalence class, we provide the minimal representative for the class and the number of times it appears in the MS dataset (the above table). This classification reveals that many unsolved presentations are AC-equivalent to each other, reducing the 550 unsolved instances to just 261 genuinely distinct hard cases. This provides the community with a concrete checklist of minimal potential counterexamples for future algorithmic development. 
+
+Table 3. Minimal counterexamples from benchmark dataset with number of occurrences. 
+
+r1 r2 name occurrences 
+
+y−1x−1yx −1y−1x y−3x−4 13 1 34 
+
+y−3x−1y2x y−1x−2y−1x3 14 1 36 
+
+y−3xy 2x−1 y−1x−2yx 3 14 2 6
+
+y−2x−1yx −1yx y−2x4yx −1 15 1 22 
+
+y−1x−3yx 2 y−3x−2y2x−1 15 2 3
+
+y−3x−1y2x y−1x−2y−1x2y−1x 15 3 3
+
+y−3x−1y2x y−1x−1yx −1yx 3 15 4 2
+
+y−3x−1y2x y−1x−1yx −2yx 2 15 5 2
+
+y−1x−2yx 3 y−3x−1yx −1yx −1 15 6 3
+
+y−3x−1y2x y−1x−1y−1x3yx −1 15 7 2
+
+y−3x−1y2x y−1x−2y−1x2yx −1 15 8 2
+
+y−1x−3yx 2 y−3x2y2x−1 15 9 3
+
+y−1x−1yx 2yx −1 y−2x−1y2xy −1x 15 10 9
+
+y−3x−1yx 2 y−3x2y2x−1 15 11 9
+
+y−2x−1y2x2 y−1x−3yxy −1x 15 12 1
+
+y−2x−2y2x y−1x−1y−1x−1yx 3 15 13 1
+
+y−2x−2yx 2 y−3xyx −1yx −1 15 14 1
+
+y−2x−2yx 2 y−3xyxyx −1 15 15 1
+
+y−2x−1yx −1yx y−2x5yx −1 16 1 16 Continued on next page 20 The Two-Hump Problem 
+
+Table 3 – continued from previous page 
+
+r1 r2 name occurrences 
+
+y−3x−1y2x−1 y−1x−4yx 3 16 2 2
+
+y−3x−1y2x y−1x−4yx 3 16 3 2
+
+y−2x−2yx −2 y−3xy 2x−1yx −1 16 4 4
+
+y−2x2yx 2 y−3xy 2xyx −1 16 5 4
+
+y−2xyxy −1x−1 y−1x−1yx −2yx 3 16 6 5
+
+y−2xy −1xyx −1 y−1x−3yx 2y−1x 16 7 6
+
+y−2xyx −1y−1x−1 y−1x−1y−1x−2yx 3 16 8 6
+
+y−2x−1yx −1y−1x−1 y−2x−4yx 2 16 9 6
+
+y−2x2yx −2 y−4x−1y−1xy −1x 16 10 1
+
+y−1x−1y−1x−1yx 2 y−5xyx −1yx −1 17 1 6
+
+y−2x−2y−1x3 y−3x−1y−1xy −1x2 17 2 1
+
+y−1x−2y−1x2y−1x y−4x−1y3x 17 3 1
+
+y−1x−2y−1xy −1x2 y−4x−1y3x 17 4 1
+
+y−2x2yx −3 y−4x−1y3x 17 5 2
+
+y−1x−2y−1x2yx y−4x−1y3x 17 6 1
+
+y−1x−1yx −2yx 2 y−4x−1y3x 17 7 1
+
+y−1x−2yx −1yx 2 y−4x−1y3x 17 8 1
+
+y−1x−1yx 2y−1x−2 y−4x−1y3x 17 9 2
+
+y−1x−1y−1x−2yx 2 y−4x−1y3x 17 10 1
+
+y−2x−3yx 2 y−1x−1yx 2yx −1y−1x 17 11 1
+
+y−1x−1y−1x−1y−1x3 y−4x−1y3x 17 12 1
+
+y−1x−1y−1x3yx −1 y−4x−1y3x 17 13 1
+
+y−1x−1yx −1y−1x3 y−4x−1y3x 17 14 1
+
+y−1x−3yxy −1x y−4x−1y3x 17 15 1
+
+y−1x−2yxy −1x2 y−4x−1y3x 17 16 2
+
+y−1x−2yx −1y−1x2 y−4x−1y3x 17 17 2
+
+y−1x−2yx 2y−1x y−4x−1y3x 17 18 1
+
+y−1x−1yx −2y−1x2 y−4x−1y3x 17 19 1
+
+y−2x−2yx 3 y−4x−1y3x 17 20 1
+
+y−2x−3y−1x2 y−3x−2y−1x−1y−1x 17 21 1
+
+y−1x−1y−1x−1yx 3 y−4x−1y3x 17 22 1
+
+y−1x−1yx 3yx −1 y−4x−1y3x 17 23 1
+
+y−1x−1yx −1yx 3 y−4x−1y3x 17 24 1
+
+y−1x−3y−1xy −1x y−4x−1y3x 17 25 1
+
+y−1x−2y−1x2yx −1 y−4x−1y3x 17 26 1
+
+y−1x−1y−1x−2y−1x2 y−4x−1y3x 17 27 1
+
+y−1x−1y−1x2yx −2 y−4x−1y3x 17 28 1
+
+y−1x−1y−1x2y−1x−2 y−4x−1y3x 17 29 1
+
+y−3xyx −2 y−2x2yx −1yx −1y−1x−1 17 30 8
+
+y−2x2yx −1 y−5x−1yx 2yx 17 31 8
+
+y−2xyx −2 y−3x−2yxyxy −1x−1 17 32 8
+
+y−3xyxyx −1 y−1x−1yx 2yx −1yx −1 17 33 8
+
+y−2x−2yx 2 y−5x−1yx −1yx 17 34 5
+
+y−2x−1yxyx y−1x−1yx −1y−1x5 17 35 5
+
+y−2x−2yx 2 y−2xyxyxy −1x−2 17 36 5
+
+y−1x−1yx −2y−1x2 y−4x−1yx −1yx 17 37 4
+
+y−3x−2yx y−2x−1y−1xyxyx −2 17 38 4
+
+y−3x−1yxyx y−1x−1y−1x−1yx −1yx 2 17 39 4
+
+y−1x−2y−1x2yx y−3x−1yx −1yx 2 17 40 4
+
+y−2x−1y−1x−1yx y−1x−1y−1x3yx −3 17 41 2
+
+y−2x−1yxy −1x y−1x−3yx −1yx 3 17 42 2Continued on next page 21 The Two-Hump Problem 
+
+Table 3 – continued from previous page 
+
+r1 r2 name occurrences 
+
+y−1x−2y−1x3 y−5x−1y4x 18 1 1
+
+y−1x−3yx 2 y−5x−1y4x 18 2 2
+
+y−1x−3y−1x2 y−5x−1y4x 18 3 1
+
+y−3x−2y−1xyx −1 y−2xy −1x−2y−1x−2 18 4 1
+
+y−3xyx −1y−1x2 y−2x2y−1x2y−1x−1 18 5 1
+
+y−1x−1y−1x−1yx 2 y−6xyx −1yx 18 6 4
+
+y−1x−1y−1x−1yx 2 y−7x−2yx 18 7 4
+
+y−3x−2yx y−2x−1y−1x−1yx −1yx 3 18 8 3
+
+y−3x2yx −1 y−1x−1y−1x−1yx −1yx 2y−1x 18 9 3
+
+y−3x−1yx 2 y−2x−3yxyxy −1x 18 10 3
+
+y−3xyx −2 y−1x−1y−1x−2yxyxy −1x 18 11 3
+
+y−2x−2y−1x3 y−5x−1y4x 19 1 1
+
+y−1x−1yx 3y−1x−2 y−4x−3yx 2 19 2 1
+
+y−1x−2y−1xy −1x2 y−5x−1y4x 19 3 1
+
+y−1x−1yx 2yx −2 y−5x−1y4x 19 4 1
+
+y−1x−2y−1x2yx y−5x−1y4x 19 5 1
+
+y−1x−1yx −2yx 2 y−5x−1y4x 19 6 1
+
+y−1x−2yx −1yx 2 y−5x−1y4x 19 7 1
+
+y−1x−1yx 2y−1x−2 y−5x−1y4x 19 8 1
+
+y−1x−1y−1x−2yx 2 y−5x−1y4x 19 9 1
+
+y−2x−3yx 2 y−5x−1y4x 19 10 1
+
+y−1x−1y−1x−1y−1x3 y−5x−1y4x 19 11 1
+
+y−1x−1y−1x3yx −1 y−5x−1y4x 19 12 1
+
+y−1x−1yx −1y−1x3 y−5x−1y4x 19 13 1
+
+y−1x−3yxy −1x y−5x−1y4x 19 14 1
+
+y−2x3y−1x−2 y−1x−1y−1x2yx −1yx −1y−1x 19 15 1
+
+y−2x3yx −2 y−5x2yxyx −1 19 16 1
+
+y−1x−2yx −1y−1x3 y−4x−3y−1x2 19 17 1
+
+y−1x−1yx −2y−1x2 y−5x−1y4x 19 18 1
+
+y−1x−2yxy −1x2 y−5x−1y4x 19 19 1
+
+y−1x−2yx −1y−1x2 y−5x−1y4x 19 20 1
+
+y−2x−2yx 3 y−5x−1y4x 19 21 1
+
+y−2x−3y−1x2 y−5x−1y4x 19 22 1
+
+y−1x−1y−1x−1yx 3 y−5x−1y4x 19 23 1
+
+y−1x−1yx 3yx −1 y−5x−1y4x 19 24 1
+
+y−1x−1yx −1yx 3 y−5x−1y4x 19 25 1
+
+y−1x−3y−1xy −1x y−5x−1y4x 19 26 1
+
+y−2x2yx −3 y−1x−1yx 2yx −1yx −1y−1x 19 27 1
+
+y−2x2y−1x−3 y−5xy −1x−1y−1x−2 19 28 1
+
+y−1x−2y−1x2yx −1 y−5x−1y4x 19 29 1
+
+y−1x−1y−1x−2y−1x2 y−5x−1y4x 19 30 1
+
+y−1x−1y−1x2yx −2 y−5x−1y4x 19 31 1
+
+y−1x−1y−1x2y−1x−2 y−5x−1y4x 19 32 1
+
+y−2x−2yx y−3x−1y−1xyxyx −2yx −1 19 33 5
+
+y−2x−1yx 2 y−2x2y−1x2yx −1yx −1y−1x 19 34 5
+
+y−4x−2y2x y−5xy 2x−2 19 35 3
+
+y−2x−1y2x−1y−2x y−7x−3 19 36 3
+
+y−2x−2yx y−1x−1yx −1yx −1yx 2y−1xy −1x 19 37 3
+
+y−2x−1yx 2 y−1x−1y−1x−1y−1xy −1x6 19 38 1
+
+y−3x−1y−1xyx y−2x−2y−1x2yx −1yx 19 39 3
+
+y−3x2y−1x−1 y−1x−1yx 3yx −1yx −1yx −1 19 40 3Continued on next page 22 The Two-Hump Problem 
+
+Table 3 – continued from previous page 
+
+r1 r2 name occurrences 
+
+y−3x−1yx −1y−1x y−1x−2y−1xy −1x−2yx 2 19 41 3
+
+y−3xy −1x−2 y−1x−1y−1x−1y−1x−1yx −1y−1x3 19 42 3
+
+y−2x−1y2x2y−1x−1 y−5xyx −1yx −1 19 43 1
+
+y−3x−2y2x y−3xy 2x−2y−1x−2 19 44 1
+
+y−3x2y2x−1 y−4x−1yx 2y−1x2 19 45 1
+
+y−4x2y−1x−1 y−3xyxy −1xy −1x−2 19 46 1
+
+y−4xyxyx −1 y−2xy −1x−2y−1xyx 19 47 1
+
+y−2xy −1x−2y2x y−5xyxyx −1 19 48 1
+
+y−3x−1y2x2 y−3x2y−1x2y2x−1 19 49 1
+
+y−3xy 2x−2 y−4x−2y−1x−2yx 19 50 1
+
+y−4xyx −2 y−1x−1yx 2yx −1yx −1y−1x 19 51 1
+
+y−4xy −1x−2 y−1x−1y−1x−1yxyx −1yx 2 19 52 1
+
+y−3xy 2x y−1x−5yx 6 20 1 1
+
+y−1x−2yx 3 y−6xy 5x−1 20 2 2
+
+y−1x−3y−1x2 y−6x−1y5x 20 3 1
+
+y−1x−1yx 3y−1x−2 y−5x−3yx 2 20 4 1
+
+y−1x−1yx 3yx −2 y−5x−2y−1x3 20 5 1
+
+y−1x−2yx −1y−1x3 y−5x−3y−1x2 20 6 1
+
+y−1x−3yxy −1x2 y−5x−2yx 3 20 7 1
+
+y−1x−1y−1x2 y−7x−1y6x 20 8 2
+
+y−1x−2y−1x y−7x−1y6x 20 9 1
+
+y−2x−1y−2xy 2x y−7x4 20 10 3
+
+y−2x−1y2x−1y−2x y−7x−4 20 11 3
+
+y−2x−1yxyx y−3x−2y2x−1yxy −1x−2 20 12 2
+
+y−1x−1y−1xyx y−8x7 21 1 1
+
+y−2x−2y−1x3 y−6x−1y5x 21 2 1
+
+y−1x−2y−1xy −1x2 y−6x−1y5x 21 3 1
+
+y−1x−1yx 2yx −2 y−6x−1y5x 21 4 1
+
+y−1x−2y−1x2yx y−6x−1y5x 21 5 1
+
+y−1x−1yx −2yx 2 y−6x−1y5x 21 6 1
+
+y−1x−1yx −2y−1x3 y−6x3yx −2 21 7 1
+
+y−1x−1yx 2y−1x−2 y−6x−1y5x 21 8 1
+
+y−2x−3yx 2 y−3x−2y−1xyx −1yx −1yx 21 9 1
+
+y−1x−1y−1x−1y−1x3 y−6x−1y5x 21 10 1
+
+y−1x−1y−1x3yx −1 y−6x−1y5x 21 11 1
+
+y−1x−1yx −1y−1x3 y−6x−1y5x 21 12 1
+
+y−1x−3yxy −1x y−6x−1y5x 21 13 1
+
+y−2x3y−1x−2 y−6x−1y5x 21 14 1
+
+y−2x3yx −2 y−6x−1y5x 21 15 1
+
+y−1x−1yx −2y−1x2 y−6x−1y5x 21 16 1
+
+y−1x−2yxy −1x2 y−6x−1y5x 21 17 1
+
+y−1x−2yx −1y−1x2 y−6x−1y5x 21 18 1
+
+y−2x−2yx 3 y−1x−1y−1x−1y−1xyx −2yxyx 21 19 1
+
+y−2x−3y−1x2 y−1x−1y−1x−1y−1xy −1x−2yxyx 21 20 1
+
+y−1x−1y−1x−1yx 3 y−6x−1y5x 21 21 1
+
+y−1x−1yx 3yx −1 y−6x−1y5x 21 22 1
+
+y−1x−1yx −1yx 3 y−6x−1y5x 21 23 1
+
+y−1x−3y−1xy −1x y−6x−1y5x 21 24 1
+
+y−2x2yx −3 y−6x−1y5x 21 25 1
+
+y−2x2y−1x−3 y−6x−1y5x 21 26 1
+
+y−1x−2y−1x2yx −1 y−6x−1y5x 21 27 1Continued on next page 23 The Two-Hump Problem 
+
+Table 3 – continued from previous page 
+
+r1 r2 name occurrences 
+
+y−1x−1y−1x2yx −2 y−6x−1y5x 21 28 1
+
+y−1x−1yx −2yx 3 y−6x2y−1x−3 21 29 1
+
+y−1x−1yx 3y−1x−2 y−6x−3yx 2 21 30 1
+
+y−1x−1yx 3yx −2 y−6x−2y−1x3 21 31 1
+
+y−1x−2yx −1y−1x3 y−6x−3y−1x2 21 32 1
+
+y−1x−3yxy −1x2 y−6x−2yx 3 21 33 1
+
+y−2x−1y−1x2 y−6xy −1xy −1xy −1x−1yx 21 34 3
+
+y−2x2yx −1 y−7xyxyx −1yx 2 21 35 5
+
+y−1x−1yx −1y−1x y−7x−8 21 36 1
+
+y−2x−2y−1x y−2xy −1xyxyx −1y−1x−1y−1x−1y−1x−1 21 37 3
+
+y−2xyx −2 y−7x−1yx −2yxyx −1 21 38 5
+
+y−3x−2y2x2 y−5x−1y2x−1y2x 21 39 1
+
+y−4xy 2x−1yx −1 y−2x−1y−1x−1yx −1y−1xyx 21 40 1
+
+y−3x−2y2x2 y−5x−1y2xy 2x 21 41 1
+
+y−4x2y2x−1 y−4x−1y−1x2y−2x2 21 42 1
+
+y−1x−2y−1x3 y−7x−1y6x 22 1 1
+
+y−3xy 2x−1 y−1x−7yx 6 22 2 1
+
+y−3xy 2x−1 y−1x−6yx 7 22 3 1
+
+y−1x−3y−1x2 y−7x−1y6x 22 4 1
+
+y−1x−2y−1x3yx −1 y−7x3y−1x−2 22 5 1
+
+y−5x2yx −3 y−2x−1yx 2yxy −1x−2 22 6 1
+
+y−1x−1yx −2y−1x3 y−7x3yx −2 22 7 1
+
+y−5x2y−1x−3 y−2x−1yx 2y−1xyx −2 22 8 1
+
+y−5x3y−1x−2 y−2x2yx −1y−1x−2yx 22 9 1
+
+y−5x3yx −2 y−2x2y−1x−1yx −2yx 22 10 1
+
+y−1x−2yx 3yx −1 y−7x2yx −3 22 11 1
+
+y−1x−1yx −2yx 3 y−7x2y−1x−3 22 12 1
+
+y−1x−1y−1x2 y−8xy 7x−1 22 13 1
+
+y−1x−2y−1x y−8x−1y7x 22 14 1
+
+y−2x−2y−1x3 y−7x−1y6x 23 1 1
+
+y−1x−2y−1x2yx y−7x−1y6x 23 2 1
+
+y−1x−1yx −2yx 2 y−7x−1y6x 23 3 1
+
+y−2x−3yx 2 y−7x−1y6x 23 4 1
+
+y−1x−1y−1x−1y−1x3 y−7x−1y6x 23 5 1
+
+y−1x−1y−1x3yx −1 y−7x−1y6x 23 6 1
+
+y−1x−1yx −1y−1x3 y−7x−1y6x 23 7 1
+
+y−1x−3yxy −1x y−7x−1y6x 23 8 1
+
+y−2x3y−1x−2 y−1x−1y−1x2yx −1yx −1yx −1y−1xy −1x 23 9 1
+
+y−2x3yx −2 y−5x2y−1x−1yxyxyx −1 23 10 1
+
+y−1x−1yx −2y−1x2 y−7x−1y6x 23 11 1
+
+y−2x−2yx 3 y−7x−1y6x 23 12 1
+
+y−2x−3y−1x2 y−7x−1y6x 23 13 1
+
+y−1x−1y−1x−1yx 3 y−7x−1y6x 23 14 1
+
+y−1x−1yx 3yx −1 y−7x−1y6x 23 15 1
+
+y−1x−1yx −1yx 3 y−7x−1y6x 23 16 1
+
+y−1x−3y−1xy −1x y−7x−1y6x 23 17 1
+
+y−2x2yx −3 y−7x−1y6x 23 18 1
+
+y−2x2y−1x−3 y−5xy −1x−1y−1x−1y−1xyx −2 23 19 1
+
+y−1x−2y−1x2yx −1 y−7x−1y6x 23 20 1
+
+y−1x−1y−1xy −1x y−8xy 7x−1 23 21 1
+
+y−2x2y−1x−1 y−5xyx −1yx −1y−1x−1y3x2 23 22 4Continued on next page 24 The Two-Hump Problem 
+
+Table 3 – continued from previous page 
+
+r1 r2 name occurrences 
+
+y−2xy −1x−2 y−8x−1y5xy −1x−1 23 23 4
+
+y−1x−1y−1x−1y−1x y−8x−1y7x 23 24 1
+
+y−1x−2y−1x3 y−8x−1y7x 24 1 1
+
+y−3x−1y2x y−1x−7yx 8 24 2 1
+
+y−1x−2yx 3 y−8x−1y7x 24 3 1
+
+y−1x−3y−1x2 y−8x−1y7x 24 4 1
+
+y−2x−2y−1x3 y−8x−1y7x 25 1 1
+
+y−1x−2y−1x2y−1x y−8x−1y7x 25 2 1
+
+y−1x−2y−1xy −1x2 y−8x−1y7x 25 3 1
+
+y−1x−1yx 2yx −2 y−8x−1y7x 25 4 1
+
+y−1x−2y−1x2yx y−8x−1y7x 25 5 1
+
+y−1x−1yx −2yx 2 y−8x−1y7x 25 6 1
+
+y−1x−2yx −1yx 2 y−8x−1y7x 25 7 1
+
+y−1x−1yx 2y−1x−2 y−8x−1y7x 25 8 1
+
+y−1x−1y−1x−2yx 2 y−8x−1y7x 25 9 1
+
+y−2x−3yx 2 y−7x−2yx −1yx −1yx −1yx 25 10 1
+
+y−1x−1y−1x−1y−1x3 y−8x−1y7x 25 11 1
+
+y−1x−1y−1x3yx −1 y−8x−1y7x 25 12 1
+
+y−1x−1yx −1y−1x3 y−8x−1y7x 25 13 1
+
+y−1x−3yxy −1x y−8x−1y7x 25 14 1
+
+y−2x3y−1x−2 y−8x−1y7x 25 15 1
+
+y−2x3yx −2 y−8x−1y7x 25 16 1
+
+y−1x−2yx 2y−1x y−8x−1y7x 25 17 1
+
+y−1x−1yx −2y−1x2 y−8x−1y7x 25 18 1
+
+y−1x−2yxy −1x2 y−8x−1y7x 25 19 1
+
+y−1x−2yx −1y−1x2 y−8x−1y7x 25 20 1
+
+y−2x−2yx 3 y−3x−1yxyxyxyx −1y−1x−1y−1x2 25 21 1
+
+y−2x−3y−1x2 y−3x−2yxyxy −1x−1y−1x−1y−1x−1y−1x 25 22 1
+
+y−1x−1y−1x−1yx 3 y−8x−1y7x 25 23 1
+
+y−1x−1yx 3yx −1 y−8x−1y7x 25 24 1
+
+y−1x−1yx −1yx 3 y−8x−1y7x 25 25 1
+
+y−1x−3y−1xy −1x y−8x−1y7x 25 26 1
+
+y−2x2yx −3 y−8x−1y7x 25 27 1
+
+y−2x2y−1x−3 y−8x−1y7x 25 28 1
+
+y−1x−2y−1x2yx −1 y−8x−1y7x 25 29 1
+
+y−1x−1y−1x−2y−1x2 y−8x−1y7x 25 30 1
+
+y−1x−1y−1x2yx −2 y−8x−1y7x 25 31 1
+
+y−1x−1y−1x2y−1x−2 y−8x−1y7x 25 32 1
+
+## G. PPO and GS Path Lengths 
+
+This appendix provides detailed path length comparisons between PPO and greedy search (GS) for all presentations solved by both methods. The table shows, for each Miller–Schupp presentation (n, w ) solved by both PPO and GS: • The presentation • The solution path length found by PPO-Sub-DRT and PPO-Sub-DRT + AC-19 (min over 5 seeds) • The solution path length found by GS-AC and GS-Sub (deterministic) As discussed in the main text (Result #3), PPO consistently finds substantially shorter paths than greedy search. The 25 The Two-Hump Problem 
+
+advantage is especially pronounced on harder presentations, where PPO’s learned value function identifies length-increasing detours that enable more efficient overall solutions. This demonstrates that the learned policy discovers non-obvious solution strategies beyond what the greedy length-reduction heuristic can find. 
+
+Table 4. Path lengths for presentations where at least one PPO method found a solution. 
+
+Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(1 , y ) 5 2 2 2
+
+MS(1 , y −1) 5 2 2 2
+
+MS(1 , y 2) 5 3 3 3
+
+MS(1 , y −2) 5 3 3 3
+
+MS(1 , y 3) 7 4 4 4
+
+MS(1 , y −3) 8 4 4 4
+
+MS(1 , yxyx −1) 11 5 5 5
+
+MS(1 , yxy −1x−1) 7 3 3 3
+
+MS(1 , y 4) 8 5 5 5
+
+MS(1 , x −1y−1xy ) 8 3 3 3
+
+MS(1 , x −1y−1xy −1) 11 5 5 5
+
+MS(1 , y −4) 8 5 5 5
+
+MS(1 , yxy 2x−1) 11 4 4 4
+
+MS(1 , yxyx −1y) 15 6 6 6
+
+MS(1 , yxyx −1y−1) 10 4 4 4
+
+MS(1 , yxy −1x−1y) 13 4 3 4
+
+MS(1 , yxy −1x−1y−1) 8 3 2 2
+
+MS(1 , yxy −2x−1) 7 3 3 3
+
+MS(1 , y 2xyx −1) 23 8 8 8
+
+MS(1 , y 2xy −1x−1) 12 6 6 6
+
+MS(1 , y 5) 15 6 6 6
+
+MS(1 , yx −1y−1xy ) 6 3 2 2
+
+MS(1 , yx −1y−1xy −1) 8 4 4 4
+
+MS(1 , x −1y−1xy 2) 6 3 3 3
+
+MS(1 , x −1y−1xy −2) 7 4 4 4
+
+MS(1 , x −1y−2xy ) 13 6 6 6
+
+MS(1 , x −1y−2xy −1) 16 8 8 8
+
+MS(1 , y −1xyx −1y−1) 13 4 4 4
+
+MS(1 , y −1xy −1x−1y−1) 12 6 6 6
+
+MS(1 , y −5) 10 6 6 6
+
+MS(1 , yx 2yx −2) 26 9 9 9
+
+MS(1 , yx 2y−1x−2) 19 7 7 7
+
+MS(1 , yxy 3x−1) 17 7 7 7
+
+MS(1 , yxy 2x−1y) 14 5 5 5
+
+MS(1 , yxy 2x−1y−1) 7 3 3 3
+
+MS(1 , yxyx −1y2) 21 7 7 7
+
+MS(1 , yxyx −1y−2) 11 3 3 3
+
+MS(1 , yxy −1x−1y2) 17 5 5 5
+
+MS(1 , yxy −1x−1y−2) 8 3 3 3
+
+MS(1 , yxy −2x−1y) 8 3 3 3
+
+MS(1 , yxy −2x−1y−1) 8 3 3 3
+
+MS(1 , yxy −3x−1) 11 3 3 3
+
+MS(1 , y 2xy 2x−1) 12 5 5 5
+
+MS(1 , y 2xyx −1y) 34 9 9 9
+
+MS(1 , y 2xyx −1y−1) 15 7 7 7
+
+MS(1 , y 2xy −1x−1y) 16 7 7 7
+
+MS(1 , y 2xy −1x−1y−1) 12 5 5 5Continued on next page 26 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(1 , y 2xy −2x−1) 8 3 3 3
+
+MS(1 , y 3xyx −1) 32 11 11 11 
+
+MS(1 , y 3xy −1x−1) 24 9 9 9
+
+MS(1 , y 6) 17 7 7 7
+
+MS(1 , y 2x−1y−1xy ) 6 3 3 3
+
+MS(1 , y 2x−1y−1xy −1) 6 3 3 3
+
+MS(1 , yx −1y−1xy 2) 7 3 3 3
+
+MS(1 , yx −1y−1xy −2) 8 3 3 3
+
+MS(1 , yx −1y−2xy ) 11 5 5 5
+
+MS(1 , yx −1y−2xy −1) 20 7 7 7
+
+MS(1 , x −2y−1x2y) 18 7 7 7
+
+MS(1 , x −2y−1x2y−1) 19 9 9 9
+
+MS(1 , x −1y−1xy 3) 9 3 3 3
+
+MS(1 , x −1y−1xy −3) 15 7 7 7
+
+MS(1 , x −1y−2xy 2) 9 3 3 3
+
+MS(1 , x −1y−2xy −2) 10 5 5 5
+
+MS(1 , x −1y−3xy ) 19 9 9 9
+
+MS(1 , x −1y−3xy −1) 34 11 11 11 
+
+MS(1 , y −1xy 2x−1y−1) 6 3 3 3
+
+MS(1 , y −1xyx −1y−2) 11 5 5 5
+
+MS(1 , y −1xy −1x−1y−2) 15 7 7 7
+
+MS(1 , y −1xy −2x−1y−1) 13 5 5 5
+
+MS(1 , y −1x−1y−2xy ) 14 7 7 7
+
+MS(1 , y −1x−1y−2xy −1) 19 9 9 9
+
+MS(1 , y −6) 12 7 7 7
+
+MS(1 , yx 2y2x−2) 13 6 6 6
+
+MS(1 , yx 2yx −1yx −1) 29 10 10 10 
+
+MS(1 , yx 2yx −2y) 44 12 12 12 
+
+MS(1 , yx 2yx −2y−1) 15 6 6 6
+
+MS(1 , yx 2yx −1y−1x−1) 22 8 8 8
+
+MS(1 , yx 2y−1x−1yx −1) 29 8 8 8
+
+MS(1 , yx 2y−1x−2y) 31 10 10 10 
+
+MS(1 , yx 2y−1x−2y−1) 14 4 4 4
+
+MS(1 , yx 2y−1x−1y−1x−1) 21 6 6 6
+
+MS(1 , yx 2y−2x−2) 10 4 4 4
+
+MS(1 , yxyxyx −2) 45 12 12 12 
+
+MS(1 , yxyxy −1x−2) 28 10 10 10 
+
+MS(1 , yxy 4x−1) 15 6 6 6
+
+MS(1 , yxy 3x−1y) 24 8 8 8
+
+MS(1 , yxy 3x−1y−1) 13 6 6 6
+
+MS(1 , yxy 2x−1y2) 16 6 6 6
+
+MS(1 , yxy 2x−1y−2) 8 3 2 3
+
+MS(1 , yxyx −1y3) 23 8 8 8
+
+MS(1 , yxyx −1y−3) 10 3 3 3
+
+MS(1 , yxy −1xyx −2) 21 6 6 6
+
+MS(1 , yxy −1xy −1x−2) 14 4 4 4
+
+MS(1 , yxy −1x−1y3) 22 6 6 6
+
+MS(1 , yxy −1x−1y−3) 10 4 4 4
+
+MS(1 , yxy −2x−1y2) 9 4 4 4
+
+MS(1 , yxy −2x−1y−2) 9 4 4 4
+
+MS(1 , yxy −3x−1y) 12 3 3 3Continued on next page 27 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(1 , yxy −3x−1y−1) 11 4 4 4
+
+MS(1 , yxy −4x−1) 7 4 4 4
+
+MS(1 , y 2x2yx −2) 65 18 16 16 
+
+MS(1 , y 2x2y−1x−2) 49 14 14 14 
+
+MS(1 , y 2xy 3x−1) 35 10 10 10 
+
+MS(1 , y 2xy 2x−1y) 16 6 6 6
+
+MS(1 , y 2xy 2x−1y−1) 8 4 4 4
+
+MS(1 , y 2xyx −1y2) 36 12 10 10 
+
+MS(1 , y 2xyx −1y−2) 15 6 6 6
+
+MS(1 , y 2xy −1x−1y2) 31 8 8 8
+
+MS(1 , y 2xy −1x−1y−2) 14 4 4 4
+
+MS(1 , y 2xy −2x−1y) 9 4 4 4
+
+MS(1 , y 2xy −2x−1y−1) 10 3 3 3
+
+MS(1 , y 2xy −3x−1) 18 4 4 4
+
+MS(1 , y 3xy 2x−1) 14 6 6 6
+
+MS(1 , y 3xyx −1y) 52 14 12 12 
+
+MS(1 , y 3xyx −1y−1) 27 10 10 10 
+
+MS(1 , y 3xy −1x−1y) 28 10 10 10 
+
+MS(1 , y 3xy −1x−1y−1) 22 8 8 8
+
+MS(1 , y 3xy −2x−1) 8 4 4 4
+
+MS(1 , y 4xyx −1) 50 16 14 14 
+
+MS(1 , y 4xy −1x−1) 42 12 12 12 
+
+MS(1 , y 7) 19 8 8 8
+
+MS(1 , y 3x−1y−1xy ) 7 4 4 4
+
+MS(1 , y 3x−1y−1xy −1) 8 3 3 3
+
+MS(1 , y 2x−1y−1xy 2) 9 4 4 4
+
+MS(1 , y 2x−1y−1xy −2) 6 3 2 2
+
+MS(1 , y 2x−1y−2xy ) 10 4 4 4
+
+MS(1 , y 2x−1y−2xy −1) 12 6 6 6
+
+MS(1 , yx −2y−1x2y) 19 6 6 6
+
+MS(1 , yx −2y−1x2y−1) 19 8 8 8
+
+MS(1 , yx −1y−1x2yx −1) 11 4 4 4
+
+MS(1 , yx −1y−1x2y−1x−1) 14 6 6 6
+
+MS(1 , yx −1y−1xy 3) 11 4 4 4
+
+MS(1 , yx −1y−1xy −3) 19 6 6 6
+
+MS(1 , yx −1y−2xy 2) 8 3 3 3
+
+MS(1 , yx −1y−2xy −2) 8 4 4 4
+
+MS(1 , yx −1y−3xy ) 22 8 8 8
+
+MS(1 , yx −1y−3xy −1) 26 10 10 10 
+
+MS(1 , x −2y−1x2y2) 11 4 4 4
+
+MS(1 , x −2y−1x2y−2) 13 6 6 6
+
+MS(1 , x −2y−1xyxy ) 13 4 4 4
+
+MS(1 , x −2y−1xyxy −1) 21 6 6 6
+
+MS(1 , x −2y−1xy −1xy ) 22 10 10 10 
+
+MS(1 , x −2y−1xy −1xy −1) 39 12 12 12 
+
+MS(1 , x −2y−2x2y) 43 14 14 13 
+
+MS(1 , x −2y−2x2y−1) 60 18 16 16 
+
+MS(1 , x −1y−1x2yx −1y−1) 23 8 8 8
+
+MS(1 , x −1y−1x2y−1x−1y−1) 24 10 10 10 
+
+MS(1 , x −1y−1xy 4) 11 4 4 4
+
+MS(1 , x −1y−1xy −4) 15 6 6 6Continued on next page 28 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(1 , x −1y−1x−1y−1x2y) 24 10 10 10 
+
+MS(1 , x −1y−1x−1y−1x2y−1) 37 12 12 13 
+
+MS(1 , x −1y−2xy 3) 12 4 4 4
+
+MS(1 , x −1y−2xy −3) 31 10 10 10 
+
+MS(1 , x −1y−3xy 2) 10 4 4 4
+
+MS(1 , x −1y−3xy −2) 10 6 6 6
+
+MS(1 , x −1y−4xy ) 37 12 12 12 
+
+MS(1 , x −1y−4xy −1) 52 16 14 14 
+
+MS(1 , y −1xy 3x−1y−1) 10 3 3 3
+
+MS(1 , y −1xy 2x−1y−2) 10 4 4 4
+
+MS(1 , y −1xyx −1y−3) 21 6 6 6
+
+MS(1 , y −1xy −1x−1y−3) 17 8 8 8
+
+MS(1 , y −1xy −2x−1y−2) 12 6 6 6
+
+MS(1 , y −1xy −3x−1y−1) 19 8 8 8
+
+MS(1 , y −1x−1y−2xy 2) 11 4 4 4
+
+MS(1 , y −1x−1y−2xy −2) 11 6 6 6
+
+MS(1 , y −1x−1y−3xy ) 22 10 10 10 
+
+MS(1 , y −1x−1y−3xy −1) 47 14 12 12 
+
+MS(1 , y −2xyx −1y−2) 26 8 8 8
+
+MS(1 , y −2xy −1x−1y−2) 31 12 10 10 
+
+MS(1 , y −7) 14 8 8 8
+
+MS(2 , y ) 7 2 2 2
+
+MS(2 , y −1) 6 2 2 2
+
+MS(2 , y 2) 11 3 3 3
+
+MS(2 , y −2) 6 3 3 3
+
+MS(2 , y 3) 7 4 4 4
+
+MS(2 , y −3) 6 4 4 4
+
+MS(2 , yxyx −1) 32 10 8 11 
+
+MS(2 , yxy −1x−1) 21 7 6 7
+
+MS(2 , y 4) 18 5 5 5
+
+MS(2 , x −1y−1xy ) 19 7 6 7
+
+MS(2 , x −1y−1xy −1) 33 10 12 10 
+
+MS(2 , y −4) 9 5 5 5
+
+MS(2 , yxy 2x−1) 41 12 12 13 
+
+MS(2 , yxyx −1y) 52 13 10 14 
+
+MS(2 , yxyx −1y−1) 26 8 7 7
+
+MS(2 , yxy −1x−1y) 20 8 8 7
+
+MS(2 , yxy −1x−1y−1) 25 8 7 6
+
+MS(2 , yxy −2x−1) 16 7 7 6
+
+MS(2 , y 2xyx −1) 18 7 6 6
+
+MS(2 , y 2xy −1x−1) 11 4 4 4
+
+MS(2 , y 5) 17 6 6 6
+
+MS(2 , yx −1y−1xy ) 23 8 7 7
+
+MS(2 , yx −1y−1xy −1) 25 8 9 9
+
+MS(2 , x −1y−1xy 2) 21 7 7 7
+
+MS(2 , x −1y−1xy −2) 36 12 13 14 
+
+MS(2 , x −1y−2xy ) 8 4 4 4
+
+MS(2 , x −1y−2xy −1) 19 7 6 6
+
+MS(2 , y −1xyx −1y−1) 23 8 9 7
+
+MS(2 , y −1xy −1x−1y−1) 45 13 15 11 
+
+MS(2 , y −5) 15 6 6 6Continued on next page 29 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(2 , yxy 3x−1) 16 5 5 5
+
+MS(2 , yxy 2x−1y) 55 15 15 16 
+
+MS(2 , yxy 2x−1y−1) 24 9 10 8
+
+MS(2 , yxyx −1y2) 63 16 13 17 
+
+MS(2 , yxyx −1y−2) 19 8 8 7
+
+MS(2 , yxy −1x−1y2) 34 11 11 11 
+
+MS(2 , yxy −1x−1y−2) 28 8 10 8
+
+MS(2 , yxy −2x−1y) 27 8 6 7
+
+MS(2 , yxy −2x−1y−1) 25 8 8 9
+
+MS(2 , yxy −3x−1) 9 4 3 3
+
+MS(2 , y 2xy 2x−1) 23 7 7 7
+
+MS(2 , y 2xyx −1y) 24 7 7 7
+
+MS(2 , y 2xyx −1y−1) 16 5 5 5
+
+MS(2 , y 2xy −1x−1y) 12 5 5 4
+
+MS(2 , y 2xy −1x−1y−1) 10 3 3 3
+
+MS(2 , y 2xy −2x−1) 9 4 3 3
+
+MS(2 , y 3xyx −1) 70 18 15 19 
+
+MS(2 , y 3xy −1x−1) 45 13 14 14 
+
+MS(2 , y 6) 19 7 7 7
+
+MS(2 , y 2x−1y−1xy ) 23 8 8 9
+
+MS(2 , y 2x−1y−1xy −1) 21 8 6 7
+
+MS(2 , yx −1y−1xy 2) 19 8 8 9
+
+MS(2 , yx −1y−1xy −2) 26 9 10 11 
+
+MS(2 , yx −1y−2xy ) 10 3 3 3
+
+MS(2 , yx −1y−2xy −1) 9 5 5 5
+
+MS(2 , x −1y−1xy 3) 10 4 3 3
+
+MS(2 , x −1y−1xy −3) 8 5 5 5
+
+MS(2 , x −1y−2xy 2) 10 4 3 3
+
+MS(2 , x −1y−2xy −2) 20 7 7 7
+
+MS(2 , x −1y−3xy ) 39 13 14 14 
+
+MS(2 , x −1y−3xy −1) 61 18 20 16 
+
+MS(2 , y −1xy 2x−1y−1) 26 8 8 7
+
+MS(2 , y −1xyx −1y−2) 34 11 12 12 
+
+MS(2 , y −1xy −1x−1y−2) 56 16 19 16 
+
+MS(2 , y −1xy −2x−1y−1) 49 15 16 17 
+
+MS(2 , y −1x−1y−2xy ) 9 5 5 5
+
+MS(2 , y −1x−1y−2xy −1) 18 7 7 7
+
+MS(2 , y −6) 15 7 7 7
+
+MS(2 , yxy 4x−1) 64 17 15 19 
+
+MS(2 , yxy 3x−1y) 22 6 6 6
+
+MS(2 , yxy 3x−1y−1) 9 4 4 4
+
+MS(2 , yxy 2x−1y2) 70 18 19 19 
+
+MS(2 , yxy 2x−1y−2) 24 8 7 8
+
+MS(2 , yxyx −1y3) 73 19 16 20 
+
+MS(2 , yxyx −1y−3) 28 8 10 8
+
+MS(2 , yxy −1x−1y3) 43 14 15 15 
+
+MS(2 , yxy −1x−1y−3) 36 11 11 10 
+
+MS(2 , yxy −2x−1y2) 27 9 7 9
+
+MS(2 , yxy −2x−1y−2) 29 10 11 12 
+
+MS(2 , yxy −3x−1y) 11 3 3 3
+
+MS(2 , yxy −3x−1y−1) 11 4 4 4Continued on next page 30 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(2 , yxy −4x−1) 29 9 10 10 
+
+MS(2 , y 2x2yx −2) 74 19 17 19 
+
+MS(2 , y 2x2y−1x−2) 53 14 14 15 
+
+MS(2 , y 2xy 3x−1) 13 6 6 6
+
+MS(2 , y 2xy 2x−1y) 28 8 8 8
+
+MS(2 , y 2xy 2x−1y−1) 19 6 6 6
+
+MS(2 , y 2xyx −1y2) 28 8 8 9
+
+MS(2 , y 2xyx −1y−2) 12 4 4 4
+
+MS(2 , y 2xy −1x−1y2) 25 6 6 6
+
+MS(2 , y 2xy −1x−1y−2) 12 3 2 2
+
+MS(2 , y 2xy −2x−1y) 16 4 4 4
+
+MS(2 , y 2xy −2x−1y−1) 10 3 3 3
+
+MS(2 , y 2xy −3x−1) 8 3 3 3
+
+MS(2 , y 3xy 2x−1) 78 20 21 21 
+
+MS(2 , y 3xyx −1y) 82 21 18 22 
+
+MS(2 , y 3xyx −1y−1) 55 15 12 16 
+
+MS(2 , y 3xy −1x−1y) 59 16 17 17 
+
+MS(2 , y 3xy −1x−1y−1) 34 10 11 9
+
+MS(2 , y 3xy −2x−1) 41 11 9 12 
+
+MS(2 , y 4xyx −1) 34 10 10 10 
+
+MS(2 , y 4xy −1x−1) 24 8 8 8
+
+MS(2 , y 7) 24 8 8 8
+
+MS(2 , y 3x−1y−1xy ) 37 11 9 12 
+
+MS(2 , y 3x−1y−1xy −1) 22 8 7 8
+
+MS(2 , y 2x−1y−1xy 2) 29 10 10 11 
+
+MS(2 , y 2x−1y−1xy −2) 25 8 7 8
+
+MS(2 , y 2x−1y−2xy ) 8 3 2 2
+
+MS(2 , y 2x−1y−2xy −1) 9 4 4 4
+
+MS(2 , yx −1y−1xy 3) 11 4 4 4
+
+MS(2 , yx −1y−1xy −3) 9 4 4 4
+
+MS(2 , yx −1y−2xy 2) 8 3 3 3
+
+MS(2 , yx −1y−2xy −2) 21 6 6 6
+
+MS(2 , yx −1y−3xy ) 29 10 11 12 
+
+MS(2 , yx −1y−3xy −1) 51 15 17 13 
+
+MS(2 , x −2y−2x2y) 44 14 15 15 
+
+MS(2 , x −2y−2x2y−1) 64 19 21 17 
+
+MS(2 , x −1y−1xy 4) 34 9 8 10 
+
+MS(2 , x −1y−1xy −4) 58 17 17 14 
+
+MS(2 , x −1y−2xy 3) 8 3 3 3
+
+MS(2 , x −1y−2xy −3) 11 6 6 6
+
+MS(2 , x −1y−3xy 2) 38 11 13 11 
+
+MS(2 , x −1y−3xy −2) 71 20 22 22 
+
+MS(2 , x −1y−4xy ) 21 8 8 8
+
+MS(2 , x −1y−4xy −1) 26 10 10 10 
+
+MS(2 , y −1xy 3x−1y−1) 9 3 3 3
+
+MS(2 , y −1xy 2x−1y−2) 28 9 11 9
+
+MS(2 , y −1xyx −1y−3) 46 14 18 14 
+
+MS(2 , y −1xy −1x−1y−3) 66 19 19 18 
+
+MS(2 , y −1xy −2x−1y−2) 64 18 19 20 
+
+MS(2 , y −1xy −3x−1y−1) 21 6 6 6
+
+MS(2 , y −1x−1y−2xy 2) 11 4 4 4Continued on next page 31 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(2 , y −1x−1y−2xy −2) 20 8 8 8
+
+MS(2 , y −1x−1y−3xy ) 52 16 14 18 
+
+MS(2 , y −1x−1y−3xy −1) 72 21 23 19 
+
+MS(2 , y −2xyx −1y−2) 21 6 6 6
+
+MS(2 , y −2xy −1x−1y−2) 20 8 8 9
+
+MS(2 , y −7) 18 8 8 8
+
+MS(3 , y ) 8 2 2 2
+
+MS(3 , y −1) 7 2 2 2
+
+MS(3 , y 2) 10 3 3 3
+
+MS(3 , y −2) 7 3 3 3
+
+MS(3 , y 3) 11 4 4 4
+
+MS(3 , y −3) 7 4 4 4
+
+MS(3 , yxy −1x−1) 44 15 14 15 
+
+MS(3 , y 4) 8 5 5 5
+
+MS(3 , x −1y−1xy ) 52 17 15 15 
+
+MS(3 , y −4) 7 5 5 5
+
+MS(3 , yxy 2x−1) 30 10 14 13 
+
+MS(3 , yxy −1x−1y) 69 22 18 16 
+
+MS(3 , yxy −1x−1y−1) 64 17 18 16 
+
+MS(3 , yxy −2x−1) 25 8 8 7
+
+MS(3 , y 2xyx −1) 106 29 25 24 
+
+MS(3 , y 5) 23 6 6 6
+
+MS(3 , yx −1y−1xy ) 66 19 17 18 
+
+MS(3 , x −1y−1xy 2) 22 8 8 8
+
+MS(3 , x −1y−1xy −2) 27 10 16 13 
+
+MS(3 , x −1y−2xy −1) 101 29 26 22 
+
+MS(3 , y −1xyx −1y−1) 70 22 19 18 
+
+MS(3 , y −5) 14 6 6 6
+
+MS(3 , yxy 3x−1) 125 38 23 23 
+
+MS(3 , yxy 2x−1y) 87 24 17 18 
+
+MS(3 , yxy 2x−1y−1) 34 9 11 10 
+
+MS(3 , yxy −1x−1y2) 116 35 20 21 
+
+MS(3 , yxy −1x−1y−2) 84 24 20 17 
+
+MS(3 , yxy −2x−1y) 27 8 8 7
+
+MS(3 , yxy −2x−1y−1) 28 9 10 9
+
+MS(3 , y 2xy 2x−1) 66 18 17 17 
+
+MS(3 , y 2xyx −1y) 118 32 26 27 
+
+MS(3 , y 2xyx −1y−1) 98 26 20 22 
+
+MS(3 , y 2xy −2x−1) 21 8 8 8
+
+MS(3 , y 3xyx −1) 21 8 7 7
+
+MS(3 , y 3xy −1x−1) 12 5 5 5
+
+MS(3 , y 6) 30 7 7 7
+
+MS(3 , y 2x−1y−1xy ) 84 24 18 18 
+
+MS(3 , yx −1y−1xy 2) 26 9 10 9
+
+MS(3 , yx −1y−1xy −2) 22 9 10 11 
+
+MS(3 , yx −1y−2xy −1) 90 26 23 20 
+
+MS(3 , x −1y−1xy −3) 120 32 26 25 
+
+MS(3 , x −1y−2xy 2) 25 8 8 8
+
+MS(3 , x −1y−2xy −2) 65 18 17 14 
+
+MS(3 , x −1y−3xy ) 9 5 5 5
+
+MS(3 , x −1y−3xy −1) 22 8 7 7Continued on next page 32 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(3 , y −1xy 2x−1y−1) 21 8 9 8
+
+MS(3 , y −1xyx −1y−2) 107 29 22 21 
+
+MS(3 , y −1xy −2x−1y−1) 87 24 19 14 
+
+MS(3 , y −1x−1y−2xy −1) 112 32 29 25 
+
+MS(3 , y −6) 17 7 7 7
+
+MS(3 , yxy 4x−1) 16 6 6 6
+
+MS(3 , yxy 3x−1y−1) 114 35 21 22 
+
+MS(3 , yxy 2x−1y2) 134 32 20 20 
+
+MS(3 , yxy 2x−1y−2) 28 8 8 8
+
+MS(3 , yxy −1x−1y3) 116 37 23 25 
+
+MS(3 , yxy −1x−1y−3) 96 27 24 20 
+
+MS(3 , yxy −2x−1y2) 24 9 9 9
+
+MS(3 , yxy −2x−1y−2) 50 13 12 12 
+
+MS(3 , yxy −4x−1) 10 5 4 4
+
+MS(3 , y 2xy 2x−1y) 81 21 20 19 
+
+MS(3 , y 2xy 2x−1y−1) 54 15 13 15 
+
+MS(3 , y 2xyx −1y2) 131 35 32 31 
+
+MS(3 , y 2xyx −1y−2) 81 23 17 17 
+
+MS(3 , y 2xy −2x−1y) 29 9 9 10 
+
+MS(3 , y 2xy −2x−1y−1) 26 8 8 7
+
+MS(3 , y 2xy −3x−1) 53 17 15 16 
+
+MS(3 , y 3xy 2x−1) 28 9 8 9
+
+MS(3 , y 3xyx −1y) 29 9 8 9
+
+MS(3 , y 3xyx −1y−1) 18 7 6 6
+
+MS(3 , y 3xy −1x−1y) 16 6 5 6
+
+MS(3 , y 3xy −1x−1y−1) 16 4 4 4
+
+MS(3 , y 3xy −2x−1) 11 5 4 4
+
+MS(3 , y 4xy −1x−1) 125 39 26 25 
+
+MS(3 , y 7) 26 8 8 8
+
+MS(3 , y 3x−1y−1xy ) 95 27 21 23 
+
+MS(3 , y 2x−1y−1xy 2) 46 13 11 13 
+
+MS(3 , y 2x−1y−1xy −2) 21 8 8 8
+
+MS(3 , y 2x−1y−2xy −1) 81 24 19 17 
+
+MS(3 , yx −1y−1xy −3) 108 29 24 22 
+
+MS(3 , yx −1y−2xy 2) 25 8 8 8
+
+MS(3 , yx −1y−2xy −2) 50 15 14 11 
+
+MS(3 , yx −1y−3xy ) 10 4 4 4
+
+MS(3 , yx −1y−3xy −1) 18 7 6 6
+
+MS(3 , x −1y−1xy 4) 18 5 4 4
+
+MS(3 , x −1y−1xy −4) 10 6 6 6
+
+MS(3 , x −1y−2xy 3) 44 15 15 15 
+
+MS(3 , x −1y−3xy 2) 13 5 4 4
+
+MS(3 , x −1y−3xy −2) 26 9 8 8
+
+MS(3 , x −1y−4xy ) 123 33 27 26 
+
+MS(3 , y −1xy 2x−1y−2) 21 9 11 11 
+
+MS(3 , y −1xyx −1y−3) 118 31 26 24 
+
+MS(3 , y −1xy −2x−1y−2) 136 29 22 18 
+
+MS(3 , y −1x−1y−2xy 2) 27 9 10 10 
+
+MS(3 , y −1x−1y−2xy −2) 78 21 20 17 
+
+MS(3 , y −1x−1y−3xy ) 12 6 6 6
+
+MS(3 , y −1x−1y−3xy −1) 25 9 8 8Continued on next page 33 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(3 , y −2xy −1x−1y−2) 127 35 32 28 
+
+MS(3 , y −7) 23 8 8 8
+
+MS(4 , y ) 9 2 2 2
+
+MS(4 , y −1) 8 2 2 2
+
+MS(4 , y 2) 15 3 3 3
+
+MS(4 , y −2) 8 3 3 3
+
+MS(4 , y 3) 13 4 4 4
+
+MS(4 , y −3) 8 4 4 4
+
+MS(4 , yxy −1x−1) 136 41 31 32 
+
+MS(4 , y 4) 12 5 5 5
+
+MS(4 , x −1y−1xy ) 140 43 33 31 
+
+MS(4 , y −4) 8 5 5 5
+
+MS(4 , yxy −1x−1y) 189 52 34 34 
+
+MS(4 , yxy −1x−1y−1) 179 47 34 35 
+
+MS(4 , y 2xy −1x−1) 50 15 13 13 
+
+MS(4 , y 5) 9 6 6 6
+
+MS(4 , yx −1y−1xy ) 179 47 36 34 
+
+MS(4 , x −1y−2xy ) 48 15 14 14 
+
+MS(4 , y −1xyx −1y−1) 189 52 36 34 
+
+MS(4 , y −5) 8 6 6 6
+
+MS(4 , yxy −1x−1y−2) 234 54 37 38 
+
+MS(4 , y 2xy 2x−1) 130 21 21 19 
+
+MS(4 , y 2xyx −1y−1) 77 20 16 15 
+
+MS(4 , y 2xy −1x−1y) 84 22 15 18 
+
+MS(4 , y 2xy −1x−1y−1) 36 12 13 12 
+
+MS(4 , y 2xy −2x−1) 28 9 9 9
+
+MS(4 , y 6) 27 7 7 7
+
+MS(4 , y 2x−1y−1xy ) 223 54 38 37 
+
+MS(4 , yx −1y−2xy ) 37 12 14 13 
+
+MS(4 , yx −1y−2xy −1) 72 20 17 17 
+
+MS(4 , x −1y−2xy 2) 26 9 9 9
+
+MS(4 , x −1y−2xy −2) 80 21 21 18 
+
+MS(4 , y −1x−1y−2xy ) 93 22 17 17 
+
+MS(4 , y −6) 16 7 7 7
+
+MS(4 , y 2xy 3x−1) 118 27 22 22 
+
+MS(4 , y 2xy 2x−1y−1) 72 19 18 17 
+
+MS(4 , y 2xyx −1y−2) 57 17 13 13 
+
+MS(4 , y 2xy −1x−1y−2) 39 12 12 12 
+
+MS(4 , y 2xy −2x−1y) 33 10 12 11 
+
+MS(4 , y 2xy −2x−1y−1) 32 9 10 8
+
+MS(4 , y 2xy −3x−1) 25 9 9 10 
+
+MS(4 , y 4xyx −1) 24 9 8 8
+
+MS(4 , y 4xy −1x−1) 14 6 6 6
+
+MS(4 , y 7) 36 8 8 8
+
+MS(4 , y 2x−1y−2xy ) 40 12 11 11 
+
+MS(4 , y 2x−1y−2xy −1) 62 17 14 14 
+
+MS(4 , yx −1y−2xy 2) 33 11 9 9
+
+MS(4 , yx −1y−2xy −2) 73 19 16 16 
+
+MS(4 , x −1y−2xy 3) 28 9 9 9
+
+MS(4 , x −1y−2xy −3) 118 23 22 21 
+
+MS(4 , x −1y−4xy ) 10 6 6 6Continued on next page 34 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(4 , x −1y−4xy −1) 24 9 8 9
+
+MS(4 , y −1x−1y−2xy 2) 34 10 12 9
+
+MS(4 , y −7) 22 8 8 8
+
+MS(5 , y ) 10 2 2 2
+
+MS(5 , y −1) 9 2 2 2
+
+MS(5 , y 2) 14 3 3 3
+
+MS(5 , y −2) 9 3 3 3
+
+MS(5 , y 3) 11 4 4 4
+
+MS(5 , y −3) 9 4 4 4
+
+MS(5 , yxy −1x−1) 333 99 67 67 
+
+MS(5 , y 4) 26 5 5 5
+
+MS(5 , x −1y−1xy ) 344 101 92 65 
+
+MS(5 , y −4) 9 5 5 5
+
+MS(5 , y 5) 13 6 6 6
+
+MS(5 , y −5) 9 6 6 6
+
+MS(5 , yxy 3x−1) 88 23 21 21 
+
+MS(5 , yxy −3x−1) 43 15 16 14 
+
+MS(5 , y 2xy −2x−1) 55 17 17 12 
+
+MS(5 , y 6) 10 7 7 8
+
+MS(5 , x −1y−1xy 3) 47 15 15 14 
+
+MS(5 , x −1y−1xy −3) 82 23 24 20 
+
+MS(5 , x −1y−2xy 2) 51 18 17 13 
+
+MS(5 , y −6) 9 7 7 7
+
+MS(5 , yxy 3x−1y−1) 79 20 18 17 
+
+MS(5 , yxy −3x−1y) 33 12 13 11 
+
+MS(5 , yxy −3x−1y−1) 76 20 19 15 
+
+MS(5 , y 2xy −2x−1y) 109 28 20 15 
+
+MS(5 , y 2xy −2x−1y−1) 83 22 20 15 
+
+MS(5 , y 2xy −3x−1) 32 10 10 9
+
+MS(5 , y 7) 56 8 8 8
+
+MS(5 , yx −1y−1xy 3) 78 20 18 17 
+
+MS(5 , yx −1y−1xy −3) 64 20 24 15 
+
+MS(5 , yx −1y−2xy 2) 82 22 20 16 
+
+MS(5 , x −1y−2xy 3) 38 12 10 10 
+
+MS(5 , x −1y−2xy −3) 93 26 24 22 
+
+MS(5 , y −1xy 3x−1y−1) 33 12 13 13 
+
+MS(5 , y −1x−1y−2xy 2) 113 28 20 18 
+
+MS(5 , y −7) 18 8 8 8
+
+MS(6 , y ) 11 2 2 2
+
+MS(6 , y −1) 10 2 2 2
+
+MS(6 , y 2) 19 3 3 3
+
+MS(6 , y −2) 10 3 3 3
+
+MS(6 , y 3) 16 4 4 4
+
+MS(6 , y −3) 10 4 4 4
+
+MS(6 , y 4) 30 5 5 5
+
+MS(6 , y −4) 10 5 5 5
+
+MS(6 , y 5) 33 6 6 6
+
+MS(6 , y −5) 10 6 6 6
+
+MS(6 , y 2xy −2x−1) 79 21 17 17 
+
+MS(6 , y 6) 14 7 7 8
+
+MS(6 , x −1y−2xy 2) 86 23 17 17 Continued on next page 35 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(6 , y −6) 10 7 7 7
+
+MS(6 , y 2xy −2x−1y) 142 36 20 20 
+
+MS(6 , y 2xy −2x−1y−1) 117 29 20 20 
+
+MS(6 , y 3xy −1x−1y−1) 131 32 24 24 
+
+MS(6 , y 3xy −2x−1) 64 17 21 15 
+
+MS(6 , y 7) 11 8 8 9
+
+MS(6 , yx −1y−2xy 2) 120 29 20 20 
+
+MS(6 , yx −1y−3xy ) 136 32 26 22 
+
+MS(6 , x −1y−3xy 2) 57 17 22 16 
+
+MS(6 , y −1x−1y−2xy 2) 150 36 20 17 
+
+MS(6 , y −7) 10 8 8 8
+
+MS(7 , y ) 12 2 2 2
+
+MS(7 , y −1) 11 2 2 2
+
+MS(7 , y 2) 18 3 3 3
+
+MS(7 , y −2) 11 3 3 3
+
+MS(7 , y 3) 17 4 4 4
+
+MS(7 , y −3) 11 4 4 4
+
+MS(7 , y 4) 12 5 5 5
+
+MS(7 , y −4) 10 5 5 5
+
+MS(7 , y 5) 33 6 6 6
+
+MS(7 , y −5) 11 6 6 6
+
+MS(7 , y 2xy −2x−1) 180 49 33 34 
+
+MS(7 , y 6) 32 7 7 8
+
+MS(7 , x −1y−2xy 2) 174 51 35 33 
+
+MS(7 , y −6) 11 7 7 7
+
+MS(7 , y 7) 15 8 8 9
+
+MS(7 , y −7) 11 8 8 8
+
+MS(3 , yxy 3x−1y) – 43 28 28 
+
+MS(3 , y −1xy −3x−1y−1) – 37 29 28 
+
+MS(4 , y 2xyx −1) – 25 19 19 
+
+MS(4 , x −1y−2xy −1) – 23 20 18 
+
+MS(4 , yxy −1x−1y2) – 73 37 38 
+
+MS(4 , y 2xyx −1y) – 25 22 22 
+
+MS(4 , y 3xyx −1) – 76 47 45 
+
+MS(4 , x −1y−3xy −1) – 76 45 47 
+
+MS(4 , y −1xyx −1y−2) – 67 39 37 
+
+MS(4 , y −1x−1y−2xy −1) – 25 23 21 
+
+MS(4 , yxy 4x−1) – 81 44 44 
+
+MS(4 , yxy −1x−1y3) – 75 40 41 
+
+MS(4 , yxy −1x−1y−3) – 69 40 41 
+
+MS(4 , y 2xy 2x−1y) – 24 24 23 
+
+MS(4 , y 2xyx −1y2) – 28 25 25 
+
+MS(4 , y 2xy −1x−1y2) – 28 18 19 
+
+MS(4 , y 3xyx −1y) – 79 50 48 
+
+MS(4 , y 3xyx −1y−1) – 71 44 42 
+
+MS(4 , y 3x−1y−1xy ) – 69 42 40 
+
+MS(4 , yx −1y−3xy −1) – 71 42 43 
+
+MS(4 , x −1y−1xy −4) – 75 46 44 
+
+MS(4 , y −1xyx −1y−3) – 69 42 40 
+
+MS(4 , y −1x−1y−2xy −2) – 24 24 22 
+
+MS(4 , y −1x−1y−3xy −1) – 79 49 50 Continued on next page 36 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(4 , y −2xyx −1y−2) – 27 22 19 
+
+MS(4 , y −2xy −1x−1y−2) – 28 26 24 
+
+MS(5 , yxy −1x−1y) – 116 68 70 
+
+MS(5 , yxy −1x−1y−1) – 109 72 73 
+
+MS(5 , yxy −2x−1) – 44 – 33 
+
+MS(5 , yx −1y−1xy ) – 109 – 70 
+
+MS(5 , x −1y−1xy 2) – 45 – 78 
+
+MS(5 , y −1xyx −1y−1) – 116 86 70 
+
+MS(5 , yxy −1x−1y2) – 145 75 73 
+
+MS(5 , yxy −1x−1y−2) – 134 75 79 
+
+MS(5 , yxy −2x−1y) – 41 – 30 
+
+MS(5 , yxy −2x−1y−1) – 48 – 36 
+
+MS(5 , y 2x−1y−1xy ) – 134 – 72 
+
+MS(5 , yx −1y−1xy 2) – 49 – 45 
+
+MS(5 , y −1xy 2x−1y−1) – 40 – 51 
+
+MS(5 , y −1xyx −1y−2) – 139 – 72 
+
+MS(5 , yxy 4x−1) – 63 – 43 
+
+MS(5 , yxy 3x−1y) – 38 23 22 
+
+MS(5 , yxy −1x−1y3) – 156 78 79 
+
+MS(5 , yxy −1x−1y−3) – 141 78 81 
+
+MS(5 , yxy −2x−1y2) – 52 – 29 
+
+MS(5 , yxy −2x−1y−2) – 50 – 39 
+
+MS(5 , y 2xy 3x−1) – 26 23 22 
+
+MS(5 , y 3xy 2x−1) – 47 34 30 
+
+MS(5 , y 4xyx −1) – 153 – 83 
+
+MS(5 , y 3x−1y−1xy ) – 141 – 74 
+
+MS(5 , y 2x−1y−1xy 2) – 52 – 72 
+
+MS(5 , x −1y−1xy −4) – 62 – 76 
+
+MS(5 , x −1y−3xy −2) – 47 34 29 
+
+MS(5 , x −1y−4xy −1) – 153 86 91 
+
+MS(5 , y −1xy 2x−1y−2) – 51 – 44 
+
+MS(5 , y −1xyx −1y−3) – 150 – 78 
+
+MS(5 , y −1xy −3x−1y−1) – 46 30 23 
+
+MS(6 , y 3xyx −1) – 64 29 30 
+
+MS(6 , y 3xy −1x−1) – 40 25 26 
+
+MS(6 , x −1y−3xy ) – 40 28 25 
+
+MS(6 , x −1y−3xy −1) – 56 31 30 
+
+MS(6 , y 3xy 2x−1) – 39 29 27 
+
+MS(6 , y 3xyx −1y) – 63 34 33 
+
+MS(6 , y 3xyx −1y−1) – 61 26 27 
+
+MS(6 , y 3xy −1x−1y) – 56 30 29 
+
+MS(6 , yx −1y−3xy −1) – 55 28 26 
+
+MS(6 , x −1y−3xy −2) – 48 30 26 
+
+MS(6 , y −1x−1y−3xy ) – 56 32 28 
+
+MS(6 , y −1x−1y−3xy −1) – 62 34 32 
+
+MS(7 , yxy 4x−1) – 56 – 33 
+
+MS(7 , yxy −4x−1) – 40 28 24 
+
+MS(7 , y 2xy −2x−1y) – 81 36 37 
+
+MS(7 , y 2xy −2x−1y−1) – 79 36 50 
+
+MS(7 , yx −1y−2xy 2) – 79 37 36 
+
+MS(7 , x −1y−1xy 4) – 40 26 25 Continued on next page 37 The Two-Hump Problem 
+
+Table 4 – continued from previous page Presentation GS-AC GS-Sub PPO-Sub-DRT PPO-Sub-DRT + AC-19 
+
+MS(7 , x −1y−1xy −4) – 56 40 42 
+
+MS(7 , y −1x−1y−2xy 2) – 83 36 36 
+
+## H. Atomic AC-Move Counts 
+
+To complement the substitution-step comparisons in the main text, this appendix reports path lengths in terms of primitive AC-moves. Each substitution decomposes into: • exactly 1 concatenation (AC2), • 0 or more inversions (AC1), • 0 to |r1| + |r2| conjugations (AC3). 
+
+Aggregate statistics. Across the 610 Miller–Schupp presentations solved by the hybrid beam search (Section 5), the mean solution comprises 12.4 substitution steps, which expand to a mean of 135.0 primitive AC-moves—an 8.7× amplification ratio. Conjugations dominate the primitive-move budget (mean 96.2, 71% of all atomic moves), followed by inversions (mean 26.4, 19%) and concatenations (mean 12.4, 9%; equal to the substitution count by construction).                                
+
+> Table 5. Representative path-length breakdowns by primitive AC-move type for a sample of Miller–Schupp presentations solved by the hybrid beam search, spanning the difficulty range. “Substitutions” = supermove count; “Atomic AC” = total primitive AC-moves; AC1 / AC2 / AC3 are the per-type counts. Idx Substitutions Atomic AC AC1 AC2 AC3 0296218524 16 5318 851 14 829 241 15 127 40 15 72 581 80 1080 129 80 871
+
+The sample illustrates that easier presentations have AC3-to-AC2 ratios near 1, while harder presentations require many length-increasing conjugations per substitution: idx 581 needs 871 conjugations across 80 substitution steps ( ∼11 per step), reflecting the deep length-increasing detours characteristic of the hard regime that GS’s length-prioritized queue cannot reach. 
+
+## I. Hybrid Beam Search Details 
+
+We evaluate the trained policy with a fixed-width beam search of width B = 16 ,384 , run for up to T = 150 steps per presentation. At each step every beam is scored by its action log-probability under the policy (log-softmax of the logits); the value head is not used in scoring. Exploration is injected via Gumbel noise, and the top B candidates over all beam-action pairs are retained. Beams are pruned by removing no-op moves and by deduplicating repeated states both within a step and globally across the search. A presentation is counted as solved as soon as any beam reaches the trivial presentation. 38
