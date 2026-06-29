@@ -1,0 +1,1530 @@
+Title: PhiBE-Q-Learning: Bridging Off-Policy Reinforcement Learning and Continuous-Time Control
+
+URL Source: https://arxiv.org/pdf/2606.21925v1
+
+Published Time: Tue, 23 Jun 2026 01:32:54 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# PhiBE-Q-Learning: Bridging Off-Policy Reinforcement Learning and Continuous-Time Control 
+
+## Yuhua Zhu ∗ Yutong Ren †
+
+Abstract 
+
+In this paper, we develop an off-policy method for continuous-time reinforcement learning (CTRL), where the system dynamics are governed by an unknown stochastic differential equation (SDE) and only discrete-time trajectory data are available. Acentral challenge is that the classical state–action value function Q(s, a ), which enables off-policy learning in discrete-time RL, does not exist in CTRL (Baird, 1994, Jia and Zhou, 2023, Tallec et al., 2019). On the other hand, continuous-time control provides local notions such as the instantaneous advantage function q(s, a ), but these typically rely on state value function V (s). To address this, we introduce a new definition of the state–action value function in CTRL and derive its governing equation. Building on the PhiBE approximation (Zhu, 2024, Zhu et al., 2025), we propose iterative algorithms to approximate the optimal Q-function in both model-based and model-free settings using only discrete-time off-policy data. Under linear function approximation, we establish convergence guarantees and derive explicit convergence rates for the proposed method. 
+
+# 1 Introduction 
+
+Reinforcement learning (RL) has achieved remarkable success in the digital world, including AlphaGo (Silver et al., 2016), Atari gameplay (Mnih et al., 2015), and the fine-tuning of large language models (Ziegler et al., 2019). A key feature underlying these successes is that the system state remains static between observations. This property is natural in digital settings, making such environments well suited to RL algorithms built on the Markov decision process (MDP) framework. However, decision-making in the physical world departs from this digital paradigm in two fundamental respects. First, the objective is not merely to maximize rewards at the discrete times when data are observed, but to control performance continuously over time, including during periods without observations. In dynamic treatment regimes, for example, a patient’s physiological state (e.g., glucose level) evolves continuously, while measurements are only taken intermittently. The clinical goal, however, is to regulate 
+
+> ∗
+
+Corresponding author: Department of Statistics and Data Science, University of California, Los Angeles, USA. yuhuazhu@ucla.edu 
+
+> †
+
+Department of Statistics and Data Science, University of California Los Angeles, California, USA. 
+
+ytren@ucla.edu 
+
+1
+
+> arXiv:2606.21925v1 [math.OC] 20 Jun 2026
+
+the state at all times (Battelino et al., 2019, Cobelli et al., 2009, Emerson et al., 2023). RL in the physical world thus poses a substantially more challenging objective than its classical counterpart. Second, many physical systems exhibit structured and smooth continuous-time dynamics, a feature that is largely absent in digital environments and not exploited by the MDP framework. RL in the physical world is also known as continuous-time reinforcement learning (CTRL) (Wang et al., 2020). Off-policy learning is equally critical in real-world applications (Ma et al., 2020, Sutton et al., 1998, Watkins and Dayan, 1992). Off-policy data consists of trajectories generated under a behavior policy that differs from the target policy, and the behavior policy may be unknown. Leveraging off-policy data can substantially improve sample efficiency, particularly in domains where data collection is costly, such as healthcare. Moreover, it enables the use of existing datasets, which is critical in settings where exploration is unsafe, such as autonomous driving. The central question this paper studies is: what is a principled framework for CTRL when the system evolves according to an unknown stochastic differential equation (SDE), yet only discrete-time off-policy observations are available? Existing work has largely followed two directions. The first approach seeks to reconstruct the underlying continuous-time dynamics from discrete observations and subsequently solve the induced optimal control problem using tools from stochastic control (Agarwal et al., 2020, Kamalapurkar et al., 2016, Yang et al., 2014, Yildiz et al., 2021). This approach has two appealing features. First, the system dynamics depend only on the state and action, therefore, it is independent of the policy, making it naturally suited for leveraging off-policy data. Second, it preserves the continuous-time structure of the problem. However, this approach also faces two fundamental limitations. First, identifying a continuous-time model from discrete observations is inherently ill-posed: in general, infinitely many continuous-time dynamics can induce the same discrete-time transition law (Zhu et al., 2025). As a result, model misspecification is unavoidable in practice and may lead to suboptimal policies. Second, the approach decomposes the problem into model identification and control optimization, each introducing its own source of error. When the ultimate goal is to find the optimal policy, explicitly estimating the underlying dynamics may be unnecessary and potentially inefficient. The second approach instead reformulates CTRL as a discrete-time MDP and applies standard model-free off-policy RL algorithms, such as Q-learning or conservative Q-learning (Kumar et al., 2020, Watkins and Dayan, 1992). These formulations rely solely on discrete-time transition dynamics, thereby avoiding the unidentifiability issues inherent in the first approach. In addition, model-free RL methods directly learn the optimal policy without explicitly estimating the underlying dynamics, providing a simple and broadly applicable framework across different systems. However, this approach also has two notable limitations. First, discrete-time RL algorithms do not exploit the SDE structure of the underlying dynamics. Instead, they treat all systems the same, leading to inefficient use of information and potentially suboptimal policies. More specifically, the learning error can be highly sensitive to both system parameters and reward functions (Zhu et al., 2025). Second, off-policy learning in the MDP framework is typically based on the action–value function Q(s, a )(Watkins and Dayan, 1992). As observed in (Baird, 1994, Jia and Zhou, 2023, Tallec et al., 2019), in the continuous-time setting, the state-action Q(s, a ) function can be viewed as a small perturbation around the state value function V (s), implying that its variation across 2actions is small, which makes it difficult to accurately distinguish between actions. To address this issue, these papers propose a rescaled advantage function q(s, a ) to amplify variation in the action space. However, this construction depends on V and thus cannot be applied in the off-policy setting directly (see Section 3 for a detailed discussion). We tackle this challenge in two steps. First, we introduce a new definition of the state– action value function Q. In classical RL, a key advantage of the Q-function is its ability to handle off-policy data, whereas the value function V does not share this property. This distinction arises because the discrete-time Bellman equation for Q depends only on the transition distribution under a given action a, while the Bellman equation for V depends on the transition induced by a policy π. Our first contribution is to define a continuous-time 
+
+Q-function that preserves this advantage. Specifically, the proposed Q-function satisfies two properties: (i) it does not degenerate to the state value function V , unlike standard continuous-time limits of RL formulations; and (ii) its governing equation depends only on the dynamics under action a, not on any policy π.The second step is to develop a new iterative algorithm to approximate the optimal value function Q∗. We begin with an algorithm for the setting where the underlying dynamics are known, and provide a rigorous error analysis with convergence rates under linear function approximation. Building on this, and leveraging the PhiBE framework (Zhu, 2024, Zhu et al., 2025), we propose a continuous-time analogue of model-free Q-learning (Watkins and Dayan, 1992). This is the second key contribution of this paper. The proposed algorithm for off-policy continuous-time RL combines the strengths of continuous-time control and classical RL while avoiding their key limitations. Compared to the model-based control approaches, it relies only on discrete-time transition data and does not require explicit estimation of the underlying dynamics. In addition, it is a model-free algorithm in the sense that the update rule is invariant across different systems. Compared to standard RL algorithms, it explicitly exploits the SDE structure of the dynamics, integrating discrete-time observations with continuous-time evolution. Moreover, the resulting Q-function is not a vanishing perturbation of the value function V , which makes the formulation well-posed and numerically stable in the continuous-time limit. 
+
+Contributions . We summarize the main contributions as follows. 
+
+• We introduce a new state–action value function Q for CTRL and derive its governing equation, which enables off-policy learning in continuous time. 
+
+• We develop an iterative algorithm to approximate the optimal state–action value function under known dynamics, and establish error bounds and convergence rates under linear function approximation that remain well-posed as the time discretization tends to 0. 
+
+• When the dynamics are unknown, we propose PhiBE-Q-Learning , a model-free algorithm that exploits the SDE structure of CTRL problems to make effective use of off-policy data. The algorithm accommodates one-step transition data and requires parametrizing only the Q function itself. 31.1 Related work 
+
+1.1.1 Standard Discrete-time RL 
+
+Classical reinforcement learning (RL) methods such as Q-learning (Watkins and Dayan, 1992), DQN (Mnih et al., 2015), provide a powerful framework for off-policy learning in discrete-time setting. Our approach draws inspiration from these algorithms. Our update rule is an analogue of Q-learning (Watkins and Dayan, 1992) in continuous-time. In discrete-time Q-learning, convergence typically relies on the discount factor γ < 1, which ensures that the optimal Bellman operator is a contraction mapping (Bertsekas, 2012). In the continuous-time setting, the corresponding discount factor takes the form γ = e−β∆t → 1as the time discretization ∆ t → 0. This limit would, in principle, destroy the contraction property and lead to ill-conditioned or diverging guarantees. In this paper, we refine the error bounds in terms of ∆ t. In particular, we establish convergence and stability results that are uniform in ∆ t. We show that, when the underlying dynamics follow an SDE, the additional regularity of the system yields well-conditioned guarantees even ∆t → 0. Similar results are also derived in other CTRL papers under different settings (Mou and Zhu, 2024, Zhu, 2024, Zhu et al., 2025). 
+
+1.1.2 Continuous-time RL(CTRL) 
+
+A number of recent works have investigated continuous-time reinforcement learning (CTRL), where the system dynamics are modeled by SDEs (Jia and Zhou, 2022a,b, Kim and Yang, 2020, Szpruch et al., 2024, Wang and Zhou, 2020). In particular, (Wang et al., 2020) connects CTRL with stochastic control with several extensions developed in subsequent works (Jia and Zhou, 2022b, Szpruch et al., 2024). These methods typically enjoy strong theoretical guarantees and exploit the SDE structure when continuous-time data are available. However, they face three major limitations in settings with discrete-time off-policy data. First, when applied to discrete-time observations, these algorithms do not fully exploit the SDE structure of the underlying dynamics. Second, many approaches depend on long trajectories spanning from an initial state to a terminal state, which restricts applicability when only fragmented or short trajectories are available. Finally, the q function defined in (Baird, 1994, Jia and Zhou, 2023, Tallec et al., 2019) remains dependent on the value function V ,preventing straightforward use of off-policy data. These limitations motivate the development of methods that can learn directly from discrete observations, and leverage off-policy samples in CTRL. 
+
+1.1.3 PhiBE 
+
+To enable learning directly from discrete trajectory data, (Zhu, 2024) proposed the PhiBE framework, which explicitly accounts for discretization effects and leverages the SDE structure. By doing so, PhiBE improves the accuracy and efficiency of learning from discrete trajectory data in stochastic continuous-time systems. At the same time, PhiBE still leaves certain aspects unaddressed. In particular, existing PhiBE algorithms do not fully support learning from off-policy data. This work extends the PhiBE framework to address the off-policy data utilization. Our method aims to find the solution of PhiBE instead of the original HJB 4equation, thereby retaining PhiBE’s key advantage of handling the discrete trajectory data. Moreover, by introducing a new definition of the continuous-time action-value function Q,we derive an analogue of the optimal Bellman equation on Q independent of policy π. This formulation allows the algorithm to utilize trajectories generated under different policies. Finally, we emphasize that our attention in this paper is restricted to the convergence rate when there are enough data. The finite sample error (Muehlebach et al., 2025, Zhao et al., 2025, Zhu, 2024) is left for future work. 
+
+1.1.4 Classical HJB solvers 
+
+Our iterative method under known dynamics shares the same intuition as classical numerical schemes for HJB equation (Feng et al., 2013, Schaeffer and Hou, 2016). However, the key difference lies in the formulation and convergence mechanism. Traditional finite-difference methods approximate the HJB equation by discretizing the state space on a grid, which requires careful mesh design and often imposes CFL-type constraints on the grid spacing to ensure stability and convergence. In contrast, our approach avoids explicit spatial discretization by approximating the Galerkin projection directly from trajectory data. This eliminates the need for grid-based computation and CFL conditions, making the method more flexible and better suited for data-driven implementations in CTRL. Moreover, based on the PhiBE framework, our method could extend to a model-free algorithm when the dynamics are unknown. Specifically, it can directly approximate the action-value function without requiring explicit knowledge of the system dynamics. Here “model-free” means that the update rule remains unchanged across different forms of underlying dynamics, allowing the algorithm to adapt automatically without model-specific modifications. 
+
+## 1.2 Notation and Organization 
+
+Notation We define weighted L2-norm as follows 
+
+⟨f, g ⟩ =
+
+Z
+
+f (s, a )g(s, a )μ(s, a )dsda, ∥f ∥2 = ⟨f, f ⟩ .
+
+Here, μ(s, a ) denotes the probability density of the off-policy data distribution, supported on a compact set Ω ⊂ Rd × Rm.For vector x ∈ Rn, and function f (s, a ), we define ∥·∥ 2 , ∥·∥ ∞ as follows, 
+
+∥x∥22 =
+
+> n
+
+X
+
+> i=1
+
+x2 
+
+> i
+
+, ∥f ∥∞ = sup 
+
+> (s,a )∈Ω
+
+∥f ∥2
+
+If no specific remarks are given, then ∇, ∇2 refer to ∇s, ∇2 
+
+> s
+
+.
+
+Organization. Section 2 introduces the problem setup. Section 3 presents the new state– action Q-function. Section 3.2 develops the algorithm under known dynamics and establishes its theoretical guarantees, while Section 3.3 derives the model-free algorithm for unknown dynamics. Section 4 reports numerical experiments that validate the theory. 52 Preliminary 
+
+## 2.1 Stochastic optimal control 
+
+We consider a continuous-time stochastic optimal control problem defined on a filtered probability space (Ω , F, {F t}, P). The state process {st}t≥0 takes values in Rd and evolves according to a controlled stochastic differential equation (SDE): 
+
+ds t = b(st, a t) dt + σ(st, a t) dB t, (1) where b : Rd × A → Rd is the drift term, σ : Rd × A → Rd×k is the diffusion term, and Bt is a k-dimensional standard Brownian motion. At time t, the agent takes an action at = π(st)according to a feedback control. Here the feedback control is defined as a deterministic mapping π : Rd → A from the state space to a compact action space A ⊆ Rm. Given a fixed policy π and initial state s0 = s, the value function is defined as 
+
+V π(s) = E
+
+Z ∞
+
+> 0
+
+e−βt r(st, π (st)) dt s0 = s
+
+
+
+, (2) where β > 0 is the discount rate. The goal of stochastic optimal control problem is to find the optimal feedback control that maximizes the value function, 
+
+π∗(s) = argmax π V π(s), V ∗(s) = V π∗
+
+(s). (3) We assume the following assumption to ensure the well-posedness of the above stochastic control problem. 
+
+Assumption 1. The action space A is compact; the functions b(s, a ), σ(s, a ), and r(s, a )
+
+are continuous in a, and locally uniformly Lipschitz continuous in s. The reward function 
+
+r(s, a ) is uniformly bounded. 
+
+Moreover, the optimal value function V ∗(s) and the optimal feedback policy π∗ defined in (3) satisfy 
+
+βV ∗(s) = sup 
+
+> a∈A
+
+[r(s, a ) + ( Lb, ΣV ∗)( s, a )] , π∗(s) = arg sup 
+
+> a∈A
+
+[r(s, a ) + ( Lb, ΣV ∗)( s, a )] ,
+
+Here 
+
+Lb, Σ = b(s, a ) · ∇ s + 12Σ( s, a ) : ∇2 
+
+> s
+
+(4) with Σ( s, a ) = σ(s, a )σ⊤(s, a ) ∈ Rd×d and Σ( s, a ) : ∇2 
+
+> s
+
+= Σ i,j Σ( s, a )ij ∂si ∂sj . We refer readers to (Fleming and Soner, 2006, Pham, 2009, Yong and Zhou, 1999) for detailed accounts of the classical stochastic control theory. 
+
+## 2.2 Reinforcement learning 
+
+In the setting of reinforcement learning, the dynamics of the environment, i.e., b(s, a ), σ (s, a )are unknown. We assume access to discretized information, either in the form of transition 6densities 
+
+ρ∆t(s′ | s, a ), Rd × Rd × A → [0 , ∞),
+
+which denotes the probability density function of s∆t given s0 = s and a(τ ) = a for τ ∈ (0 , ∆t), or a dataset of transitions 
+
+{(si, a i, s ′
+
+> i
+
+, r i)}ni=1 , (si, a i) ∼ μ(s, a ), s′ 
+
+> i
+
+∼ ρ∆t( · | si, a i), ri = r(si, a i). (5) Here the actions {ai}ni=1 are generated by some (possibly unknown) behavior policy and are not controlled by the learner. Note that we consider a piecewise constant control where the action is frozen at the left endpoint, i.e., at = a0 for t ∈ [0 , ∆t] in the data set, while the goal is still to find the optimal feedback control π∗(s) defined in (3). 
+
+## 2.3 PhiBE 
+
+As indicated in (Zhu, 2024, Zhu et al., 2025), the optimal-PhiBE provides a better approximation to the continuous-time optimal control problem compared to the Bellman equation when the underlying dynamics are smooth or the reward function oscillates, as it preserves the underlying SDE structure. Therefore, in this work, we adopt PhiBE to approximate the value function. The first-order Optimal-PhiBE corresponding to (Zhu et al., 2025) is given by 
+
+Definition 1 (PhiBE) .
+
+β ˆV ∗(s) = sup 
+
+> a∈A
+
+n
+
+r(s, a ) + Lˆb, ˆΣ ˆV ∗(s)
+
+o
+
+, (6) 
+
+where 
+
+ˆb(s, a ) = 1∆t
+
+Z
+
+(s′ − s)ρ∆t(s′|s, a )ds ′
+
+ˆΣ( s, a ) = 1∆t
+
+Z
+
+(s′ − s)( s′ − s)⊤ρ∆t(s′|s, a )ds ′
+
+(7) As shown in Theorem 3.5 of (Zhu et al., 2025), under suitable regularity conditions on the dynamics b and σ, the optimal policy ˆπ∗(s) derived from PhiBE achieves an O(∆t)approximation to the true optimal policy, when evaluated in terms of the true value function under the respective policies. We will use the PhiBE formulation in Section 3.3 when only discrete-time information are available. 
+
+# 3 PhiBE Q-Learning 
+
+In this section, we aim to find a method that leverages the off-policy data. Off-policy data refers to experience collected under a behavior policy that is different from the target policy being optimized, in which the behavior policy may be unknown. Off-policy learning plays a crucial role in continuous-time reinforcement learning (CTRL). By allowing the use of data generated under arbitrary behavior policies, it significantly improves sample efficiency and makes it possible to reuse trajectories, which is especially important when collecting new 7data is costly. Furthermore, in many practical applications such as healthcare or autonomous driving, exploration is inherently risky. Off-policy learning provides a way to leverage existing datasets without requiring unsafe interactions. It also helps reduce the limitation caused by using data only from the current policy, enabling learning to reach an optimal policy. Finally, the ability to separate safe data collection from optimal policy optimization highlights the practical necessity of off-policy methods for CTRL, motivating our extension of PhiBE to this setting. In standard RL, the key reason why Q(s, a ) naturally supports off-policy learning is because the Bellman equation 
+
+Qπ(s, a ) = r(s, a ) + γ Es′∼ρ(·| s,a )
+
+ Ea′∼π(·| s) [Qπ(s′, a ′)]  (8) is determined by the unknown transition dynamics ρ(·| s, a ) independent of the target policy 
+
+π. While the Bellman equation for the value functions V π(s)
+
+V π(s) = rπ(s) + γ Es′∼ρπ (·| s) (V π(s′)) is determined by the unknown marginal transition kernel ρπ(s′|s) = R π(a|s) ρ(s′|s, a ) da ,which explicitly depends on π. As a result, when data are generated from a different behavior policy, the estimation of V π is inherently biased if the off-policy data is directly applied. In contrast, the Bellman optimality equation for Q∗(s, a ) is conditioned directly on ( s, a ), and the transition kernel ρ(s′|s, a ) depends only on the environment dynamics, not on π. Thus, any sample ( s, a, s ′, r ) collected under an arbitrary behavior policy provides an unbiased estimate of the right-hand side of the Bellman equation, making off-policy learning feasible for Q.Although the Bellman equation for V π(s) can, in principle, be adapted to off-policy learning by applying importance sampling to correct for the mismatch between the target policy π and the behavior policy, this approach faces two challenges in practice. First, importance sampling often leads to high variance, especially in long-horizon problems or when the behavior and target policies differ substantially. Second, the behavior policy itself may be unknown, making it difficult to compute the required importance sampling ratios. These limitations motivate the use of Q-functions, whose Bellman equation is naturally off-policy without requiring such corrections. A direct generalization of the discrete-time action-value function Qπ(s, a ) to the continuous-time setting is not feasible. As proved in (Jia and Zhou, 2023, Tallec et al., 2019), the discrete-time action-value function Qπ
+
+> ∆t
+
+(s, a ) defined as 
+
+Qπ
+
+> ∆t
+
+(s, a ) = E ai∼π(·| si),i ≥1
+
+> si+1 ∼ρ∆t(·| si,a i),i ≥0
+
+h ∞X
+
+> i=0
+
+γir(si, a i)|s0 = s, a 0 = a
+
+i
+
+(9) will converge to V π as ∆ t → 0. The reason is that, as the discretization step ∆ t → 0, the duration over which an action influences the environment also vanishes. In this limit, the effect of choosing action a at state s becomes negligible, and the action-value function Qπ(s, a )effectively degenerates to the value function V π(s). In (Jia and Zhou, 2023, Tallec et al., 2019), the authors propose an action-value function 8defined as 
+
+qπ(s, a ) := r(s, a ) + [ Lb, ΣV π]( s, a ) − βV π(s).
+
+This formulation, however, depends explicitly on V π, whose estimation typically relies on on-policy transitions generated by π. We note that both Jia and Zhou (2023) and Tallec et al. (2019) propose off-policy algorithms for jointly estimating qπ and V π. Nevertheless, these approaches have two limitations when applied to discrete-time data. First, they require parameterizing two separate functions, qπ and V π, thereby introducing two sources of approximation error. Second, the resulting algorithms with discrete-time data do not fully exploit the smooth SDE structure. Therefore, in order to handle the off-policy data within one value function and embed the SDE structure, we introduce a modified definition of the action-value function in the CTRL framework. In Sections 3.1 and 3.2, we begin by analyzing the known-dynamics setting, where the continuous transition dynamics ( b, Σ) are assumed to be known. Moreover, we derive an iterative algorithm and establish the exponential convergence of the proposed scheme. Section 3.3.1 further demonstrates that PhiBE allows us to extend the analysis from known dynamics to the unknown-dynamics case, where only discrete transition dynamics ρ∆t(s′|s, a )are available. Finally, Section 3.3.2 also presents a model-free, off-policy data-driven algorithm that implements the proposed method when the dynamics are unknown and only discrete-time data is available, followed by numerical experiments in Section 4 to demonstrate the performance of the approach. 
+
+## 3.1 Continuous-time state-action value function Q(s, a )
+
+Definition 2 (Continuous-time Bellman equation for Qπ(s, a )) .
+
+Qπ(s, a ) = r(s, a ) + Lb, Σ [Ea∼π(Qπ)] ( s, a ) + (1 − β)Ea∼π[Qπ(s, a )] (10) Several remarks on the definition of Qπ in (10) are in order. First, comparing (10) with the continuous-time Bellman equation for V π defined in (2), 
+
+βV π(s) = rπ(s) + Lbπ ,Σπ V π(s), bπ(s) = Ea∼π[b(s, a )] , Σπ(s) = Ea∼π[Σ( s, a )] ,
+
+we see a key structural difference. The operator in (10) is governed by the dynamics (b(s, a ), Σ( s, a )), and therefore does not depend on the target policy π. This mirrors the discrete-time Bellman equation for Q∆t in (8) . In contrast, the dynamics for V π depend on ( bπ, Σπ) and thus on π. Consequently, when the dynamics are unknown, Qπ naturally accommodates off-policy data, whereas V π does not. Second, the continuous-time Qπ can also be viewed as the sum of the value function and the instantaneous advantage function: 
+
+Qπ(s, a ) = lim 
+
+> ∆t→0
+
+Qπ
+
+> ∆t
+
+(s, a ) − V π
+
+> ∆t
+
+(s)∆t
+
+
+
++ V π(s),
+
+9where Qπ 
+
+> ∆t
+
+is defined in (9) and V π
+
+> ∆t
+
+(s) = Ea∼π[Qπ
+
+> ∆t
+
+(s, a )]. As shown in (Jia and Zhou, 2023), instantaneous advantage function is given by 
+
+qπ(s, a ) := r(s, a ) + [ LV π]( s, a ) − βV π(s). (11) Accordingly, Qπ can be written as 
+
+Qπ(s, a ) = r(s, a ) + [ LV π]( s, a ) − βV π(s) + V π(s). (12) Taking expectation over a ∼ π yields 
+
+Ea∼π[Qπ(s, a )] = rπ(s) + Lbπ ,Σπ V π(s) − βV π(s) + V π(s) = V π(s),
+
+where the last equality follows from the Bellman equation for V π. Substituting V π(s) = 
+
+Ea∼π[Qπ(s, a )] into (12) recovers the continuous-time Q-Bellman equation (10). Third, we adopt the formulation in Definition 2, rather than (12) , because it expresses the equation entirely in terms of the Q-function. This avoids the need to explicitly compute 
+
+V π and is essential for off-policy learning. Next, we define the continuous-time optimal Bellman equation for Q∗(s, a ) as follows. 
+
+Definition 3 (Continuous-time optimal Bellman equation for Q∗(s, a )) .
+
+βQ ∗(s, a ) = r(s, a ) + Lb, Σ
+
+ max  
+
+> a′
+
+Q∗(s, a ′). (13) To verify that (13) is consistent with the standard RL relation V ∗(s) = max a Q∗(s, a ), we provide a formal proof below. Define the operators 
+
+TQ(Q) = 1
+
+β
+
+
+
+r(s, a ) + Lb, Σ
+
+ max  
+
+> a
+
+Q(s, a ) 
+
+, (14) 
+
+TV (V ) = 1
+
+β max 
+
+> a
+
+
+
+r(s, a ) + [ Lb, ΣV ]( s, a )
+
+
+
+. (15) Let Q∗ denote the fixed point of TQ, i.e., TQ(Q∗) = Q∗. Define ˆV (s) = max a Q∗(s, a ). Then 
+
+TV ( ˆV ) = 1
+
+β max 
+
+> a
+
+
+
+r(s, a ) + [ Lb, Σ ˆV ]( s, a )
+
+
+
+= max 
+
+> a
+
+1
+
+β
+
+
+
+r(s, a ) + Lb, Σ
+
+ max  
+
+> a′
+
+Q∗(s, a ′)
+
+= max  
+
+> a
+
+Q∗(s, a ) = ˆV . 
+
+Hence, ˆV is a fixed point of the operator TV . Since V ∗, the optimal value function, is also the unique fixed point of TV (by the existence and uniqueness of the solution to the HJB equation), we conclude that ˆV = V ∗. Consequently, the identity V ∗(s) = max a Q∗(s, a ) holds. We summarize several key properties of the continuous-time Qπ and Q∗ as follows: 
+
+• The function Qπ(s, a ) admits the equivalent definition 
+
+Qπ(s, a ) = lim 
+
+> ∆t→0
+
+Qπ
+
+> ∆t
+
+(s, a ) − V π
+
+> ∆t
+
+(s)∆t
+
+
+
++ V π(s).
+
+10 • Qπ(s, a ) induces the same policy improvement as qπ(s, a ), under both the greedy and softmax policy update rules, arg max  
+
+> a
+
+qπ(s, a ) = argmax aQπ(s, a ), π(a|s) = exp( λq π(s, a )) 
+
+Zq(s) = exp( λQ π(s, a )) 
+
+ZQ(s)where Zq, Z Q are the normalizing constant. 
+
+• The solution to the continuous-time Q-Bellman equation (10) is consistent with the value function V π in (2), in the sense that 
+
+Ea∼π[Qπ(s, a )] = V π(s).
+
+• The solution to the continuous-time optimal Q-Bellman equation (13) satisfies max  
+
+> a
+
+Q∗(s, a ) = V ∗(s) = max  
+
+> π
+
+V π(s) = max  
+
+> π
+
+Ea∼π[Qπ(s, a )] .
+
+## 3.2 Q-learning under Known Dynamics 
+
+In this section, we introduce an iterative algorithm to solve (13) for Q∗(s, a ) under linear bases. Let Φ( s) : S → Rn be a set of basis functions. We approximate the solution by ˆQ(s, a ) = Φ( s, a )⊤θ∗ using Galerkin method. The Galerkin approximation ˆQ(s, a ) satisfies, 
+
+D
+
+r(s, a ) + Lb, Σ
+
+
+
+max 
+
+> a
+
+Φ( s, a )⊤θ∗
+
++ (1 − β) max 
+
+> a
+
+Φ( s, a )⊤θ∗ − Φ( s, a )⊤θ∗, Φ( s, a )
+
+E
+
+= 0 (16) D
+
+r(s, a ) + Lb, Σ
+
+
+
+max 
+
+> a
+
+Φ( s, a )⊤θ∗
+
+− βΦ( s, a )⊤θ∗, Φ( s, a )
+
+E
+
+= 0 (17) However, directly solving the above equation for θ∗ is infeasible. We add a time dependence on θ(t), and derive an ODE for θ(t)
+
+ddt θ(t) = r(s, a ) + Lb, Σ
+
+
+
+max 
+
+> a
+
+Φ( s, a )⊤θ(t)
+
+− βΦ( s, a )⊤θ(t), Φ( s, a )
+
+Discretize the time evolution, one has 
+
+θn+1 =θn + αn
+
+D
+
+r(s, a ) + Lb, Σ
+
+
+
+max  
+
+> a
+
+[Φ( s, a )⊤θn]
+
+
+
+− βΦ( s, a )⊤θn, Φ( s, a )
+
+E
+
+(18) We establish the properties of the proposed algorithm in two steps. First, Theorem 3.3 shows that, under Assumption 2, the Galerkin solution θ∗ defined in (17) provides a good approximation to the true value function Q∗(s, a ) defined in (13) . Second, Theorem 3.4 shows that the iterates θn generated by Algorithm (18) converge to the Galerkin approximation θ∗.
+
+Assumption 2. (A1) The smallest eigenvalue λ1 of the Gram matrix G = R ΦΦ ⊤μdsda is positive. The largest eigenvalue λ2 of the Gram matrix is bounded, and the bases ∥Φ∥∞
+
+are bounded. In addition, the largest eigenvalue of Gram matrix G∇, G ∇2 of ∇Φ, ∇2Φ
+
+are bounded. 
+
+11 (A2) ∥b∥C1 , ∥Σ∥C2 ≤ L
+
+(A3) Let c0 := max v∈Sn−1 ∥ max a |v⊤Φ|∥ ∥Φ⊤v∥ , c1 := max v∈Sn−1 ∥∇ Φ⊤v∥∥Φ⊤v∥ , c 2 := max v∈Sn−1 ∥∇ 2Φ⊤v∥∥Φ⊤v∥ . We assume that 
+
+β > C L, Φ := c0L(1 + c1 + c2) (19) Several remarks on the assumptions are in order. Assumption (A1) constrains the choice of basis functions Φ( s), Assumption (A2) imposes conditions on the underlying dynamics, and Assumption (A3) requires the discount parameter β to be large enough. In Assumption (A1), the requirement that the smallest eigenvalue of the Gram matrix be strictly positive is equivalent to linear independence of the basis functions in the weighted space L2(μ). In Assumption (A3), we note that the constants c0, c 1, c 2 are always finite under Assump-tion (A1). For c0, since v⊤Φ = v⊤Gv ≥ λ1 for ∥v∥2 = 1, one has c0 ≤ ∥Φ∥∞ 
+
+> √λ1
+
+. For c1, c 2, let 
+
+λ3 and λ4 denote the largest eigenvalues of the matrices G∇ and G∇2 , respectively. Then one can further bound c1 ≤ λ3 
+
+> λ1
+
+, c 2 ≤ λ4 
+
+> λ1
+
+.The discounted coefficient β and the constant CL, Φ are the key quantities that governing the performance of the algorithm. Later in Theorems 3.3 and 3.4, we will show that both the approximation accuracy and convergence behavior improve as β becomes larger or CL, Φ
+
+becomes smaller. Since CL, Φ depends on c0, c 1, c 2 through L, and smaller c0, c 1, c 2 weakens the requirement on β while improving algorithmic performance, we discuss in the following the conditions under which c0, c 1, c 2 are small. 
+
+Uniform exploration of the behavior policy controls c0. Let μ(s) = R 
+
+> A
+
+μ(s, a )da 
+
+be the marginal distribution over states, and define the conditional distribution π(a|s) s.t. 
+
+μ(s, a ) = μ(s)π(a|s), which corresponds to the behavior policy generating the data. We claim that the uniform behavior policy πu(a|s) = 1 /|A| minimizes the constant c0 in the worst case over all bounded bases Φ. Any other policy π̸ = πu leaves some region of the action space systematically under-covered relative to πu, and a basis functions can always be constructed that places its informative directions precisely in that region, inflating c0(π) above c0(πu). The precise statement is presented in the following lemma, and the proof is given in Appendix A. 
+
+Lemma 3.1. The uniform policy πu is the unique minimax optimizer to 
+
+πu = argmin 
+
+> π∈Π
+
+max 
+
+> Φ∈F B
+
+c0(π, Φ) 2.
+
+where Π := 
+
+n
+
+π(·|· ) : π(a|s) ≥ 0, R 
+
+> A
+
+π(a|s) da = 1 μ(s)-a.e. 
+
+o
+
+, FB := {Φ continuous :
+
+∥Φ∥∞ ≤ B}.
+
+The minimax formulation in Lemma 3.1 is necessary for the following reason. For a fixed known basis functions Φ, a policy concentrating on actions where Φ has high energy can achieve a smaller c0 than πu. However, such a policy requires prior knowledge of the geometry of Φ, precisely the object the offline RL algorithm is trying to learn. The minimax formulation min π max Φ c0(π, Φ) 2 captures the natural requirement that the behavior policy 12 must be chosen without this knowledge. Under this criterion, πu is uniquely optimal: it is the only policy that cannot be adversarially exploited by any choice of basis functions, because it covers every action equally regardless of where Φ places its informative directions. 
+
+Smoothness and orthonormality of the bases Φ controls c1 and c2. The constants 
+
+c1 and c2 are relative smoothness constants of the basis functions Φ. They are controlled by two independent mechanisms. First, the numerators ∥∇ Φ⊤v∥ and ∥∇ 2Φ⊤v∥ are small when Φ has small derivatives across S × A , which can be achieved by regularizing the derivatives, for instance through smoothness penalties or bounded weight norms in a neural network parameterization. Second, the denominator min v ∥Φ⊤v∥ = λ1 is large when the basis functions are orthonormal under μ, so that no projection direction is starved of signal. Any deviation from orthogonality under μ reduces λ1 and increases c1 and c2.Before we present the theorem, we first prove a Lemma that will be frequently used in the theoretical guarantees. 
+
+Lemma 3.2. Under Assumption 2, for any Q = Φ ⊤θ in the linear space spanned by Φ, one has the following upper bound, 
+
+L∗
+
+> b, Σ
+
+Q ≲ L(1 + c1 + c2) ∥Q∥ , where L∗
+
+> b, Σ
+
+f = ∇ · 
+
+
+
+bf + 12∇ · (Σ f )
+
+
+
+.
+
+where the inequality holds up to a uniform constant that is independent of the problem. Proof. First note that 
+
+L∗
+
+> b, Σ
+
+Q ≤
+
+
+
+∥∇ b∥∞ + 12 ∇2Σ ∞
+
+
+
+∥Q∥ + ( ∥b∥∞ + ∥∇ Σ∥) ∥∇ Q∥ + 12 ∥Σ∥∞ ∇2Q
+
+≲L  ∥Q∥ + ∇Φ⊤θ + ∇2Φ⊤θ  ≤ L(1 + c1 + c2) ∥Q∥
+
+where the first inequality is due to Cauchy–Schwarz inequality; the second inequaltiy is by Assumption (A2); the third inequality is because Q = θ⊤Φ and for ∀0̸ = θ ∈ Rn, one has 
+
+∇Φ⊤θ = ∇Φ⊤θ
+
+∥Φ⊤θ∥ Φ⊤θ ≤ max 
+
+> v∈Sn−1
+
+∇Φ⊤v
+
+∥Φ⊤v∥ Φ⊤θ = c1 θ⊤Φ ,
+
+and similar inequality can be obtained for ∇2Φ⊤θ ≤ c2 ∥Q∥.
+
+Theorem 3.3 (Galerkin solution accuracy) . Under Assumption 2, the Galerkin solution 
+
+ˆQ∗(s, a ) = Φ( s, a )⊤θ∗ that satisfies (17) has an accuracy of 
+
+ˆQ∗ − Q∗ ≤ β + CL, Φ
+
+β − CL, Φ
+
+min  
+
+> θ
+
+Q∗ − Φ⊤θ
+
+where CL, Φ = Lc 0(1 + c1 + c2) is a constant only depending on Φ, b, Σ.
+
+Several remarks on the above theorem are in order. First, when the optimal value function 
+
+Q∗(s, a ) can be represented by the bases Φ( s, a ), then the Galerkin solution is accurate. 13 Second, one can view min θ Q∗ − Φ⊤θ as the model error, that is the best approximation one can obtain in the space spanned by the bases Φ. The theorem shows that the Galerkin solution ˆQ∗ achieves, up to a multiplicative constant, the smallest possible error among all linear combinations of Φ. Therefore, whenever the linear basis Φ( s, a ) provides a good approximation to Q∗, the Galerkin solution inherits this accuracy and is guaranteed to be near-optimal within the chosen function class. In the presence of model approximation error, the accuracy of the Galerkin solution improves as β becomes larger or CL, Φ becomes smaller. Based on the discussion following Assumption 2, this implies that the Galerkin approximation becomes more accurate under the following conditions: 1) β is larger; 2) the behavior policy explores the action space more uniformly; 3) the basis functions Φ are smoother; 4) the basis functions are more orthogonal under the off-policy data distribution. 
+
+Proof. We divide the error e(s, a ) = Q∗(s, a ) − ˆQ∗(s, a ) into two parts, 
+
+e(s, a ) = eG(s, a ) + eP (s, a ), eP = Q∗ − Φ⊤u, eG = Φ ⊤v, v = u − θ∗ (20) where u, v ∈ Rd, u = arg min θ Q∗ − Φ⊤θ . Here eG represents the Galerkin error, and eP
+
+represents the model error. Taking inner product of the continuous-time Q-function (13) with eG, one has 
+
+D
+
+r + Lb, Σ(max  
+
+> a
+
+Q∗), e G
+
+E
+
+= ⟨βQ ∗, e G⟩
+
+Taking inner product of v with the Galerkin equation (17), one has 
+
+D
+
+r + Lb, Σ(max 
+
+> a
+
+ˆQ∗), e G
+
+E
+
+=
+
+D
+
+β ˆQ∗, e G
+
+E
+
+subtracting the two equations gives, 
+
+D
+
+Lb, Σ(max  
+
+> a
+
+Q∗ − max 
+
+> a
+
+ˆQ∗), e G
+
+E
+
+= β ∥eG∥2 + β ⟨eP , e G⟩
+
+Now the LHS can be bounded by 
+
+LHS =
+
+D
+
+max  
+
+> a
+
+Q∗ − max 
+
+> a
+
+ˆQ∗, L∗
+
+> b, Σ
+
+eG
+
+E
+
+≤ L(1 + c1 + c2) max  
+
+> a
+
+Q∗ − max 
+
+> a
+
+ˆQ∗ ∥eG∥≤L(1 + c1 + c2) max  
+
+> a
+
+|eG + eP | ∥eG∥≤L(1 + c1 + c2)
+
+
+
+max  
+
+> a
+
+|eG| ∥eG∥ + max  
+
+> a
+
+|eP | ∥eG∥
+
+
+
+≤ Lc 0(1 + c1 + c2)  ∥eG∥2 + ∥eP ∥ ∥ eG∥
+
+where the first equality is due to integration by parts, and the first inequality is by Lemma 3.2. The last inequality is because of Assumption 2/(A1), for any e(s, a ) = e⊤Φ( s, a ) with 
+
+∥e∥2̸ = 0, 
+
+max  
+
+> a
+
+|e| = ∥max a |e|∥ ∥e∥ ∥e∥ ≤ max 
+
+> v∈Sn−1
+
+∥ max a |v⊤Φ|∥ ∥Φ⊤v∥ ∥e∥ = c0 ∥e∥ . (21) 14 Therefore, denote CL, Φ = Lc 0(1 + c1 + c2), one has (β − CL, Φ) ∥eG∥2 ≤ CL, Φ ∥eP ∥ ∥ eG∥ − β ⟨eP , e G⟩ ≤ (β + CL, Φ) ∥eP ∥ ∥ eG∥
+
+which implies 
+
+∥eG∥ ≤ β + CL, Φ
+
+β − CL, Φ
+
+∥eP ∥ .
+
+One completes the proof by inserting the definition of eP in (20). The convergence guarantee is derived in the following theorem. 
+
+Theorem 3.4 (Convergence of Q-learning under known dynamics) . Under Assumption 2, the Q-learning iteration defined in (18) with learning rate αn = α ∈ (0 , 2mK2 ) converges to the Galerkin solution θ∗ defined in (17) at a linear rate. By setting the learning rate α = mK2 , it achieves the optimal rate, 
+
+∥θn − θ∗∥2 ≤
+
+r
+
+1 − m2
+
+K2
+
+!n
+
+∥θ0 − θ∗∥2,
+
+where m = λ1(β − CL, Φ), K = λ2(β + CL, Φ).
+
+Several remarks on the theorem are in order. The optimal convergence rate depends explicitly on the spectrum of the Gram matrix through λ1 and λ2, as well as the key parameters 
+
+β and CL, Φ. In particular, better-conditioned bases lead to faster convergence: in the special case where the basis functions are orthonormal under L2(μ), the Gram matrix becomes the identity, so λ1 = λ2 = 1, yielding the fastest possible rate. The convergence rate therefore becomes faster under the same conditions that make the Galerkin solution more accurate, namely: 1) β is larger; 2) the behavior policy explores the action space more uniformly; 3) the basis functions Φ are smoother; 4) the basis functions are more orthogonal under the off-policy data distribution. 
+
+Proof. Define 
+
+H(θ) = 
+
+D
+
+βΦT θ − L b, Σ
+
+
+
+max  
+
+> a
+
+ΦT θ
+
+
+
+− r, Φ
+
+E
+
+. (22) 
+
+Monotonicity. We first show that H is strongly monotone. Let Q = θ⊤Φ, P = η⊤Φ, expanding the left-hand side, we have (H(θ) − H (η)) ⊤ (θ − η)=β∥Q − P ∥2 −
+
+
+
+(b∇ + 12Σ : ∇2)(max  
+
+> a
+
+Q − max  
+
+> a
+
+P ), Q − P
+
+
+
+=β∥Q − P ∥2 − ⟨ max  
+
+> a
+
+Q − max  
+
+> a
+
+P, L∗
+
+> b, Σ
+
+(Q − P ) ⟩≥β∥Q − P ∥2 − L(1 + c1 + c2) max  
+
+> a
+
+Q − max  
+
+> a
+
+P ∥Q − P ∥ ≥ (β − CL, Φ)∥Q − P ∥2
+
+15 where the first inequality is by Lemma 3.2, and the second inequality is obtained by applying (21), 
+
+max  
+
+> a
+
+Q − max  
+
+> a
+
+P ≤ max  
+
+> a
+
+|Q − P | ≤ c0 ∥Q − P ∥
+
+Again by Assumption (A1), one has 
+
+∥Q − P ∥2 = ( θ − η)⊤
+
+Z 
+
+ΦΦ ⊤μ(s, a )dsda 
+
+
+
+(θ − η) ≥ λ1 ∥θ − η∥22
+
+Therefore, one has (H(θ) − H (η)) ⊤ (θ − η) ≥ λ1(β − CL, Φ) ∥θ − η∥22 .
+
+Lipschitz Continuity of H. We verify that H is Lipschitz. Observe 
+
+∥H (θ) − H (η)∥ ≤ β ⟨Φ⊤(θ − η), Φ⟩ + max  
+
+> a
+
+Q − max  
+
+> a
+
+P L∗
+
+> b, Σ
+
+Φ
+
+≤β ∥G(θ − η)∥ + CL, Φ ∥Q − P ∥ ∥ Φ∥ ≤ (β + CL, Φ)λ2 ∥θ − η∥2
+
+where Lemma 3.2 and (21) is applied to obtained the second inequality, and Assumption 2/(A1) is used in the third inequality. 
+
+Contraction Property. For fixed learning rate αk = α, since the Galerkin iteration update is 
+
+θk+1 = θk − αkH(θk),
+
+and H(θ∗) = 0, one has 
+
+∥θn+1 − θ∗∥22 = ∥θn − θ∗ − α(H(θn) − H (θ∗)) ∥22
+
+≤∥ θn − θ∗∥22 − 2α(H(θn) − H (θ∗)) ⊤(θn − θ∗) + α2∥H (θn) − H (θ∗)∥22
+
+By Monotonicity and Lipschitz continuity of H, we have 
+
+∥θn+1 − θ∗∥22 ≤ (1 − 2mα + α2K2)∥θn − θ∗∥22, m = λ1(β − CL, Φ), K = λ2(β + CL, Φ).
+
+First note that since K > m , one has 1 − 2αm + α2K2 > 0. Second, one chooses 0 < α < 2mK2
+
+then the mapping becomes a contraction. Lastly, by setting α = m/K 2, the convergence rate is optimized as 
+
+∥θn − θ∗∥2 ≤
+
+r
+
+1 − m2
+
+K2
+
+!n
+
+∥θ0 − θ∗∥2
+
+.
+
+## 3.3 Q-learning under unknown dynamics 
+
+In the previous section, we assumed that the continuous dynamics b, σ are known. In this section, we assume b, σ are unknown. In Section 3.3.1, we introduce PhiBE to naturally apply 16 the algorithm and theoretical guarantees when only the discrete-time transition dynamics are known. In 3.3.2, we describe how to implement the update rule (18) in a data-driven manner when the transition dynamics is unknown and only the state-action-next-state-reward tuples 
+
+{(si, a i, s ′
+
+> i
+
+, r i)}ni=1 as defined in (5) are available. 
+
+3.3.1 PhiBE setting 
+
+When only the discrete-time transition dynamics ρ∆t(s′|s, a ) are available, one can replace the unknown drift and diffusion b, Σ in the equation (13) for Q∗ with the approximated ˆb
+
+and ˆΣ according to (7), and one ends up with the Optimal-PhiBE-Q equation 
+
+Definition 4 (Optimal-PhiBE-Q) .
+
+β ˆQ∗(s, a ) = r(s, a ) + Lˆb, ˆΣ
+
+ max 
+
+> a
+
+ˆQ∗(s, a ), (23) 
+
+where ˆb, ˆΣ are defined in (7) .
+
+Substituting ( ˆb, ˆΣ ) into (14) yields a corresponding operator, whose fixed point corresponds to the optimal PhiBE solution to (6). Solving the Optimal-PhiBE-Q equation in Definition 4, the same algorithm (18) applies with the approximated ˆb, ˆΣ. Therefore as long as ˆb, ˆΣsatisfies the Assumption (A2), the corresponding algorithm 
+
+θn+1 =θn + αn
+
+
+
+r(s, a ) + Lˆb, ˆΣ
+
+
+
+max  
+
+> a
+
+[Φ( s, a )⊤θn]
+
+
+
+− βΦ( s, a )⊤θn, Φ( s, a )
+
+
+
+(24) recovers the same limiting behavior as established in Theorem 3.3 and Theorem 3.4. 
+
+Corollary 1. Under Assumption 2/(A1), (A3). For ∀ϵ > 0, if ∥b∥C1 , ∥Σ∥C2 ≤ L − ϵ,then there exists ∆t small enough, s.t., the Galerkin solution ˜Q∗(s, a ) = Φ( s, a )⊤ ˜θ∗ for Optimal-PhiBE-Q, 
+
+D
+
+r(s, a ) + Lˆb, ˆΣ
+
+
+
+max 
+
+> a
+
+h
+
+Φ( s, a )⊤ ˜θ∗
+
+i 
+
+− βΦ( s, a )⊤ ˜θ∗, Φ( s, a )
+
+E
+
+= 0 (25) 
+
+has an accuracy of 
+
+˜Q∗(s, a ) − ˆQ∗(s, a ) ≤ β + CL, Φ
+
+β − CL, Φ
+
+min 
+
+> θ
+
+ˆQ∗(s, a ) − Φ⊤θ ∞
+
+.
+
+In addition, with the same learning rate as in Theorem 3.4, the iterative algorithm (24) will converges to ˜θ∗ in the same rate as in Theorem 3.4. Proof. As proved in (Zhu et al., 2025), ∇k(ˆb − b) ∞
+
+≤ C∆t with k = 0 , 1, ∇k(Σ − ˆΣ) ∞
+
+≤
+
+C∆t with k = 0 , 1, 2. Therefore, for sufficiently small ∆ t, one has 
+
+∥b − ˆb∥C1 + ∥Σ − ˆΣ∥C2 ≤ ϵ
+
+then by the assumption, one has ∥ˆb∥C1 ≤ ∥ b∥C1 + ∥b − ˆb∥C1 ≤ L. Similarly, one can prove with the same ∆ t, ∥ ˆΣ∥C2 ≤ ∥ Σ∥C2 + ∥Σ − ˆΣ∥C2 ≤ L. 
+
+17 Therefore, the approximated ˆb, ˆΣ satisfies Assumption 2/(A2), then the guarantees in Theorems 3.3 and 3.4 follows. 
+
+3.3.2 Data-driven algorithm 
+
+When only discrete-time off-policy data (5) is available, our goal is to approximate the optimal action-value function Q∗(s, a ). Following the algorithm (24) introduced in last section, we approximate the optimal-Q function Q∗(s, a ) using the bases Φ( s, a ) = ( ϕ1, . . . , ϕ n)⊤. In each iteration, given Qn(s, a ) = Φ( s, a )⊤θn, one first computes 
+
+Vn(s) = max  
+
+> a
+
+Qn(s, a ).
+
+Then a mini-batch Bn ⊂ B is sampled, and for each tuple ( si, a i, r i) in the mini-batch, the TD-error is computed as 
+
+δ(si, s ′
+
+> i
+
+, a i, r i) = ri + Lbi,Σi Vn(si) − βQ n(si, a i), (26) which serves as an unbiased estimate of the PhiBE residual. Here Lb, Σ is defined in (4) , and 
+
+bi = s′ 
+
+> i
+
+− si
+
+∆t , ˆΣi = (s′ 
+
+> i
+
+− si)( s′ 
+
+> i
+
+− si)⊤
+
+∆t .
+
+Finally, the parameter is updated via 
+
+θn+1 = θn + αn
+
+|B n|
+
+X
+
+> (si,s ′
+> i,a i,r i)∈B n
+
+Φ( si, a i) δ(si, s ′
+
+> i
+
+, a i, r i), (27) This procedure is repeated until a satisfactory approximation of the Galerkin solution for Q∗(s, a ) is obtained. A rigorous analysis of the sample complexity is left for future work. The algorithm is presented in Algorithm 1. Several remarks on the Algorithm are in order. First, the algorithm can be viewed as a continuous-time analogue of classical Q-learning (Watkins and Dayan, 1992). The classical approach constructs the TD error as the residual of the discrete-time Bellman equation (8) , whereas our method is based on the PhiBE-Q equation (23). Second, the algorithm naturally extends to nonlinear function approximation, such as Deep Neural Networks (DNNs). One constructs the same TD error as in (26) using the parametric form Q(s, a ; θn), and updates the parameters via 
+
+θn+1 = θn + αn δ(si, s ′
+
+> i
+
+, a i, r i)∇θQ(si, a i; θn).
+
+As in classical RL, convergence guarantees are generally unavailable under nonlinear function approximation. In practice, stability can be improved by decoupling the target from the online network. For example, following (Mnih et al., 2015), one may use a target network and define Vn = max a Q(s, a ; θ−), where θ− denotes parameters from a delayed copy of the Q-network. 18 Algorithm 1 PhiBE Q-learning Method 
+
+Input: Batch size |B n|, initial value θ0, discrete time step ∆ t, discount β, state-next-state-reward-action tuples B = {(si, s ′
+
+> i
+
+, r i, a i)}Ni=1 , basis Φ( s, a ) = ( ϕ1, . . . , ϕ n)⊤, steps Niter ,step-sizes {αn}
+
+Output: Estimated parameter θNiter and Q-function ˆQ(s, a ) = θ⊤Φ( s, a )
+
+θ ← θ0
+
+for n = 0 , . . . , N iter − 1 do 
+
+Compute the optimal state-value function V (s) ← max a Φ( s, a )⊤θ
+
+Sample a mini-batch Bn ⊂ B , and compute PhiBE-Q error for each ( si, s ′
+
+> i
+
+, a i, r i) ∈ B n
+
+δ(si, s ′
+
+> i
+
+, a i, r i) = s′ 
+
+> i
+
+− si
+
+∆t · ∇ sV (si) + 12∆ t (s′ 
+
+> i
+
+− si)( s′ 
+
+> i
+
+− si)⊤ : ∇2 
+
+> s
+
+V (si) − β ˆQ(si, a i)Update parameter: θ ← θ + αn
+
+> |B n|
+
+P 
+
+> (si,s ′
+> i,a i,r i)∈B n
+
+Φ( si, a i) δ(si, a i, r i)
+
+end for return ˆQ(s, a ) = θ⊤ 
+
+> Niter
+
+Φ( s, a )Third, with the continuous-time formulations of Q∗(s, a ) in (13) and Qπ(s, a ) in (10) ,standard off-policy algorithms including Q-learning (Watkins and Dayan, 1992), DQN (Mnih et al., 2015), TD3-BC (Fujimoto and Gu, 2021), CQL (Kumar et al., 2020), etc can be directly adapted to solve continuous-time RL problems. Finally, we would like to mention that this algorithm is typically applied in settings where max a Φ( s, a )⊤θ can be computed efficiently. The numerical experiment in Section 4.1 provides one such example. For discrete action spaces, max a Φ( s, a )⊤θ is easy to evaluate; however, 
+
+Vn(s) is not necessarily differentiable. To address this, one may approximate the greedy action a∗(s) = arg max a Q(s, a ) using a softmax policy π(a | s) ∝ exp  Q(s, a )/λ , where λ
+
+controls the degree of exploration. This leads to a softmax variant of PhiBE-Q-learning. Alternatively, one can approximate ∂sk V (si) ≈ 1 
+
+> h
+
+(V (si + he k) − V (si)), where ek denotes the 
+
+kth standard basis vector in the state space and h > 0 is a small finite-difference step size. Provided that h < ∆t, the additional approximation error introduced by this finite-difference step does not dominate the overall discretization error. 
+
+# 4 Experiments 
+
+## 4.1 LQR with stochastic dynamics 
+
+We consider the linear dynamics with quadratic reward setting, 
+
+b(s, a ) = As + Ba, σ(s, a ) = σ, r(s, a ) = s⊤Qs + a⊤Ra, 
+
+The system parameters are set as A = B = 0 .1, Q = R = −1, and the discount factor β = 1 or β = 2. In the noise-free case, σ = 0, whereas in the noisy case, σ = 0 .2. To generate the dataset, we simulate I independent trajectories {(si, s ′
+
+> i
+
+, r i, a i)}Ni=1 . Here, 19 s ∼ U (−1, 1) , a ∼ U (−1, 1) and s′ is the resulting next state after applying action a,
+
+ρ(s′ | s, a ) ∼ N 
+
+
+
+eA∆ts + BA
+
+ eA∆t − 1 a, σ2
+
+2A
+
+ e2A∆t − 1
+
+.
+
+.We represent Qθ(s, a ) = θ⊤Φ( s, a ) using quadratic features Φ( s, a ) = ( s2, a 2, 1), and initialize the parameter θ0 randomly. Note that in LQR, the corresponding greedy value function admits the explicit representation max  
+
+> a
+
+Qθ(s, a ) = θ⊤
+
+> m
+
+ϕ(s), θm =
+
+
+
+θ1 − θ22
+
+θ3
+
+, 0, θ 3
+
+⊤
+
+.
+
+The step size in all plots is set to αn = 0 .1. Figure 1 shows the evolution of the error 
+
+|θn − θ∗| for PhiBE under known discrete-time dynamics. We implement the algorithm in (24) ,where ˆb, ˆΣ, and the inner products are computed explicitly. The purpose of this experiment is to demonstrate that PhiBE provides an accurate approximation to the continuous-time optimal control problem and to validate our theoretical guarantees. Figure 2 shows the evolution of the error |θn − θ∗| under discrete-time data, using Algorithm 1. This experiment demonstrates that the proposed data-driven algorithm performs comparably to the algorithm with known discrete-time dynamics. At each iteration, we sample a mini-batch from the dataset, compute the Optimal-PhiBE-Q residual defined in (26) at θn
+
+δ(s, a, r ) = r + ( bL max Qθn )( s) + (1 − β) max Qθn (s) − Qθn ,
+
+and update θn according to the PhiBE-Q-learning rule (27).  
+
+> (a) Deterministic dynamics (b) Stochastic dynamics
+
+Figure 1: The evolution of PhiBE Q-learning under known discrete-time dynamics. Subfigure (a) shows the deterministic setting ( σ = 0), while subfigure (b) shows the stochastic setting (σ = 0 .2). β = 1 in the deterministic setting, β = 2 in the stochastic setting. In each subfigure, different curves correspond to the exact known-dynamics update and its corresponding PhiBE approximation using different time steps ∆ t.20 (a) Deterministic dynamics (b) Stochastic dynamics 
+
+Figure 2: The evolution of PhiBE Q-learning when only discrete trajectory off-policy data are available with ∆t = 0 .1. Subfigure (a) shows the deterministic setting ( σ = 0), while subfigure (b) shows the stochastic setting ( σ = 0 .2). In each subfigure, the batch-size curves correspond to data-driven PhiBE Q-learning with different batch sizes used at each iteration, while the additional baseline curve corresponds to PhiBE Q-learning with known discrete-time dynamics. The discount parameter is β = 1 in the deterministic setting and β = 2 in the stochastic setting. For the known-dynamics setting, the results in Figure 1 show that PhiBE Q-learning closely tracks the exact discrete-time Q-iteration across both deterministic and stochastic dynamics. When the time step ∆ t decreases, the PhiBE approximation becomes more accurate. In the stochastic case the long-term convergence trend remains nearly identical to the deterministic counterpart. The algorithm ultimately reaches the same accuracy level, confirming that the PhiBE Q-learning update is stable and robust to moderate diffusion noise in the transition dynamics. For the off-policy data setting in Figure 2, PhiBE Q-learning successfully recovers the Q-function from sample trajectories, and its convergence behavior is strongly influenced by the batch size. Larger batches lead to smoother error decay and significantly faster convergence, while very small batches introduce higher variance and slower stabilization. Comparing the deterministic and stochastic environments, we observe that stochasticity causes oscillations during the transient phase. However, by adopting a decreasing learning rate in later iterations, the method avoids persistent oscillation and converges to a similar final error plateau. These results demonstrate that PhiBE Q-learning remains effective even with off-policy data and stochastic dynamics, achieving reliable convergence across different sampling regimes. 21 (a) Deterministic dynamics (b) Stochastic dynamics 
+
+Figure 3: The evolution of PhiBE Q-learning when only discrete trajectory off-policy data are available compared with RL Q-Learning under same batch size = 64. Subfigure (a) shows the deterministic setting ( σ = 0), while subfigure (b) shows the stochastic setting ( σ = 0 .2). In each subfigure, different curves correspond to whether the method is based on PhiBE. We set ∆ t = 0 .1, β = 2 in this setting. To further demonstrate the effectiveness of our method, we also evaluate the standard Q-Learning algorithm using the same data and experimental configuration. As shown in Figure 3, the Q-Learning method iterates converge with a larger error. Therefore, the experimental results clearly confirm that our approach is significantly more robust than the standard Q-learning in the continuous setting. 
+
+# 5 Conclusion 
+
+In this work, we propose a continuous-time Q function, enabling off-policy data usage in continuous-time RL settings. By introducing an time-evolutionary equation and leveraging the Galerkin projection, we develop a stable iterative scheme for solving continuous-time optimal control problems in a model-free way. We further establish convergence guarantees for the proposed algorithms under linear function approximation. The resulting stability conditions are independent of ∆t, allowing our method to learn robustly from discrete trajectory data. Numerical experiments demonstrate the effectiveness of the proposed algorithms and highlight their superior convergence behavior compared to standard Q-learning, which may diverge in similar continuous-time settings. Several promising directions remain open for future investigation. First, from a theoretical perspective, some of the assumptions used to establish the current guarantees may poten-tially be relaxed. While this paper focuses on convergence and convergence rate analysis, establishing theoretical sample complexity bounds is an important next step. Second, extend-ing our methodology to large-scale problems via deep neural approximators presents both opportunities and challenges in expressiveness and stability. Third, incorporating exploration strategies and safety constraints would broaden applicability in real-world control systems. Overall, this work provides a principled and data-driven foundation for continuous-time reinforcement learning for off-policy data, and we believe the proposed framework will 22 facilitate further developments toward scalable and reliable continuous-time decision-making. 
+
+# A Proof of Lemma 3.1 
+
+## Setting 
+
+Fix a state marginal μ(s). The set of all Markov kernel behavior policies is Π := 
+
+n
+
+π(·|· ) : π(a|s) ≥ 0,
+
+Z
+
+> A
+
+π(a|s) da = 1 μ(s)-a.e. 
+
+o
+
+,
+
+and the uniform policy is πu(a|s) := 1 /|A| . The Gram matrix and coverage coefficient under 
+
+π are 
+
+Gπ := Es
+
+Z 
+
+> A
+
+π(a|s) Φ( s, a )Φ( s, a )⊤ da 
+
+
+
+,c0(π, Φ) 2 := max 
+
+> v∈Sn−1
+
+Es
+
+max a∈A (v⊤Φ( s, a )) 2
+
+v⊤Gπv .
+
+Since A is compact and Φ is continuous, the maximum over a is attained; since Sn−1 is compact and v 7 → c0(π, Φ) 2 is continuous, the maximum over v is also attained. Define 
+
+FB := {Φ continuous : ∥Φ∥∞ ≤ B}, ¯H(Φ) := Es
+
+Z 
+
+> A
+
+Φ( s, a )Φ( s, a )⊤ da 
+
+
+
+.
+
+Proof. We establish the result in two parts. 
+
+Part (I): Upper bound on c0(πu, Φ) 2 for each fixed Φ. For any fixed Φ ∈ F B and any 
+
+v ∈ Sn−1, since ∥Φ∥∞ ≤ B:
+
+Es
+
+
+
+max  
+
+> a∈A
+
+(v⊤Φ( s, a )) 2
+
+
+
+≤ B2.
+
+Under πu:
+
+v⊤Guv = 1
+
+|A| Es
+
+Z 
+
+> A
+
+(v⊤Φ( s, a )) 2 da 
+
+
+
+= v⊤ ¯H(Φ) v
+
+|A| ≥ λmin ( ¯H(Φ)) 
+
+|A| .
+
+Dividing and taking the maximum over v:
+
+c0(πu, Φ) 2 ≤ B2 |A| 
+
+λmin ( ¯H(Φ)) . (28) 
+
+Part (II): Every π̸ = πu is strictly suboptimal. Fix any π ∈ Π with π̸ = πu. Define 
+
+A− := 
+
+
+
+a ∈ A : Es[π(a|s)] < 1
+
+|A| 
+
+
+
+.
+
+23 Claim: |A−| > 0. Since π(·| s) and πu are both probability densities on A:
+
+Z
+
+> A
+
+Es[π(a|s)] da = Es
+
+Z 
+
+> A
+
+π(a|s) da 
+
+
+
+= 1 = 
+
+Z
+
+> A
+
+1
+
+|A| da. 
+
+So Es[π(·| s)] − 1/|A| integrates to zero over A but is not identically zero (since π̸ = πu). Therefore it must be strictly negative on a set of positive Lebesgue measure, i.e., |A−| > 0. 
+
+Adversarial basis functions. Fix any v0 ∈ Sn−1 and define Φ∗(s, a ) := B v 0 1A− (a).
+
+Note that Φ ∗ does not depend on s and ∥Φ∗∥∞ ≤ B, so Φ ∗ ∈ F B .
+
+Numerator (same for all π): 
+
+Es
+
+
+
+max  
+
+> a∈A
+
+(v⊤ 
+
+> 0
+
+Φ∗(s, a )) 2
+
+
+
+= B2. (29) 
+
+Denominator under π:
+
+v⊤ 
+
+> 0
+
+Gπv0 = Es
+
+Z 
+
+> A
+
+(v⊤ 
+
+> 0
+
+Φ∗(s, a )) 2 π(a|s) da 
+
+
+
+= B2
+
+Z
+
+> A−
+
+Es[π(a|s)] da. (30) 
+
+Denominator under πu:
+
+v⊤ 
+
+> 0
+
+Guv0 = B2
+
+Z
+
+> A−
+
+1
+
+|A| da = B2 |A−||A| . (31) 
+
+Strict inequality. By definition of A−, we have Es[π(a|s)] < 1/|A| for every a ∈ A−, so: 
+
+Z
+
+> A−
+
+Es[π(a|s)] da < |A−||A| . (32) 
+
+Conclusion. Since the numerator B2 in (29) is identical for both policies, combining (30)–(32): 
+
+c0(π, Φ∗)2 = B2
+
+v⊤ 
+
+> 0
+
+Gπv0
+
+= 1
+
+R 
+
+> A−
+
+Es[π(a|s)] da 
+
+> (32)
+
+> |A| |A−| = B2
+
+v⊤ 
+
+> 0
+
+Guv0
+
+= c0(πu, Φ∗)2.
+
+Therefore sup 
+
+> Φ∈F B
+
+c0(π, Φ) 2 ≥ c0(π, Φ∗)2 > c 0(πu, Φ∗)2,
+
+and since π̸ = πu was arbitrary, πu is the unique minimizer. 24 Corollary 
+
+For any Φ ∈ F B with λmin ( ¯H(Φ)) ≥ σ > 0: min  
+
+> π∈Π
+
+sup 
+
+> Φ∈F B
+
+c0(π, Φ) = sup 
+
+> Φ∈F B
+
+c0(πu, Φ) ≤ Bp|A| √σ .
+
+Consequently, the convergence condition β ≥ Lc 0 holds under πu whenever 
+
+β ≥ LB p|A| √σ , σ := λmin ( ¯H(Φ)) ,
+
+and no other π ∈ Π guarantees this bound uniformly over FB .
+
+# References 
+
+Alekh Agarwal, Sham Kakade, and Lin F. Yang. Model-based reinforcement learning with a generative model is minimax optimal. In Jacob Abernethy and Shivani Agarwal, editors, Proceedings of Thirty Third Conference on Learning Theory , volume 125 of Proceedings of Machine Learning Research , pages 67–83. PMLR, 09–12 Jul 2020. URL https:// proceedings.mlr.press/v125/agarwal20b.html .Leemon C Baird. Reinforcement learning in continuous time: Advantage updating. In Proceedings of 1994 IEEE International Conference on Neural Networks (ICNN’94) , vol-ume 4, pages 2448–2453. IEEE, 1994. Tadej Battelino, Thomas Danne, Richard M Bergenstal, Stephanie A Amiel, Roy Beck, Torben Biester, Emanuele Bosi, Bruce A Buckingham, William T Cefalu, Kelly L Close, et al. Clinical targets for continuous glucose monitoring data interpretation: recommendations from the international consensus on time in range. Diabetes care, 42(8):1593–1603, 2019. Dimitri Bertsekas. Dynamic programming and optimal control: Volume I, volume 4. Athena scientific, 2012. Claudio Cobelli, Chiara Dalla Man, Giovanni Sparacino, Lalo Magni, Giuseppe De Nicolao, and Boris P Kovatchev. Diabetes: models, signals, and control. IEEE reviews in biomedical engineering, 2:54–96, 2009. Harry Emerson, Matthew Guy, and Ryan McConville. Offline reinforcement learning for safer blood glucose control in people with type 1 diabetes. Journal of Biomedical Informatics, 142:104376, 2023. Xiaobing Feng, Roland Glowinski, and Michael Neilan. Recent developments in numerical methods for fully nonlinear second order partial differential equations. siam REVIEW, 55 (2):205–267, 2013. Wendell H. Fleming and H. Mete Soner. Controlled Markov processes and viscosity solutions, volume 25 of Stochastic Modelling and Applied Probability. Springer, second edition, 2006. 25 Scott Fujimoto and Shixiang Shane Gu. A minimalist approach to offline reinforcement learning. Advances in neural information processing systems, 34:20132–20145, 2021. Yanwei Jia and Xun Yu Zhou. Policy evaluation and temporal-difference learning in continuous time and space: A martingale approach. Journal of Machine Learning Research, 23(154): 1–55, 2022a. Yanwei Jia and Xun Yu Zhou. Policy gradient and actor-critic learning in continuous time and space: Theory and algorithms. Journal of Machine Learning Research, 23(275):1–50, 2022b. Yanwei Jia and Xun Yu Zhou. q-learning in continuous time. Journal of Machine Learning Research, 24(161):1–61, 2023. Rushikesh Kamalapurkar, Patrick Walters, and Warren E Dixon. Model-based reinforcement learning for approximate optimal regulation. Automatica, 64:94–104, 2016. Jeongho Kim and Insoon Yang. Hamilton-jacobi-bellman equations for q-learning in continuous time. In Learning for Dynamics and Control, pages 739–748. PMLR, 2020. Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. Conservative q-learning for offline reinforcement learning. Advances in neural information processing systems, 33: 1179–1191, 2020. Jiaqi Ma, Zhe Zhao, Xinyang Yi, Ji Yang, Minmin Chen, Jiaxi Tang, Lichan Hong, and Ed H Chi. Off-policy learning in two-stage recommender systems. In Proceedings of The Web Conference 2020, pages 463–473, 2020. Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei A Rusu, Joel Veness, Marc G Bellemare, Alex Graves, Martin Riedmiller, Andreas K Fidjeland, Georg Ostrovski, et al. Human-level control through deep reinforcement learning. nature, 518(7540):529–533, 2015. Wenlong Mou and Yuhua Zhu. On bellman equations for continuous-time policy evaluation: discretization and approximation. arXiv preprint arXiv:2407.05966, 2024. Michael Muehlebach, Zhiyu He, and Michael I Jordan. The sample complexity of online reinforcement learning: A multi-model perspective. arXiv preprint arXiv:2501.15910, 2025. Huyˆ en Pham. Continuous time stochastic control and optimization with financial applications , volume 61 of Stochastic modeling and applied probability. Springer-Verlag, New York, 2009. Hayden Schaeffer and Thomas Y Hou. An accelerated method for nonlinear elliptic pde. Journal of Scientific Computing, 69(2):556–580, 2016. David Silver, Aja Huang, Chris J Maddison, Arthur Guez, Laurent Sifre, George Van Den Driessche, Julian Schrittwieser, Ioannis Antonoglou, Veda Panneershelvam, Marc Lanctot, et al. Mastering the game of go with deep neural networks and tree search. nature, 529(7587):484–489, 2016. 26 Richard S Sutton, Andrew G Barto, et al. Reinforcement learning: An introduction, volume 1. MIT press Cambridge, 1998. Lukasz Szpruch, Tanut Treetanthiploet, and Yufei Zhang. Optimal scheduling of entropy regularizer for continuous-time linear-quadratic reinforcement learning. SIAM Journal on Control and Optimization, 62(1):135–166, 2024. Corentin Tallec, L´ eonard Blier, and Yann Ollivier. Making deep q-learning methods robust to time discretization. In International Conference on Machine Learning, pages 6096–6104. PMLR, 2019. Haoran Wang and Xun Yu Zhou. Continuous-time mean–variance portfolio selection: A reinforcement learning framework. Mathematical Finance, 30(4):1273–1308, 2020. Haoran Wang, Thaleia Zariphopoulou, and Xun Yu Zhou. Reinforcement learning in continu-ous time and space: A stochastic control approach. Journal of Machine Learning Research, 21(198):1–34, 2020. Christopher JCH Watkins and Peter Dayan. Q-learning. Machine learning, 8(3):279–292, 1992. Xiong Yang, Derong Liu, and Ding Wang. Reinforcement learning for adaptive optimal control of unknown continuous-time nonlinear systems with input constraints. International Journal of Control, 87(3):553–566, 2014. Cagatay Yildiz, Markus Heinonen, and Harri L¨ ahdesm¨ aki. Continuous-time model-based reinforcement learning. In Marina Meila and Tong Zhang, editors, Proceedings of the 38th International Conference on Machine Learning , volume 139 of Proceedings of Machine Learning Research , pages 12009–12018. PMLR, 18–24 Jul 2021. URL 
+
+https://proceedings.mlr.press/v139/yildiz21a.html .Jiongmin Yong and Xun Yu Zhou. Stochastic controls – Hamiltonian systems and HJB equations , volume 43 of Applications of Mathematics (New York). Springer-Verlag, New York, 1999. Runze Zhao, Yue Yu, Adams Yiyue Zhu, Chen Yang, and Dongruo Zhou. Sample and computationally efficient continuous-time reinforcement learning with general function approximation. arXiv preprint arXiv:2505.14821, 2025. Yuhua Zhu. Phibe: A pde-based bellman equation for continuous time policy evaluation. arXiv preprint arXiv:2405.12535, 2024. Yuhua Zhu, Yuming Zhang, and Haoyu Zhang. Optimal-phibe: A pde-based model-free framework for continuous-time reinforcement learning. arXiv preprint arXiv:2506.05208, 2025. Daniel M. Ziegler, Nisan Stiennon, Jeffrey Wu, Tom Brown, Alec Radford, Dario Amodei, and Paul F. Christiano. Fine-tuning language models from human preferences. arXiv preprint arXiv:1909.08593, 2019. 27

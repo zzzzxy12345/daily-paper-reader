@@ -1,0 +1,3020 @@
+Title: Heavy-Ball Q-Learning with Residual Weighting Correction
+
+URL Source: https://arxiv.org/pdf/2606.27112v1
+
+Published Time: Fri, 26 Jun 2026 01:05:55 GMT
+
+Number of Pages: 40
+
+Markdown Content:
+# Heavy-Ball Q-Learning with Residual Weighting Correction 
+
+Donghwan Lee Department of Electrical Engineering Korea Advanced Institute of Science and Technology (KAIST) Daejeon 34141, South Korea (email: donghwan@kaist.ac.kr )
+
+Abstract 
+
+This paper proposes a corrected heavy-ball Q-learning method for reinforcement learning (RL) and establishes its convergence. It also identifies conditions under which the method is theoretically guaranteed to converge faster than standard Q-learning. The same construction is then extended to Q-learning with linear function approximation, where analogous conver-gence and acceleration statements are derived. The analysis is based on a switched linear system (SLS) representation of Q-learning algorithms and on the joint spectral radius (JSR) of the associated switching families. This SLS viewpoint is not commonly used in standard analyses of Q-learning, and it provides a complementary framework and new insight into how heavy-ball momentum can accelerate Q-learning. 
+
+Keywords. Q-value iteration, heavy-ball momentum, Bellman residual, joint spectral radius, switched linear systems, constant-preserving diagonal weighting 
+
+# 1 Introduction 
+
+Q-learning [ 1] is one of the most fundamental and widely used methods in reinforcement learning (RL) [ 2]. In the tabular discounted setting, it learns the optimal Q-function through Bellman optimality updates without requiring an explicit transition model, and it also underlies modern deep variants such as deep Q-learning [ 18 ]. The usual convergence argument relies on the con-traction property of the Bellman optimality operator, but this contraction can be weak when the discount factor is close to one. Therefore, many methods have tried to improve the speed of Q-learning or closely related value-iteration recursions. Examples include speedy Q-learning [ 3], momentum-based Q-learning [ 13 ], proportional-integral-derivative (PID)-type value iteration [ 4], first-order accelerated value iteration [ 5], and rank-one correction or deflation methods [ 8, 11 ]. However, theoretical guarantees that a modified recursion is faster than standard Q-learning remain comparatively limited, especially for control problems in which the active greedy policy can change along the trajectory. This paper proposes a corrected heavy-ball Q-learning method obtained by modifying the simplest heavy-ball Q-learning recursion. The correction is designed so that the associated mean mappings share a common eigenvector. Along this common eigenvector, we derive conditions under which the corrected heavy-ball recursion has a smaller certified rate than the standard Q-learning recursion. The common eigenvector makes the analysis tractable and is the reason such a theoretical acceleration guarantee can be obtained. In the directions orthogonal to this common eigenvector, the present argument does not give the same acceleration guarantee. The contribution is therefore a precise certificate in one analytically identifiable direction, rather than a full-direction acceleration theorem, and this gives a useful perspective on the geometry of the heavy-ball Q-learning. For this analysis, we model the heavy-ball Q-learning mean dynamics as a switched linear system (SLS) [ 25 –27 ]. The greedy action in the Bellman maximum determines the active mode of the SLS, and the resulting matrix family is analyzed through the joint spectral radius (JSR) [ 20 ,1
+
+> arXiv:2606.27112v1 [cs.LG] 25 Jun 2026
+
+28 ]. This switching-system viewpoint provides a new route for studying the proposed heavy-ball Q-learning recursion and gives additional intuition about when acceleration can be certified. We also extend the method to linear function approximation and obtain analogous conclu-sions. The main analysis is written for deterministic mean dynamics, which keeps the role of the common eigenvector clear. The same update can be implemented as a model-free stochastic RL recursion. We also give a short discussion of the independent and identically distributed (i.i.d.) observation version. A Markovian observation version can be developed with standard stochastic approximation tools, as in [ 22 ], but that extension is not developed here. 
+
+# 2 Related work 
+
+Momentum-based modifications of value iteration have been studied from several perspectives. The proportional-integral-derivative (PID) accelerated value iteration framework in [ 4] inter-prets value iteration as a feedback-control system and introduces proportional-derivative (PD), proportional-integral (PI), and related PID variants. In fixed-policy settings, the PD/heavy-ball term changes the eigenvalues of the value-iteration error dynamics through a second-order companion polynomial associated with each eigenvalue of the transition matrix. Momentum value computation and accelerated value iteration were also studied in [ 5], which connects value iteration with first-order optimization methods and analyzes momentum-type value-iteration updates for policy evaluation. Momentum-based accelerated Q-learning has also been studied in stochastic approximation settings [ 13 , 14 ]. Other acceleration mechanisms for dynamic programming iterations are related but tech-nically different. Adaptive relaxation and lookahead methods for value iteration were studied in [ 6, 7]; Anderson acceleration applies a general fixed-point acceleration scheme to dynamic programming iterations [ 15 ]; momentum value iteration in [ 16 ] averages successive Q-functions rather than using the heavy-ball Q-value iteration update analyzed here; and anchored/Halpern-type value iteration gives another provably accelerated Bellman-error mechanism for both Bell-man consistency and optimality operators [ 17 ]. Speedy Q-learning is also relevant because it uses two successive Q-estimates to obtain faster finite-sample bounds in a model-free setting [ 3]. These works support the broader idea that past iterates or modified Bellman updates can accel-erate Bellman-type recursions. In contrast, this paper proposes a modified heavy-ball Q-learning recursion that yields a theoretically verifiable acceleration certificate. To the best of our knowledge, the algorithm stud-ied here has not appeared previously, and the convergence and acceleration analysis developed below is new. Unlike much of the existing momentum-based value-iteration and Q-learning lit-erature, which focuses mainly on policy evaluation or stochastic approximation bounds, this paper treats the control setting for a simple constant-stepsize heavy-ball Q-learning recursion. The proof technique is also different: we represent the recursion as a switched linear system and compare the resulting switching families through the joint spectral radius rather than relying on fixed-policy spectral or contraction arguments. The slow constant direction of discounted dynamic programming iterations has a long history. Rank-one correction and extrapolation methods exploit the dominant stochastic matrix direc-tion to improve value-iteration behavior [ 8]. Recent rank-one or deflation-based methods also use dominant-direction information, including rank-one modified value iteration and deflated dynamics value iteration [ 9, 10 ]. More recent deflation-based approaches remove or quotient out the component along the common eigenvector in order to expose faster transverse dynamics; see, for example, the switching-geometry analysis of deflated Q-value iteration (Q-VI) [ 11 ]. The present paper is related in that every standard Q-VI switching matrix treats the constant-vector direction in the same way. This shared direction fixes the ambient-space benchmark rate, even though the remaining policy-dependent directions may decay faster. The mechanism studied here is different: heavy-ball momentum does not deflate or remove this direction, but turns it 2into a second-order linear time-invariant dynamics. The JSR is a standard measure of worst-case exponential growth for products of matrices under arbitrary switching; see, for example, [ 20 ]. Value-iteration updates naturally lead to SLS representations because the greedy action can change with the iterate. The SLS analysis used here is close to the direct switching representation of Q-learning [ 22 ]. The projected-error view-point is also related to recent JSR analyses of Q-VI geometry, including [ 11 , 23 ]. 
+
+# 3 Preliminaries 
+
+3.1 Notation 
+
+The set of real numbers is denoted by R; Rm is the m-dimensional Euclidean space; and Rm×n is the set of all m × n real matrices. For a matrix A, A⊤ denotes its transpose. The identity matrix is denoted by I. For a finite state set S and a finite action set A, es and ea denote the standard basis vectors associated with s ∈ S and a ∈ A , respectively. For the state-action index i = ( s, a ), write ei = es ⊗ ea. More generally, standard basis vectors in other Euclidean spaces use the same notation when the dimension is clear from context, and ⊗ denotes the Kronecker product. For a finite set S, |S| denotes its cardinality. For finite tabular state and action sets, set n := |S||A| .Moreover, we write ∆ m := {q ∈ Rm : qi ≥ 0, ∑mi=1 qi = 1 } for the probability simplex in Rm. For a finite matrix family H = {A1, . . . , A N }, co( H) :=  
+
+> {∑Ni=1
+
+λiAi : λi ≥ 0, ∑Ni=1 λi = 1 
+
+> }
+
+denotes its convex hull. We also use standard matrix notation that appears repeatedly below. For a vector x, ‖x‖2 is the Euclidean norm. For a square matrix A, ρ(A) denotes its ordinary spectral radius. After the matrix-family radius is introduced in Definition 3.1 , the notation ρ(H) is used for that quantity when the argument is a switching family. For a matrix B, range( B) denotes its column space, B ≻ 0 means that B is symmetric positive definite, and λmax (B) denotes the largest eigenvalue when B is symmetric. For square matrices A and B of the same size, we write A ∼ B when they are similar, that is, when B = S−1AS for some nonsingular matrix S.Expectations are denoted by E[·]. 
+
+3.2 Switched linear systems 
+
+The stability certificates used later are stated in the language of switched systems, so we first recall the basic model before specializing it to the Bellman-induced switching families. Consider the discrete-time switching affine system (SAS) [ 25 –27 ]
+
+xk+1 = Aσk xk + bσk ,
+
+where each index i ∈ { 1, 2, . . . , M }, equivalently each affine pair ( Ai, b i), is called a mode , and 
+
+σk is the switching signal that selects the active mode at time k. The matrix Aσk is selected from the prescribed family H := {A1, A 2, . . . , A M }, which is called a switching family ; bσk is a mode-dependent affine term. When bσk = 0, the deterministic part reduces to a switched linear system (SLS), xk+1 = Aσk xk. The worst-case exponential rate of the SLS family is characterized by the joint spectral radius (JSR), defined as follows. 
+
+Definition 3.1. For a bounded set of matrices H ⊂ Rm×m, its JSR is 
+
+ρ(H) := lim  
+
+> k→∞
+
+sup 
+
+> A1,...,A k∈H
+
+‖Ak · · · A1‖1/k .
+
+We note that the JSR is independent of the chosen submultiplicative norm [ 20 , 28 ]. When 
+
+H is finite, the supremum for each fixed product length is a maximum over products generated by matrices in H. For a finite family H, the notation ρ(co( H)) means the JSR computed when each factor in a product is allowed to be any convex combination of matrices in H. Throughout 3the later JSR certificates, ρ(H) denotes this same JSR value when the argument is a switching family. Three standard JSR facts used below, convex-hull invariance, similarity invariance, and block upper triangular decomposition, are collected in Section A.2 .
+
+3.3 Joint spectral radius and Lyapunov certificates 
+
+The JSR in Definition 3.1 turns arbitrary switched products into a single worst-case exponential rate. An SLS is uniformly exponentially stable under arbitrary switching if there exist constants 
+
+C ≥ 1 and η ∈ (0 , 1) such that ‖Aσk−1 · · · Aσ0 x‖2 ≤ Cη k‖x‖2 for every horizon k ≥ 0, every initial state x ∈ Rm, and every switching sequence. A common Lyapunov function for H is a positive definite function that decreases along every mode. In the analysis below, the Bellman maximum induces stochastic-policy switching, and the Lyapunov functions are built from products of the corresponding mode matrices. The following finite-family piecewise-quadratic construction [ 22 ,
+
+29 ] is the Lyapunov certificate used in the deterministic arguments. 
+
+Lemma 3.3. Let H = {A1, A 2, . . . , A M } ⊂ Rm×m and fix ǫ > 0 such that βǫ := ρ(H)+ ǫ ∈ (0 , 1) .For a word σ = ( σ1, . . . , σ k) ∈ { 1, . . . , M }k, write 
+
+Aσ := Aσk · · · Aσ1 ,
+
+with the convention that the empty word gives Aσ = I. Define 
+
+V ∞ 
+
+> ǫ
+
+(x) := 
+
+> ∞∑
+> k=0
+
+β−2kǫ max   
+
+> σ∈{ 1,...,M }k
+
+‖Aσx‖22, x ∈ Rm.
+
+Then V ∞ 
+
+> ǫ
+
+is finite for every x, and there exists Cǫ > 0 such that 
+
+‖x‖22 ≤ V ∞ 
+
+> ǫ
+
+(x) ≤ Cǫ‖x‖22, ∀x ∈ Rm.
+
+The function pǫ(x) := √V ∞ 
+
+> ǫ
+
+(x) is a norm on Rm, and every mode satisfies 
+
+pǫ(Aix) ≤ βǫpǫ(x), ∀x ∈ Rm, i = 1 , . . . , M. 
+
+Proof. The construction and proof are given in [ 22 , 29 ]; we omit the proof here. 
+
+Throughout the sequel, whenever this construction is applied to a switching family with JSR less than one, we call the resulting V ∞ 
+
+> ǫ
+
+a JSR Lyapunov function for that family, and we call the associated norm pǫ a JSR Lyapunov norm . The following lemma is the common bridge from a JSR bound to convergence of the corresponding error recursion. 
+
+Lemma 3.4. Let H = {A1, . . . , A M } ⊂ Rn×n be finite and suppose ρ(H) < 1. Consider any error recursion 
+
+xk+1 = Akxk, Ak ∈ co( H), k ∈ { 0, 1, . . . }.
+
+Then, for every ǫ > 0 such that βǫ := ρ(H) + ǫ < 1, the Lyapunov function V ∞ 
+
+> ǫ
+
+and norm pǫ
+
+from Lemma 3.3 , applied to H, satisfy 
+
+V ∞ 
+
+> ǫ
+
+(xk+1 ) ≤ β2 
+
+> ǫ
+
+V ∞ 
+
+> ǫ
+
+(xk), pǫ(xk+1 ) ≤ βǫpǫ(xk).
+
+Consequently, if Cǫ is the constant from Lemma 3.3 , then 
+
+pǫ(xk) ≤ βkǫ pǫ(x0), ‖xk‖2 ≤ βkǫ pǫ(x0) ≤ √Cǫ βkǫ ‖x0‖2,
+
+and hence xk → 0.
+
+4Proof. The claim follows from the standard JSR Lyapunov-norm construction, together with the convex-hull invariance of the JSR; see [ 22 , 29 ]. We omit the proof. 
+
+The rest of the paper uses this JSR implication as the main convergence certificate. Once an error recursion has been written as an SLS whose mode family has JSR below one, convergence and an exponential rate bound follow from Lemma 3.4 . After each deterministic mean recursion is introduced, the corresponding sampled stochastic RL recursion is also given. For the sampled version, a JSR bound below one for the associated conditional-mean switching family gives the drift part needed for stochastic convergence and finite-time error bounds, as in [ 22 ]. This paper treats only the independent and identically distributed (i.i.d.) sampling case to keep the formulas transparent. The same conditional-mean and noise decomposition can be combined with Markovian-observation stochastic-approximation arguments, as in [ 24 ], to extend the setting beyond i.i.d. samples. 
+
+3.4 Discounted Markov decision processes 
+
+We consider a finite discounted Markov decision process (MDP), the standard model for reinforcement learning (RL) control [30 , 31 ], with state-space S = {1, . . . , |S|} , action-space A = {1, . . . , |A|} , transition probability P (s′ | s, a ), real-valued one-step reward 
+
+r(s, a, s ′), expected reward R(s, a ) := ∑ 
+
+> s′∈S
+
+P (s′ | s, a )r(s, a, s ′), and discount factor 
+
+γ ∈ (0 , 1). State-action functions are viewed as vectors in Rn using the action-block order-ing (1 , 1) , (2 , 1) , . . . , (|S| , 1) , (1 , 2) , (2 , 2) , . . . , (|S| , |A| ). All matrices and vectors indexed by state-action pairs use this ordering. Define 
+
+P := 
+
+> 
+
+P1
+
+...
+
+P|A|  
+
+> 
+
+∈ Rn×|S| , R := 
+
+> 
+
+R(·, 1) ...
+
+R(·, |A| ) 
+
+> 
+
+∈ Rn,
+
+where Pa = P (· | · , a ) ∈ R|S|×|S| . Let Θ denote the set of deterministic stationary policies 
+
+π : S → A . For any stochastic policy μ : S → ∆|A| , define Πμ := 
+
+> 
+
+μ(1) ⊤ ⊗ e⊤
+
+> 1
+
+μ(2) ⊤ ⊗ e⊤
+
+> 2
+
+...
+
+μ(|S| )⊤ ⊗ e⊤|S|  
+
+> 
+
+∈ R|S|× n.
+
+For a deterministic policy π ∈ Θ, the same notation Π π is used by identifying π(s) with its one-hot encoding. For Q ∈ Rn, define 
+
+VQ(s) := max  
+
+> a∈A
+
+Q(s, a ), VQ := ( VQ(1) , . . . , V Q(|S| )) ⊤.
+
+The Bellman optimality operator is F (Q) := R + γP V Q. Let Q⋆ denote the unique fixed point of the Bellman optimality operator, Q⋆ = F (Q⋆). For a tie-broken greedy policy πQ satisfying 
+
+πQ(s) ∈ arg max 
+
+> a∈A
+
+Q(s, a ), s ∈ S ,
+
+one has VQ = Π πQ Q and 
+
+F (Q) = R + γP ΠπQ Q. 
+
+The following lemma is used repeatedly to write Bellman differences as linear maps depending on stochastic policies. 5Lemma 3.5. For any two vectors Q, ¯Q ∈ Rn, there exists a stochastic policy μQ, ¯Q such that 
+
+VQ − V ¯Q = Π μQ, ¯Q (Q − ¯Q).
+
+Consequently, 
+
+F (Q) − F ( ¯Q) = γP ΠμQ, ¯Q (Q − ¯Q). (3.1) 
+
+Moreover, for every stochastic policy μ,
+
+P Πμ ∈ co {P Ππ : π ∈ Θ} ,
+
+and P Πμ is row-stochastic and satisfies P Πμ1 = 1.Proof. The proof can be found in [ 22 ]. 
+
+We use d to denote a state-action sampling distribution on S × A . In the i.i.d. observation model, d is the sampling distribution of ( sk, a k); in the Markovian observation model, d is the stationary state-action distribution of the behavior-induced chain. Throughout the paper, we assume that the sampling distribution satisfies d(s, a ) > 0 for every ( s, a ) ∈ S × A . This distribution forms the full-support state-action weight vector d ∈ Rn with d⊤1 = 1, and we define 
+
+D := diag( d), dmax := max  
+
+> (s,a )∈S×A
+
+d(s, a ).
+
+# 4 Corrected Q-learning 
+
+In this section, we first introduce the deterministic standard Q-learning (QL) update in Algorithm 1 as the baseline against which the subsequent convergence rates will be compared. 
+
+Algorithm 1 Deterministic standard Q-learning 
+
+Require: Q0 ∈ Rn, stepsize α > 0, and D = diag( d)
+
+for k = 0 , 1, 2, . . . do 
+
+Update 
+
+Qk+1 ← Qk + αD {F (Qk ) − Qk}.
+
+end for 
+
+This deterministic recursion is a natural starting point for stochastic RL extensions with sampled coordinate updates. However, after inserting D, the common all-ones eigenvector ar-gument in [ 12 ], which is central to the acceleration analysis developed below, no longer applies in general: the corresponding matrices need not map the all-ones vector to a scalar multiple of itself unless the diagonal weights in D are uniform. Motivated by this obstruction, this section introduces a modification that keeps a nonuniform diagonal weighting on the Bellman residual components while restoring the common eigenvector needed for the SLS-based JSR analysis below. 
+
+Definition 4.1. Define the matrix 
+
+Πd := 1d⊤.
+
+For a scalar δ > 0, define the correction matrix 
+
+H := δΠd + D(I − Πd) = D + ( δ1 − d)d⊤. (4.1) The next lemma states the property that makes this correction useful: multiplication by H
+
+maps a constant vector to a constant vector. 6Lemma 4.1. The matrix H in Equation (4.1) satisfies 
+
+H1 = δ1. (4.2) 
+
+Proof. Using d⊤1 = 1, one has Π d1 = 1d⊤1 = 1 and ( I − Πd)1 = 1 − 1 = 0. Substituting these identities into Equation (4.1) gives H1 = δΠd1 + D(I − Πd)1 = δ1, which completes the proof. 
+
+Lemma 4.2. The matrix H in Equation (4.1) is nonsingular. Proof. Take an arbitrary x ∈ Rn and separate it into its d-weighted constant part and the remaining d-mean-free part. Set a := d⊤x and z := x − a1. Then 
+
+x = a1 + z = ( d⊤x)1 + z, d⊤z = d⊤x − ad ⊤1 = 0 .
+
+This decomposition is unique: if x = a1 + z with d⊤z = 0, then multiplying by d⊤ gives a = d⊤x.Hence Π dx = a1 and ( I − Πd)x = z. The identity Hx = 0 is therefore equivalent to 
+
+δ(d⊤x)1 + Dz = 0 .
+
+Multiplication by d⊤D−1 gives 0 = δ(d⊤x)d⊤D−11 + d⊤z = δ(d⊤x)d⊤D−11.
+
+Because d has full support, D−1 exists and d⊤D−11 = ∑ 
+
+> i
+
+di(1 /d i) = n > 0. Since δ > 0, we obtain d⊤x = 0. Then Dz = 0, and the positivity of the diagonal entries of D implies z = 0. Hence x = 0, so H is nonsingular. 
+
+Algorithm 2 Deterministic corrected Q-learning 
+
+Require: Q0 ∈ Rn, stepsize α > 0, and H from Equation (4.1) 
+
+for k = 0 , 1, 2, . . . do 
+
+Update 
+
+Qk+1 ← Qk + αH {F (Qk ) − Qk}.
+
+end for 
+
+The proposed construction replaces the stochastic weighting matrix D in the update of Algorithm 1 with the correction matrix H. The resulting algorithm is given in Algorithm 2 
+
+and is called corrected Q-learning (CQL). To analyze its fixed point, define the corresponding map 
+
+g(Q) := Q + αH {F (Q) − Q}. (4.3) The next lemma shows that the correction does not move the Bellman fixed point Q⋆.
+
+Lemma 4.3. The map g in Equation (4.3) has the unique fixed point Q⋆.Proof. If ¯Q is a fixed point of g, then H{F ( ¯Q) − ¯Q} = 0. By Lemma 4.2 , F ( ¯Q) − ¯Q = 0 since 
+
+H is nonsingular. The discounted Bellman optimality operator has the unique fixed point Q⋆,so ¯Q = Q⋆. Conversely, F (Q⋆) = Q⋆ immediately implies that Q⋆ is fixed by g.
+
+Subtracting Q⋆ = F (Q⋆) from the update in Algorithm 2 gives the error recursion 
+
+Qk+1 − Q⋆ = ( Qk − Q⋆) + αH {F (Qk ) − F (Q⋆) − (Qk − Q⋆)}. (4.4) We next show that the error recursion in Equation (4.4) admits an exact SLS representation. 7Lemma 4.4. The error recursion in Equation (4.4) satisfies the SLS 
+
+Qk+1 − Q⋆ = ACQL  
+
+> μk
+
+(Qk − Q⋆). (4.5) 
+
+where for any stochastic policy μ,
+
+ACQL  
+
+> μ
+
+:= I + αH (γP Πμ − I) (4.6) 
+
+Proof. Consider the error recursion in Equation (4.4) . By Equation (3.1) , we have F (Qk) −
+
+F (Q⋆) = γP Πμk (Qk − Q⋆), and therefore 
+
+Qk+1 − Q⋆ = {I + αH (γP Πμk − I)}(Qk − Q⋆)= ACQL  
+
+> μk
+
+(Qk − Q⋆),
+
+which is Equation (4.5) .
+
+The corresponding switching family associated with deterministic policies is 
+
+ACQL := 
+
+> {
+
+ACQL  
+
+> π
+
+: π ∈ Θ
+
+> }
+
+.
+
+It follows directly that, for every stochastic selector μk, ACQL  
+
+> μk
+
+∈ co( ACQL ). Using the iden-tity in Equation (4.2) , one can prove that every switching mode in co( ACQL ) has a common eigenvector. 
+
+Lemma 4.5. For every stochastic policy μ, it holds that 
+
+ACQL  
+
+> μ
+
+1 = (1 − αδ (1 − γ))1. (4.7) 
+
+Proof. For every stochastic policy μ, one has ( γP Πμ − I)1 = γ1 − 1 = −(1 − γ)1. Us-ing Equation (4.2) , we obtain 
+
+ACQL  
+
+> μ
+
+1 = [ I + αH (γP Πμ − I)] 1
+
+= 1 − α(1 − γ)H1
+
+= (1 − αδ (1 − γ)) 1.
+
+This proves the claim. 
+
+Therefore, the all-ones direction is again a common invariant direction, equivalently a com-mon eigenvector, with scalar factor 1 −αδ (1 −γ). Throughout the paper, we require this factor to lie strictly between zero and one so that each mode in co( ACQL ) is stable before any momentum is added. 
+
+Assumption 4.1. The parameters α and δ satisfy 
+
+0 < 1 − αδ (1 − γ) < 1.
+
+The correction matrix H should be viewed as a structural correction rather than as a uni-versal accelerator. It is introduced in place of D to recover the common eigenvector property in Equation (4.7) for all switching modes. This property alone does not imply that CQL is always faster than QL. The value of H is that it creates the decomposition needed to certify the acceleration of the heavy-ball CQL recursion introduced next. Indeed, adding a heavy-ball momentum term directly to QL may also improve convergence, and in some instances it may even be faster than CQL with a heavy-ball momentum term. The difficulty is that, without the common eigenvector in Equation (4.7) , an analogous JSR-based certificate is harder to obtain 8for the heavy-ball QL without the modification. The subsequent theory and numerical exam-ples show cases in which CQL with momentum is both theoretically certified and empirically observed to be faster than the corresponding corrected or standard baseline. The analysis in this paper separates this all-ones direction from its orthogonal complement. For this purpose, we introduce the following projection and the associated projected SLS. Let 
+
+U ∈ Rn×(n−1) have orthonormal columns spanning span {1}⊥, so that U ⊤U = In−1, U ⊤1 = 0, and U U ⊤ = I − n−111 ⊤. Define the projected standard family ¯ACQL  
+
+> π
+
+:= U ⊤ACQL  
+
+> π
+
+U, ¯ACQL := 
+
+{ ¯ACQL  
+
+> π
+
+: π ∈ Θ
+
+}
+
+. (4.8) The matrix ¯ACQL  
+
+> π
+
+is the mode induced by ACQL  
+
+> π
+
+on the orthogonal component. The next lemma makes this statement precise at each iteration. 
+
+Lemma 4.6. Let Qk follow Algorithm 2 . The projected error U ⊤(Qk − Q⋆) satisfies the SLS 
+
+U ⊤(Qk+1 − Q⋆) = U ⊤ACQL  
+
+> μk
+
+U U ⊤(Qk − Q⋆), (4.9) 
+
+where each projected mode belongs to co( ¯ACQL ).Proof. By Equation (4.5) , Qk+1 − Q⋆ = ACQL  
+
+> μk
+
+(Qk − Q⋆). Because q = n−1/21 and the columns of U are orthonormal and orthogonal to q, the matrix [ q U ] is orthogonal. Hence 
+
+qq ⊤ + U U ⊤ = [ q U ]
+
+[
+
+q⊤
+
+U ⊤
+
+]
+
+= I. 
+
+Therefore, 
+
+Qk − Q⋆ = ( qq ⊤ + U U ⊤)( Qk − Q⋆)= q q ⊤(Qk − Q⋆) + U U ⊤(Qk − Q⋆)= 1
+
+n 11 ⊤(Qk − Q⋆) + U U ⊤(Qk − Q⋆).
+
+Equivalently, the first term is the component along span {1}, and the second term is the compo-nent in span {1}⊥. The common-vector identity in Equation (4.7) gives ACQL  
+
+> μk
+
+1 = {1−αδ (1 −γ)}1,hence U ⊤ACQL  
+
+> μk
+
+q = 0. Therefore 
+
+U ⊤(Qk+1 − Q⋆) = U ⊤ACQL  
+
+> μk
+
+{qq ⊤(Qk − Q⋆) + U U ⊤(Qk − Q⋆)}
+
+= U ⊤ACQL  
+
+> μk
+
+U U ⊤(Qk − Q⋆),
+
+which is Equation (4.9) . The map P Πμ 7 → U ⊤[I + αH (γP Πμ − I)] U is affine in P Πμ. The convex-hull statement in Lemma 3.5 then implies U ⊤ACQL  
+
+> μk
+
+U ∈ co( ¯ACQL ). 
+
+This decomposition gives a direct expression for the full JSR ρ(ACQL ) in terms of the constant scalar block corresponding to the common eigenvector and the projected SLS family ¯ACQL .
+
+Lemma 4.7. The JSR ρ(ACQL ) satisfies 
+
+ρ(ACQL ) = max 
+
+{
+
+1 − αδ (1 − γ), ρ ( ¯ACQL )
+
+}
+
+. (4.10) 
+
+Proof. Let 
+
+q := n−1/21, S := 
+
+[
+
+q U
+
+]
+
+.
+
+Since U ⊤U = In−1, U ⊤1 = 0, and U U ⊤ = I − n−111 ⊤, the matrix S is orthogonal. Indeed, 
+
+S⊤S =
+
+[
+
+q⊤q q⊤UU ⊤q U ⊤U
+
+]
+
+= In, SS ⊤ = qq ⊤ + U U ⊤ = n−111 ⊤ + I − n−111 ⊤ = In.
+
+9For every deterministic policy π, Equation (4.7) gives ACQL  
+
+> π
+
+q = (1 − αδ (1 − γ))q. Therefore, in the orthogonal basis S, we can derive 
+
+S⊤ACQL  
+
+> π
+
+S =
+
+> [
+
+q⊤ACQL  
+
+> π
+
+q q⊤ACQL  
+
+> π
+
+UU ⊤ACQL  
+
+> π
+
+q U ⊤ACQL  
+
+> π
+
+U
+
+> ]
+
+=
+
+> [
+
+1 − αδ (1 − γ) q⊤ACQL  
+
+> π
+
+U
+
+0 ¯ACQL 
+
+> π
+> ]
+
+,
+
+where we use the fact that q⊤ACQL  
+
+> π
+
+q = 1 − αδ (1 − γ), U ⊤ACQL  
+
+> π
+
+q = (1 − αδ (1 − γ))U ⊤q = 0, and 
+
+U ⊤ACQL  
+
+> π
+
+U = ¯ACQL  
+
+> π
+
+by Equation (4.8) . Thus all matrices in ACQL are simultaneously similar to block upper triangular matrices with scalar diagonal block 1 − αδ (1 − γ) and projected block ¯ACQL  
+
+> π
+
+. By the similarity invariance in Lemma A.4 , we may compute the JSR in this common basis. Applying Lemma A.5 gives 
+
+ρ(ACQL ) = max 
+
+> {
+
+|1 − αδ (1 − γ)| , ρ ( ¯ACQL )
+
+> }
+
+.
+
+By Assumption 4.1 , 1 − αδ (1 − γ) > 0, so the absolute value can be removed. 
+
+The decomposition immediately implies that the projected SLS family ¯ACQL cannot have a larger JSR than the full SLS family ACQL .
+
+Corollary 4.1. The following inequality holds: 
+
+ρ( ¯ACQL ) ≤ ρ(ACQL ).
+
+Proof. The claim follows directly from Lemma 4.7 .
+
+The same decomposition also gives the corresponding lower bound for the constant scalar mode. 
+
+Corollary 4.2. Under Assumption 4.1 , we have 
+
+1 − αδ (1 − γ) ≤ ρ(ACQL ).
+
+Proof. The claim follows directly from Lemma 4.7 .
+
+This paper focuses on the case in which the projected SLS family ¯ACQL is strictly faster than the full SLS family ACQL . In that regime, the decomposition in Equation (4.10) shows that the standard rate is governed by the common all-ones eigenvalue. The proposed modifications can then improve convergence along the corresponding invariant direction without being blocked by the projected SLS dynamics represented by ¯ACQL .
+
+Assumption 4.2. Throughout the paper, we assume that the following strict inequality holds: 
+
+ρ( ¯ACQL ) < ρ (ACQL ).
+
+Under this assumption, the decomposition in Equation (4.10) shows that ρ(ACQL ) is exactly the eigenvalue of the common all-ones eigenvector. 
+
+Lemma 4.8. Under Assumption 4.2 ,
+
+ρ(ACQL ) = 1 − αδ (1 − γ). (4.11) 
+
+Proof. The claim follows directly from Lemma 4.7 .
+
+10 Combining Assumption 4.2 and Lemma 4.8 with Assumption 4.1 , we obtain the equivalent form 
+
+ρ( ¯ACQL ) < 1 − αδ (1 − γ) < 1.
+
+The projected modes given in Equation (4.8) have a useful structural feature: the tuning parameter δ affects only the common all-ones direction, not the projected dynamics. This result is formally summarized in the following. 
+
+Lemma 4.9. For every deterministic policy π, the projected standard mode satisfies 
+
+¯ACQL  
+
+> π
+
+= In−1 + αU ⊤D(I − Πd)( γP Ππ − I)U. (4.12) 
+
+Consequently, the matrices in ¯ACQL do not contain δ.Proof. From Equations (4.1) and (4.6) ,¯ACQL  
+
+> π
+
+= U ⊤ {I + α [δΠd + D(I − Πd)] ( γP Ππ − I)} U
+
+= In−1 + αδU ⊤Πd(γP Ππ − I)U + αU ⊤D(I − Πd)( γP Ππ − I)U. 
+
+Since 
+
+U ⊤Πd = U ⊤1d⊤ = 0 ,
+
+the middle term is zero. This proves Equation (4.12) . The right-hand side of Equation (4.12) 
+
+contains the MDP term P Ππ, the stepsize α, the diagonal weighting D, and Π d = 1d⊤, but it does not contain δ.
+
+Intuitively, changing δ moves only the all-ones common eigenvalue in Equation (4.7) , while leaving the projected SLS family in Equation (4.8) unchanged by Equation (4.12) . This separa-tion is useful when choosing δ: it allows dynamics along the common eigenvector direction to be tuned without changing the projected JSR term that appears in Equation (4.10) .
+
+# 5 Heavy-ball corrected Q-learning 
+
+Before introducing the corrected heavy-ball recursion, it is useful to contrast it with the de-terministic heavy-ball Q-value iteration studied in [ 12 ]. That work considers the unweighted heavy-ball Q-value iteration update 
+
+Qk+1 = Qk + α{F (Qk ) − Qk} + η(Qk − Qk−1). (5.1) Its acceleration mechanism is to improve the convergence rate along the common eigenvector direction. A stochastic heavy-ball Q-learning analogue, however, has the conditional mean dy-namics 
+
+Qk+1 = Qk + αD {F (Qk) − Qk} + η(Qk − Qk−1),
+
+in which the diagonal sampling matrix D multiplies the Bellman residual. As noted af-ter Algorithm 1 , this multiplication generally destroys the common eigenvector property unless 
+
+D is uniform. The corrected matrix H in Equation (4.1) is introduced precisely to retain nonuniform sampling weights while restoring the common eigenvector direction needed by the JSR analysis below. This section studies the effect of adding a heavy-ball momentum term to the CQL update in Algorithm 2 . The resulting update is given in Algorithm 3 and is called heavy-ball corrected Q-learning (HBCQL). 11 Algorithm 3 Deterministic HBCQL 
+
+Require: Q−1, Q 0 ∈ Rn, stepsize α > 0, momentum η ≥ 0, and H from Equation (4.1) 
+
+for k = 0 , 1, 2, . . . do 
+
+Update 
+
+Qk+1 ← Qk + αH {F (Qk) − Qk} + η(Qk − Qk−1).
+
+end for 
+
+To proceed, define the augmented map 
+
+g(Q, Q −) := 
+
+[
+
+Q + αH {F (Q) − Q} + η(Q − Q−)
+
+Q
+
+]
+
+.
+
+The augmented map has the same fixed point in both blocks as the corrected standard map in Equation (4.3) .
+
+Lemma 5.1. A pair ( ¯Q, ¯Q−) is a fixed point of g, in the sense that 
+
+g( ¯Q, ¯Q−) = 
+
+[ ¯Q
+
+¯Q−
+
+]
+
+,
+
+if and only if ¯Q = ¯Q− = Q⋆.Proof. If ( ¯Q, ¯Q−) is a fixed point of g, then the second block gives ¯Q = ¯Q−. Substituting this identity into the first block gives 
+
+H{F ( ¯ Q) − ¯Q} = 0 .
+
+By Lemma 4.2 , H is nonsingular, so F ( ¯Q) = ¯Q and hence ¯Q = Q⋆. Therefore ¯Q− = Q⋆ as well. Conversely, F (Q⋆) = Q⋆ immediately gives g(Q⋆, Q ⋆) = 
+
+[
+
+Q⋆
+
+Q⋆
+
+]
+
+.
+
+Subtracting Q⋆ = F (Q⋆) from the HBCQL update in Algorithm 3 gives the error recursion 
+
+Qk+1 − Q⋆ = ( Qk − Q⋆) + αH {F (Qk ) − F (Q⋆) − (Qk − Q⋆)} + η{(Qk − Q⋆) − (Qk−1 − Q⋆)}.
+
+(5.2) The next lemma shows that the error recursion in Equation (5.2) can be expressed as an SLS. 
+
+Lemma 5.2. The error recursion in Equation (5.2) satisfies 
+
+[
+
+Qk+1 − Q⋆
+
+Qk − Q⋆
+
+]
+
+= AHBCQL 
+
+> μk
+
+[
+
+Qk − Q⋆
+
+Qk−1 − Q⋆
+
+]
+
+, (5.3) 
+
+where for a stochastic policy μ,
+
+AHBCQL  
+
+> μ
+
+:= 
+
+[
+
+ACQL  
+
+> μ
+
++ ηI −ηI I 0
+
+]
+
+.
+
+Proof. Using Equation (3.1) ,
+
+Qk+1 − Q⋆ = [ I + αH (γP Πμk − I) + ηI ] ( Qk − Q⋆) − η(Qk−1 − Q⋆)= ( ACQL  
+
+> μk
+
++ ηI )( Qk − Q⋆) − η(Qk−1 − Q⋆).
+
+Stacking this identity with the identity Qk − Q⋆ = Qk − Q⋆ gives Equation (5.3) . Since the upper-left block depends affinely on P Πμk and the convex-hull statement in Lemma 3.5 holds, 
+
+AHBCQL  
+
+> μk
+
+∈ co {AHBCQL  
+
+> π
+
+: π ∈ Θ} = co( AHBCQL ).
+
+12 The corresponding SLS family is defined and denoted by 
+
+AHBCQL := 
+
+> {
+
+AHBCQL  
+
+> π
+
+: π ∈ Θ
+
+> }
+
+. (5.4) Moreover, for every stochastic selector μk, one has AHBCQL  
+
+> μk
+
+∈ co( AHBCQL ). For the augmented heavy-ball recursion, the one-dimensional common eigenvector argument on span {1} becomes an argument with respect to a two-dimensional invariant subspace. To show this, define the subspace 
+
+I := 
+
+> {[
+
+a1
+
+b1
+
+> ]
+
+: a, b ∈ R
+
+> }
+
+. (5.5) If the augmented error belongs to this subspace, then the next augmented error also belongs to it, and the scalar coefficients are updated by the following 2 × 2 matrix: 
+
+C := 
+
+> [(
+
+1 − αδ (1 − γ)) + η −η
+
+1 0
+
+> ]
+
+.
+
+This invariance is summarized in the next lemma. 
+
+Lemma 5.3. For every stochastic policy μ, the subspace I in Equation (5.5) is invariant under 
+
+AHBCQL  
+
+> μ
+
+. More precisely, for every a, b ∈ R,
+
+AHBCQL 
+
+> μ
+> [
+
+a1
+
+b1
+
+> ]
+
+=
+
+> [
+
+a+1
+
+b+1
+
+> ]
+
+,
+
+> [
+
+a+
+
+b+
+
+> ]
+
+= C
+
+> [
+
+ab
+
+> ]
+
+. (5.6) 
+
+Proof. Using Equation (4.7) , we have ACQL  
+
+> μ
+
+1 = (1 − αδ (1 − γ))1. Hence, we obtain 
+
+AHBCQL 
+
+> μ
+> [
+
+a1
+
+b1
+
+> ]
+
+=
+
+> [
+
+(ACQL  
+
+> μ
+
++ ηI )a1 − ηb 1
+
+a1
+
+> ]
+
+=
+
+> [((
+
+1 − αδ (1 − γ)) + η) a1 − ηb 1
+
+a1
+
+> ]
+
+.
+
+The scalar coordinates therefore satisfy 
+
+> [
+
+a+
+
+b+
+
+> ]
+
+=
+
+> [(
+
+1 − αδ (1 − γ)) + η −η
+
+1 0
+
+> ] [
+
+ab
+
+> ]
+
+= C
+
+> [
+
+ab
+
+> ]
+
+,
+
+which proves both invariance and Equation (5.6) .
+
+Thus, the common eigenvector direction span {1} of CQL is lifted, in HBCQL, to the invariant subspace I of the augmented state. On span {1}, CQL follows the first-order scalar dynamics 
+
+xk+1 = (1 − αδ (1 − γ))xk, xk ∈ span {1},
+
+whereas HBCQL follows the second-order dynamics on I governed by the matrix C
+
+in Equation (5.6) as follows: 
+
+xk+1 = Cx k, xi ∈ I .
+
+The preceding lemma therefore implies that the augmented SLS family of HBCQL cannot have a JSR smaller than the spectral radius of C. To explain this, define, for any stochastic policy μ,the following projected mode and its associated SLS family: ¯AHBCQL  
+
+> μ
+
+:= 
+
+> [
+
+U ⊤ACQL  
+
+> μ
+
+U + ηI n−1 −ηI n−1
+
+In−1 0
+
+> ]
+
+, ¯AHBCQL :=  
+
+> {
+
+¯AHBCQL  
+
+> π
+
+: π ∈ Θ
+
+> }
+
+. (5.7) The next lemma shows that the projected augmented error associated with Equation (5.3) can be represented by an SLS. 13 Lemma 5.4. Let Qk follow Algorithm 3 . Then 
+
+[
+
+U ⊤(Qk+1 − Q⋆)
+
+U ⊤(Qk − Q⋆)
+
+]
+
+= ¯AHBCQL 
+
+> μk
+
+[
+
+U ⊤(Qk − Q⋆)
+
+U ⊤(Qk−1 − Q⋆)
+
+]
+
+, (5.8) 
+
+and the mode matrix in Equation (5.8) belongs to co( ¯AHBCQL ).Proof. By Equation (5.3) ,
+
+Qk+1 − Q⋆ = ( ACQL  
+
+> μk
+
++ ηI )( Qk − Q⋆) − η(Qk−1 − Q⋆).
+
+As in the proof of Lemma 4.6 , U ⊤ACQL  
+
+> μk
+
+q = 0 for q = n−1/21. Therefore 
+
+U ⊤(Qk+1 − Q⋆) = ( U ⊤ACQL  
+
+> μk
+
+U + ηI n−1)U ⊤(Qk − Q⋆) − ηU ⊤(Qk−1 − Q⋆).
+
+Stacking this identity with the identity U ⊤(Qk − Q⋆) = U ⊤(Qk − Q⋆) gives Equation (5.8) . The affine convex-hull relation for U ⊤ACQL  
+
+> μk
+
+U and Equation (5.7) imply that the projected heavy-ball mode belongs to co( ¯AHBCQL ). 
+
+As in the CQL analysis, we can now decompose the augmented SLS family in Equation (5.4) 
+
+into the constant-error subspace in Equation (5.5) and the projected dynamics in Equation (5.7) .
+
+Lemma 5.5. The HBCQL SLS family in Equation (5.4) satisfies 
+
+ρ(AHBCQL ) = max 
+
+{
+
+ρ(C), ρ ( ¯AHBCQL )
+
+}
+
+. (5.9) 
+
+Proof. Let 
+
+q := n−1/21, S := 
+
+[
+
+q U
+
+]
+
+.
+
+The matrix S is orthogonal. By the proof of Lemma 4.7 , each deterministic standard mode has 
+
+S⊤ACQL  
+
+> π
+
+S =
+
+[
+
+1 − αδ (1 − γ) q⊤ACQL  
+
+> π
+
+U
+
+0 ¯ACQL 
+
+> π
+
+]
+
+.
+
+Conjugating the current and previous coordinates by the same orthogonal basis gives 
+
+[
+
+S⊤ 00 S⊤
+
+]
+
+AHBCQL 
+
+> π
+
+[
+
+S 00 S
+
+]
+
+=
+
+[
+
+S⊤(ACQL  
+
+> π
+
++ ηI )S −ηI I 0
+
+]
+
+=
+
+
+
+1 − αδ (1 − γ) + η q⊤ACQL  
+
+> π
+
+U −η 00 ¯ACQL  
+
+> π
+
++ ηI n−1 0 −ηI n−1
+
+1 0 0 00 In−1 0 0
+
+ ,
+
+where the block coordinates are ordered as current constant, current projected, previous constant, and previous projected. Permuting the second and third block coordinates gives the similar matrix 
+
+1 − αδ (1 − γ) + η −η q⊤ACQL  
+
+> π
+
+U 01 0 0 00 0 ¯ACQL  
+
+> π
+
++ ηI n−1 −ηI n−1
+
+0 0 In−1 0
+
+ .
+
+The upper-left block in this matrix is 
+
+[
+
+1 − αδ (1 − γ) + η −η
+
+1 0
+
+]
+
+= C, 
+
+14 and the lower-right block is  
+
+> [
+
+¯ACQL  
+
+> π
+
++ ηI n−1 −ηI n−1
+
+In−1 0
+
+> ]
+
+= ¯AHBCQL  
+
+> π
+
+.
+
+The only nonzero coupling from the constant second-order block to the projected second-order block is the row q⊤ACQL  
+
+> π
+
+U in the current coordinate. Thus, equivalently, 
+
+AHBCQL  
+
+> π
+
+∼
+
+> [
+
+C Eπ
+
+0 ¯AHBCQL 
+
+> π
+> ]
+
+, Eπ := 
+
+> [
+
+q⊤ACQL  
+
+> π
+
+U 00 0
+
+> ]
+
+.
+
+The same similarity and permutation are used for every π ∈ Θ, so the whole family is si-multaneously block upper triangular with diagonal families {C} and ¯AHBCQL . By the similarity invariance in Lemma A.4 , we may compute the JSR in this common basis. Applying Lemma A.5 
+
+gives 
+
+ρ(AHBCQL ) = max {ρ(C), ρ ( ¯AHBCQL )}.
+
+The decomposition in Equation (5.9) gives the following two lower bounds. 
+
+Corollary 5.1. The following inequality holds: 
+
+ρ(C) ≤ ρ(AHBCQL ).
+
+Proof. The claim follows from Equation (5.9) because the maximum is at least its first entry. 
+
+Corollary 5.2. The following inequality holds: 
+
+ρ( ¯AHBCQL ) ≤ ρ(AHBCQL ).
+
+Proof. The claim follows from Equation (5.9) because the maximum is at least its second entry. 
+
+A natural question is whether the HBCQL recursion can improve the convergence rate. The common eigenvector direction can be accelerated by a suitable positive momentum. The next theorem gives a sufficient condition under which HBCQL has a strictly smaller JSR than CQL. 
+
+Theorem 5.1. Under Assumptions 4.1 and 4.2 , there exists η0 > 0 such that every 
+
+0 < η < min {(1 − αδ (1 − γ))2, η 0} (5.10) 
+
+satisfies 
+
+ρ(AHBCQL ) < ρ (ACQL ) = (1 − αδ (1 − γ)) < 1. (5.11) 
+
+Proof. By Assumption 4.1 ,0 < 1 − αδ (1 − γ) < 1.
+
+From Equation (4.10) and Assumption 4.2 , the projected block cannot attain the maximum; hence 
+
+ρ(ACQL ) = 1 − αδ (1 − γ), ρ( ¯ACQL ) < 1 − αδ (1 − γ).
+
+At η = 0, Equation (5.7) gives, for each π ∈ Θ, ¯AHBCQL  
+
+> π
+> ∣∣∣η=0
+
+= 
+
+> [
+
+¯ACQL  
+
+> π
+
+0
+
+In−1 0
+
+> ]
+
+.
+
+15 For every word π1, . . . , π k with k ≥ 1, the corresponding product is ¯AHBCQL  
+
+> πk
+> ∣∣∣η=0
+
+· · · ¯AHBCQL  
+
+> π1
+> ∣∣∣η=0
+
+= 
+
+> [
+
+¯ACQL  
+
+> πk
+
+· · · ¯ACQL  
+
+> π1
+
+0¯ACQL  
+
+> πk−1
+
+· · · ¯ACQL  
+
+> π1
+
+0
+
+> ]
+
+,
+
+where the lower-left block is interpreted as In−1 when k = 1. Equivalently, the zero-momentum projected family is block lower triangular with diagonal families ¯ACQL and {0}. Hence 
+
+Lemma A.5 gives 
+
+ρ
+
+> (
+
+¯AHBCQL ∣∣∣η=0 
+
+> )
+
+= max {ρ( ¯ACQL ), 0} = ρ( ¯ACQL ).
+
+By continuity of the JSR for finite matrix families, there exists η0 > 0 such that 
+
+ρ( ¯AHBCQL ) < 1 − αδ (1 − γ), 0 < η < η 0.
+
+If, in addition, 0 < η < (1 − αδ (1 − γ))2,
+
+then Proposition A.1 gives 
+
+ρ(C) < 1 − αδ (1 − γ).
+
+Using Equation (5.9) ,
+
+ρ(AHBCQL ) = max {ρ(C), ρ ( ¯AHBCQL )}
+
+< 1 − αδ (1 − γ) = ρ(ACQL ).
+
+This proves Equation (5.11) . For admissible stochastic Bellman-difference selectors, the convex-hull statement in Lemma 3.5 and Lemma A.3 show that passing to the convex hull does not change the JSR. Since the resulting JSR is less than one, the uniform exponential stability statement follows from Lemma 3.4 .
+
+Theorem 5.1 implies that, under its hypotheses, HBCQL converges to Q⋆ and has a strictly smaller JSR certificate than the CQL recursion in Algorithm 2 . Note that Theorem 5.1 as-sumes the strict inequality in Assumption 4.2 . Because this condition may be hard to verify directly, the following corollary gives a simple sufficient interval for δ that automatically guar-antees Assumption 4.2 .
+
+Corollary 5.3. Suppose that ρ( ¯ACQL ) < 1. For any 
+
+0 < δ < 1 − ρ( ¯ACQL )
+
+α(1 − γ) , (5.12) 
+
+Assumption 4.2 holds. After such a δ has been fixed, any momentum parameter satisfy-ing Equation (5.10) also satisfies the hypotheses of Theorem 5.1 .Proof. For fixed MDP data, α, D, and d, the projected matrices satisfy ¯ACQL  
+
+> π
+
+= In−1 + αU ⊤D(I − Πd)( γP Ππ − I)U, 
+
+by Equation (4.12) . Hence ρ( ¯ ACQL ) is independent of δ. The strict projected-gap condition is therefore 
+
+ρ( ¯ACQL ) < 1 − αδ (1 − γ),
+
+together with 0 < 1 − αδ (1 − γ) < 1. The interval in Equation (5.12) gives 0 < αδ (1 − γ) < 1 − ρ( ¯ACQL ) ≤ 1,
+
+and therefore 
+
+ρ( ¯ACQL ) < 1 − αδ (1 − γ) < 1.
+
+Thus both the constant-mode range and projected-gap requirements hold. Once δ is fixed, Equation (5.10) is precisely the remaining small-momentum condition in Theorem 5.1 .
+
+16 6 Hyperparameter conditions for improving over standard Q-learning 
+
+The previous theorem compares HBCQL with CQL ( η = 0). We also state a useful sufficient condition under which HBCQL is faster than the standard QL benchmark in Algorithm 1 , ob-tained by setting the momentum term to zero and not applying the correction. Since D is nonsingular, the fixed point of Algorithm 1 is Q⋆. Subtracting Q⋆ = F (Q⋆) from the update given in Algorithm 1 gives the error recursion 
+
+Qk+1 − Q⋆ = ( Qk − Q⋆) + αD {F (Qk ) − F (Q⋆) − (Qk − Q⋆)}. (6.1) The next lemma uses Equation (3.1) to derive an SLS model associated with the error recursion in Equation (6.1) .
+
+Lemma 6.1. If Qk follows Algorithm 1 , then the error recursion in Equation (6.1) satisfies the SLS 
+
+Qk+1 − Q⋆ = AQL  
+
+> μk
+
+(Qk − Q⋆), (6.2) 
+
+where for any stochastic policy μ,
+
+AQL  
+
+> μ
+
+:= I + αD (γP Πμ − I). (6.3) 
+
+Proof. Using Equation (3.1) , the error recursion in Equation (6.1) can be written as 
+
+Qk+1 − Q⋆ = {I + αD (γP Πμk − I)}(Qk − Q⋆)= AQL  
+
+> μk
+
+(Qk − Q⋆),
+
+which proves Equation (6.2) . The affine dependence on P Πμk and the convex-hull statement in 
+
+Lemma 3.5 give AQL  
+
+> μk
+
+∈ co( AQL ). 
+
+The corresponding SLS family is 
+
+AQL := 
+
+{
+
+AQL  
+
+> π
+
+: π ∈ Θ
+
+}
+
+. (6.4) We now compare CQL with the standard QL benchmark. The correction in CQL is designed to preserve a common eigenvector, but this structural property alone does not imply an improve-ment over QL. The next result gives a sufficient condition under which the JSR of CQL is no larger than that of the QL benchmark. 
+
+Lemma 6.2. Assume 
+
+0 < αd (s, a ) ≤ 1 for every (s, a ) ∈ S × A ,
+
+and 
+
+dmax ≤ δ < 1 − ρ( ¯ACQL )
+
+α(1 − γ) .
+
+Then 
+
+ρ(ACQL ) ≤ ρ(AQL ).
+
+The interval for δ is nonempty if and only if 
+
+ρ( ¯ACQL ) < 1 − αd max (1 − γ).
+
+17 Proof. The upper bound on δ gives 
+
+ρ( ¯ACQL ) < 1 − αδ (1 − γ).
+
+Since JSRs are nonnegative, the same upper bound gives 1 − αδ (1 − γ) > 0. Also, dmax ≤ δ
+
+and full support of d imply δ > 0, so 1 − αδ (1 − γ) < 1. Hence Assumption 4.1 holds, and the decomposition in Equation (4.10) yields 
+
+ρ(ACQL ) = 1 − αδ (1 − γ).
+
+By Lemma A.2 , every deterministic direct mode satisfies 
+
+ρ(AQL  
+
+> π
+
+) ≥ 1 − αd max (1 − γ), π ∈ Θ.
+
+Since the JSR of a family is at least the spectral radius of each one-step mode, 
+
+ρ(AQL ) ≥ 1 − αd max (1 − γ).
+
+Using dmax ≤ δ, we obtain 
+
+ρ(ACQL ) = 1 − αδ (1 − γ) ≤ 1 − αd max (1 − γ) ≤ ρ(AQL ),
+
+which proves the claimed comparison. Finally, 
+
+dmax < 1 − ρ( ¯ACQL )
+
+α(1 − γ)is equivalent to 
+
+ρ( ¯ACQL ) < 1 − αd max (1 − γ),
+
+and this proves the nonempty-interval statement. 
+
+The remaining question is whether HBCQL can be faster than the QL benchmark itself. Combining the previous comparison with the heavy-ball improvement theorem Theorem 5.1 
+
+gives the following sufficient condition for a strict JSR comparison of HBCQL against QL. 
+
+Lemma 6.3. Assume 
+
+0 < αd (s, a ) ≤ 1 for every (s, a ) ∈ S × A ,
+
+and 
+
+dmax ≤ δ < 1 − ρ( ¯ACQL )
+
+α(1 − γ) .
+
+Then the hypotheses of Theorem 5.1 are satisfied, namely Assumptions 4.1 and 4.2 hold. Let 
+
+η0 > 0 be the corresponding small-momentum radius guaranteed by Theorem 5.1 . If 
+
+0 < η < min {(1 − αδ (1 − γ))2, η 0},
+
+then 
+
+ρ(AHBCQL ) < ρ (AQL ).
+
+Proof. Because 0 < αd (s, a ) for every ( s, a ) and dmax ≤ δ, we have δ > 0. The upper bound on 
+
+δ gives 
+
+ρ( ¯ACQL ) < 1 − αδ (1 − γ).
+
+Since the left-hand side is nonnegative, this also gives 0 < 1 − αδ (1 − γ) < 1. Hence 
+
+Assumptions 4.1 and 4.2 hold, and Theorem 5.1 applies. Therefore 
+
+ρ(AHBCQL ) < ρ (ACQL )for the stated range of η. Combining this strict inequality with Lemma 6.2 gives 
+
+ρ(AHBCQL ) < ρ (AQL ).
+
+18 The previous lemma packages two requirements into the interval for δ: the upper bound gives the hypotheses of Theorem 5.1 , while dmax ≤ δ gives the comparison between CQL and QL. The following corollary separates these two roles. It assumes the projected gap directly and states the conclusion in terms of the hyperparameters. 
+
+Corollary 6.1. Assume the following hyperparameter conditions hold: (i) 0 < αd (s, a ) ≤ 1 for every (s, a ) ∈ S × A ;(ii) dmax ≤ δ < 1 
+
+> α(1 −γ)
+
+;(iii) Assumption 4.2 holds; (iv) 0 < η < min {ρ(ACQL )2, η 0}, where η0 > 0 is the small-momentum radius from 
+
+Theorem 5.1 .Then 
+
+ρ(AHBCQL ) < ρ (AQL ).
+
+In particular, with the boundary choice δ = dmax , condition (ii) reduces to 
+
+0 < α ≤ 1
+
+dmax 
+
+.
+
+If Assumption 4.2 is also verified for this choice, then it is sufficient to choose 
+
+0 < η < min 
+
+> {
+
+ρ(ACQL )2, η 0
+
+> }
+
+.
+
+Proof. By Lemma A.2 , every deterministic direct mode satisfies 
+
+ρ(AQL  
+
+> π
+
+) ≥ 1 − αd max (1 − γ), π ∈ Θ.
+
+Therefore 
+
+ρ(AQL ) ≥ 1 − αd max (1 − γ).
+
+On the other hand, δ ≥ dmax implies 1 − αδ (1 − γ) ≤ 1 − αd max (1 − γ).
+
+Condition (ii) gives 0 < 1 − αδ (1 − γ) < 1, so Assumption 4.1 holds. Condition (iii) and 
+
+Lemma 4.8 give 
+
+ρ(ACQL ) = 1 − αδ (1 − γ).
+
+Then condition (iv), together with Theorem 5.1 , gives 
+
+ρ(AHBCQL ) < ρ (ACQL ).
+
+Combining these inequalities yields 
+
+ρ(AHBCQL ) < ρ (ACQL ) = 1 − αδ (1 − γ) ≤ 1 − αd max (1 − γ) ≤ ρ(AQL ),
+
+which proves the claim. The simplified conditions follow by setting δ = dmax .
+
+19 7 Numerical illustration 
+
+This section gives an example for Algorithms 2 and 3. The purpose of this example is to show in a reproducible finite example how the heavy-ball momentum term can accelerate convergence. We consider an MDP with S = {1, 2}, A = {1, 2}, and γ = 0 .9. The transition-to-next-state probabilities are 
+
+Ps =
+
+> 
+
+0.85 0.15 0.70 0.30 0.25 0.75 0.10 0.90  
+
+> 
+
+.
+
+The one-step reward entries are r(1 , 1, 1) = r(1 , 1, 2) = 1.0, r(1 , 2, 1) = r(1 , 2, 2) = 0.2, 
+
+r(2 , 1, 1) = r(2 , 1, 2) = 0 .1, and r(2 , 2, 1) = r(2 , 2, 2) = 0 .8. The nonuniform sampling vector is set to d = (0 .45 , 0.05 , 0.40 , 0.10) ⊤ and D = diag( d), and the shared numerical parameters are 
+
+α = 1 .10 , δ = 0 .80 , η = 0 .30 .
+
+For the simulation, we use the initial values Q−1 = Q0 = (3 , −2.5, 1.5, 0) ⊤ , and the optimal Q-function is obtained by value iteration and is Q⋆ ≈ (9 .16923 , 8.28615 , 7.93692 , 8.55385) ⊤ . For comparative analysis, define the relative error 
+
+eQk = ‖Qk − Q⋆‖2
+
+‖Q0 − Q⋆‖2
+
+.
+
+Figure 1 compares Algorithm 2 and Algorithm 3 . The figure shows that HBCQL reduces the relative error faster than CQL on this instance. 
+
+0 0 00 0 00 0 00  
+
+0  
+
+0   
+
+0   
+
+0   
+
+0   
+
+>  
+
+  
+
+  
+
+0    
+
+Figure 1: The HBCQL in Algorithm 3 reaches the same relative Q-error threshold in fewer iterations than the CQL in Algorithm 2 .
+
+# 8 Stochastic heavy-ball corrected Q-learning 
+
+This section studies a model-free stochastic counterpart of the HBCQL recursion in Algorithm 3 .We first recall standard tabular Q-learning. Given Qk, draw ik = ( sk, a k) ∼ d, draw s′ 
+
+> k
+
+∼ P (· | 
+
+sk, a k), and define ∆ k := r(sk, a k, s ′
+
+> k
+
+) + γ max b∈A Qk(s′
+
+> k
+
+, b ) − Qk(sk, a k). The standard sampled update changes the sampled coordinate only: 
+
+Qk+1 = Qk + αk∆keik .
+
+20 Equivalently, it can be written as 
+
+Qk+1 (s, a ) = 
+
+{Qk(s, a ) + αk∆k, (s, a ) = ik,Qk(s, a ), (s, a ) 6 = ik.
+
+The complete procedure is stated in Algorithm 4 .
+
+Algorithm 4 Stochastic standard Q-learning 
+
+Require: Q0 ∈ Rn, stepsizes αk > 0, and full-support sampling distribution d
+
+for k = 0 , 1, 2, . . . do 
+
+Draw ik = ( sk, a k) ∼ d
+
+Draw s′ 
+
+> k
+
+∼ P (· | sk, a k) and compute ∆ k
+
+Update 
+
+Qk+1 ← Qk + αk∆keik .
+
+end for 
+
+Throughout this section, samples are drawn i.i.d. from the full-support distribution d.Markovian sampling is not treated here in order to keep the presentation focused, but the same conditional-mean switching viewpoint can be combined with Markovian stochastic-approximation tools, as in [ 22 ]. A replay buffer can also be used to approximate the independent sampling required below, following the experience-replay idea used in deep Q-networks (DQN) [ 18 ]. We now consider a sampled counterpart of the HBCQL in Algorithm 3 . At time k, we sample 
+
+ik ∼ d, jk ∼ d, 
+
+where jk is independent of ik and of the transition sample used below. After ik = ( sk, a k) is selected, draw s′ 
+
+> k
+
+according to P (· | sk, a k) and form ∆k := r(sk, a k, s ′
+
+> k
+
+) + γ max  
+
+> b∈A
+
+Qk(s′
+
+> k
+
+, b ) − Qk(sk, a k). (8.1) The stochastic HBCQL is written as 
+
+Qk+1 = Qk + α∆k
+
+(eik + δ1 − ejk
+
+) + η(Qk − Qk−1). (8.2) For each state-action pair ( s, a ), this is equivalently written as 
+
+Qk+1 (s, a ) = Qk(s, a ) + α∆k
+
+(
+
+1{(s,a )= ik } + δ − 1{(s,a )= jk }
+
+)
+
++ η{Qk(s, a ) − Qk−1(s, a )}.
+
+The complete pseudocode is given in Algorithm 5 .
+
+Algorithm 5 Heavy-ball CQL 
+
+Require: Q−1, Q 0 ∈ Rn, stepsize α > 0, momentum η ≥ 0, scalar δ > 0, and full-support d
+
+for k = 0 , 1, 2, . . . do 
+
+Draw ik = ( sk, a k) ∼ d and jk ∼ d independently Draw s′ 
+
+> k
+
+∼ P (· | sk, a k) and compute ∆ k by Equation (8.1) 
+
+for all (s, a ) ∈ S × A do 
+
+Update 
+
+Qk+1 (s, a ) ← Qk(s, a ) + α∆k
+
+(
+
+1{(s,a )= ik } + δ − 1{(s,a )= jk }
+
+)
+
++ η{Qk (s, a ) − Qk−1(s, a )}.
+
+end for end for 
+
+21 Setting η = 0 in Algorithm 5 gives the sampled stochastic version of CQL. Compared with classical Q-learning, the update uses two independent state-action indices, ik and jk. This in-creases the sampling burden, but it is not the double-sampling issue associated with residual-gradient methods in [ 32 ]: only one next-state sample is drawn from the selected pair ik, while the second draw is an independent state-action index used to approximate the centering term. In practice, the second index can be drawn from a replay buffer. Equivalently, with the noise 
+
+ξk+1 := ∆ k
+
+> (
+
+eik + δ1 − ejk 
+
+> )
+
+− H{F (Qk ) − Qk},
+
+one has E[ξk+1 | Qk, Q k−1] = 0, and the recursion in Equation (8.2) can equivalently be written as 
+
+Qk+1 = Qk + αH {F (Qk ) − Qk} + η(Qk − Qk−1) + αξ k+1 . (8.3) The noise form in Equation (8.3) shows that Equation (8.2) is an unbiased stochastic approx-imation of the deterministic HBCQL update in Algorithm 3 . The next lemma gives the corre-sponding conditional-mean identity. 
+
+Lemma 8.1. The following conditional-mean identity holds: 
+
+E[Qk+1 − Qk | Qk, Q k−1] = αH {F (Qk) − Qk} + η(Qk − Qk−1). (8.4) 
+
+Proof. The sampling identities are 
+
+E[∆ keik | Qk] = D{F (Qk) − Qk}, E[∆ k | Qk] = d⊤{F (Qk) − Qk}.
+
+Because jk ∼ d is independent of the random variables used to form ∆ k,
+
+E[∆ kejk | Qk] = (d⊤{F (Qk ) − Qk})d. 
+
+Therefore, 
+
+E [∆k
+
+> (
+
+eik + δ1 − ejk 
+
+> )
+
+| Qk
+
+> ]
+
+= D{F (Qk) − Qk} + δ1d⊤{F (Qk ) − Qk} − dd ⊤{F (Qk) − Qk}
+
+=
+
+> [
+
+D + ( δ1 − d)d⊤]
+
+{F (Qk) − Qk} = H{F (Qk ) − Qk}.
+
+Taking the conditional mean of Equation (8.2) gives Equation (8.4) .
+
+The conditional-mean update in Equation (8.4) is exactly the deterministic HBCQL recur-sion analyzed in the previous section. Hence its right-hand side admits the same SLS repre-sentation as Equation (5.3) . Therefore, the deterministic HBCQL JSR certificates apply to the conditional-mean recursion associated with Equation (8.2) . When the corresponding JSR is smaller than one, finite-time error bounds can be derived by applying the Lyapunov-based SLS analysis in [ 22 ]. The convergence and acceleration conclusions established for deterministic HBCQL therefore transfer to this conditional-mean recursion, so we omit the repeated argument. 
+
+# 9 Numerical illustration 
+
+This section adds an experiment for Algorithm 5 , where we use the same MDP and parameter settings as in Section 7 . The only change is that the Bellman residual is now observed through transition samples rather than evaluated as a full vector. We compare two choices of this update, 
+
+η = 0 (CQL counterpart) and η = 0 .45 (HBCQL), against standard tabular Q-learning with the same samples. All three methods are run with common random numbers, so differences between the curves are not due to different random seeds. The numerical parameters are α = 0 .020, 22 δ = 0 .80, η ∈ { 0, 0.45 }, and K = 4000. The reported curve is the median over 400 independent Monte Carlo paths of the relative error 
+
+emc  
+
+> k
+
+= ‖Qk − Q⋆‖2
+
+‖Q0 − Q⋆‖2
+
+.
+
+Because the stepsize is constant, the stochastic methods should be interpreted as approaching a noise neighborhood of Q⋆, not as converging exactly to zero error. Figure 2 shows the median relative Q-error curves. The CQL update ( η = 0) is already much faster than standard Q-learning in this nonuniformly sampled example. Adding the heavy-ball term gives a further transient acceleration: the median first passage time below 10 −2 drops from about 2693 iterations to about 1556 iterations. 
+
+0 00 000  00 000  00 000  00 000  
+
+0   
+
+0   
+
+0 0
+
+>   
+
+ 
+
+  η 0
+
+  η 0 
+
+0    
+
+Figure 2: The plotted quantity is the median relative Q-error over 400 Monte Carlo paths. 
+
+# 10 Corrected Q-learning with linear function approximation 
+
+The correction method from the previous sections can be extended to deterministic Q-learning with linear function approximation, referred to as linear Q-learning (LQL). Let the parameter vector be θ ∈ Rm, and approximate the Q-vector by Φ θ ∈ Rn, where the feature matrix Φ ∈
+
+Rn×m has one row for each state-action pair and one column for each feature. We impose the standard rank condition on the feature matrix. 
+
+Assumption 10.1. The feature matrix Φ ∈ Rn×m has full column rank. 
+
+To use the ideas from the previous sections, we introduce the following assumption. 
+
+Assumption 10.2. There exists c ∈ Rm such that 
+
+Φc = 1.
+
+This assumption is easy to enforce in tabular feature constructions: one may include an intercept feature, namely a column of Φ filled with ones. Then the corresponding coordinate vector can be chosen as c. The standard deterministic LQL update is summarized in Algorithm 6 .23 Algorithm 6 Deterministic LQL 
+
+Require: θ0 ∈ Rm, stepsize α > 0, features Φ, and D = diag( d)
+
+for k = 0 , 1, 2, . . . do 
+
+Update 
+
+θk+1 ← θk + αΦ⊤D{F (Φ θk) − Φθk}.
+
+end for 
+
+The corresponding map is defined as 
+
+g(θ) := θ + αΦ⊤D{F (Φ θ) − Φθ}.
+
+Its fixed points, g(θ) = θ, are characterized by the associated residual equation below. 
+
+Lemma 10.1. A parameter vector ¯θ ∈ Rm is a fixed point of g if and only if 
+
+Φ⊤D{F (Φ ¯θ) − Φ¯θ} = 0 . (10.1) 
+
+Proof. A fixed point of g satisfies ¯θ = ¯θ + αΦ⊤D{F (Φ ¯θ) − Φ¯θ}.
+
+Because α > 0, this is equivalent to Equation (10.1) . Conversely, suppose that Equation (10.1) 
+
+holds. Substituting this identity into the update in Algorithm 6 , with θk = ¯θ, gives 
+
+θk+1 = ¯θ + αΦ⊤D{F (Φ ¯θ) − Φ¯θ}
+
+= ¯θ + α · 0 = ¯θ. 
+
+Thus the update leaves ¯θ unchanged, so ¯θ is a fixed point of g.
+
+Subtracting the fixed-point identity in Equation (10.1) from the update in Algorithm 6 gives 
+
+θk+1 − ¯θ = θk − ¯θ + αΦ⊤D{F (Φ θk) − F (Φ ¯θ) − Φ( θk − ¯θ)}. (10.2) The next lemma states an SLS error system associated with the above error recursion. 
+
+Lemma 10.2. Assume that ¯θ is a fixed point of g. Then the error recursion in Equation (10.2) 
+
+satisfies the SLS 
+
+θk+1 − ¯θ = ALQL  
+
+> μk
+
+(θk − ¯θ), (10.3) 
+
+where for any stochastic policy μ,
+
+ALQL  
+
+> μ
+
+:= Im + αΦ⊤D(γP Πμ − I)Φ . (10.4) 
+
+Proof. By Lemma 3.5 , there is a stochastic policy μk such that F (Φ θk)−F (Φ ¯θ) = γP Πμk Φ( θk −
+
+¯θ). Substituting this identity gives 
+
+θk+1 − ¯θ = {Im + αΦ⊤D(γP Πμk − I)Φ }(θk − ¯θ)= ALQL  
+
+> μk
+
+(θk − ¯θ),
+
+which proves Equation (10.3) .
+
+For the matrix in Equation (10.4) , the modes generally do not share a common eigenvector. Consequently, the common-eigenvector acceleration argument used in the tabular analysis does not apply directly. To remove this obstruction, we introduce the corrected map below. 24 Definition 10.1. We define the correction matrix 
+
+G := Φ ⊤D + ( δc − Φ⊤D1)d⊤ = δcd ⊤ + Φ ⊤D(I − 1d⊤), d⊤1 = 1 . (10.5) The map G has a structure similar to the tabular correction, as summarized in the following result. 
+
+Lemma 10.3. The map in Equation (10.5) satisfies 
+
+G1 = δc. (10.6) 
+
+Proof. Starting from Equation (10.5) and using d⊤1 = 1, we compute 
+
+G1 = Φ ⊤D1 + ( δc − Φ⊤D1)d⊤1
+
+= Φ ⊤D1 + δc − Φ⊤D1
+
+= δc. 
+
+Equivalently, from the second expression in Equation (10.5) , G1 = δcd ⊤1 + Φ ⊤D(I − 1d⊤)1 =
+
+δc .
+
+The corresponding deterministic corrected linear Q-learning (CLQL) is given in Algorithm 7 .Note that this is exactly the tabular correction when Φ = I and c = 1.
+
+Algorithm 7 Deterministic CLQL 
+
+Require: θ0 ∈ Rm, stepsize α > 0, features Φ, and G from Equation (10.5) 
+
+for k = 0 , 1, 2, . . . do 
+
+Update 
+
+θk+1 ← θk + αG {F (Φ θk ) − Φθk}.
+
+end for 
+
+Define the corresponding feature-space map 
+
+g(θ) := θ + αG {F (Φ θ) − Φθ}. (10.7) The next lemma characterizes the fixed points of this map. 
+
+Lemma 10.4. A parameter vector θ⋆ ∈ Rm is a fixed point of the map g in Equation (10.7) if and only if 
+
+G{F (Φ θ⋆) − Φθ⋆} = 0 . (10.8) 
+
+Proof. A fixed point of g satisfies θ⋆ = θ⋆ + αG {F (Φ θ⋆) − Φθ⋆}. Because the stepsize is pos-itive, this is equivalent to G{F (Φ θ⋆) − Φθ⋆} = 0, which is Equation (10.8) . Conversely, if 
+
+Equation (10.8) holds, substituting it into the update in Algorithm 7 gives θk+1 = θk = θ⋆.
+
+Unlike the tabular matrix H, the map G is generally not nonsingular. It is often rectangular, since it maps a Bellman residual in Rn to a parameter update in Rm, and even in the square case its rank depends on Φ, D, d, and c. Hence, the feature-space analysis in the sequel uses the fixed-point equation in Equation (10.8) and explicitly assumes uniqueness. 
+
+Assumption 10.3. The map g in Equation (10.7) has a unique fixed point denoted by θ⋆.
+
+The fixed point condition in Equation (10.8) should be compared with the standard LQL update in Algorithm 6 . A fixed point corresponding to the standard LQL satisfies Φ ⊤D{F (Φ θ)−
+
+Φθ} = 0, which is the usual D-weighted projected Bellman equation: the Bellman residual is orthogonal to every feature column in the D-weighted inner product. By contrast, a fixed point 25 of the update in Algorithm 7 satisfies G{F (Φ θ) − Φθ} = 0. Thus the two fixed-point equations generally need not have the same solution. Next, subtracting the fixed-point equation in Equation (10.8) from the update in Algorithm 7 
+
+gives the error recursion 
+
+θk+1 − θ⋆ = ( θk − θ⋆) + αG {F (Φ θk ) − F (Φ θ⋆) − Φ( θk − θ⋆)}. (10.9) We next rewrite this error recursion as an SLS. 
+
+Lemma 10.5. The error recursion in Equation (10.9) satisfies the SLS 
+
+θk+1 − θ⋆ = ACLQL  
+
+> μk
+
+(θk − θ⋆), (10.10) 
+
+where μk is a stochastic policy and for any stochastic policy μ,
+
+ACLQL  
+
+> μ
+
+:= Im + αG (γP Πμ − I)Φ .
+
+Proof. By Lemma 3.5 , there is a stochastic policy μk such that F (Φ θk)−F (Φ θ⋆) = γP Πμk Φ( θk −
+
+θ⋆). Substitution gives θk+1 − θ⋆ = {Im + αG (γP Πμk − I)Φ }(θk − θ⋆) = ACLQL  
+
+> μk
+
+(θk − θ⋆), which proves Equation (10.10) .
+
+The corresponding SLS family is 
+
+ACLQL := 
+
+{
+
+ACLQL  
+
+> π
+
+: π ∈ Θ
+
+}
+
+.
+
+As in the tabular case, every mode in ACLQL has a common eigenvector as shown below. 
+
+Lemma 10.6. For every stochastic policy μ,
+
+ACLQL  
+
+> μ
+
+c = (1 − αδ (1 − γ)) c. (10.11) 
+
+Proof. Since Φ c = 1 and P Πμ1 = 1, one has ( γP Πμ − I)Φ c = ( γP Πμ − I)1 = −(1 − γ)1.Using Equation (10.6) ,
+
+ACLQL  
+
+> μ
+
+c = [ Im + αG (γP Πμ − I)Φ] c
+
+= c − α(1 − γ)G1
+
+= c − αδ (1 − γ)c
+
+= (1 − αδ (1 − γ)) c. 
+
+This completes the proof. 
+
+By Equation (10.11) , the direction span {c} is a common eigenvector direction of the SLS family ACLQL . As in the tabular analysis, we decompose the feature-space dynamics into this common direction and the induced dynamics on the quotient space. This decomposition provides the same type of convergence benchmark as in the tabular analysis. Let ¯ACLQL denote the quotient family induced by ACLQL on Rm/ span {c}.
+
+Proposition 10.1. Under Assumption 4.1 , it holds that 
+
+ρ(ACLQL ) = max 
+
+{
+
+1 − αδ (1 − γ), ρ ( ¯ACLQL )
+
+}
+
+. (10.12) 
+
+Proof. Choose W ∈ Rm×(m−1) so that S := [ c W ] is nonsingular, and write 
+
+S−1 =
+
+[
+
+ℓ⊤
+
+L
+
+]
+
+.
+
+26 Then Lc = 0 and LW = Im−1. By Equation (10.11) , each deterministic mode satisfies 
+
+ACLQL  
+
+> π
+
+c = (1 − αδ (1 − γ))c. 
+
+Consequently, 
+
+S−1ACLQL  
+
+> π
+
+S =
+
+[
+
+ℓ⊤
+
+L
+
+]
+
+ACLQL 
+
+> π
+
+[
+
+c W
+
+]
+
+=
+
+[
+
+ℓ⊤ACLQL  
+
+> π
+
+c ℓ⊤ACLQL  
+
+> π
+
+WLA CLQL  
+
+> π
+
+c LA CLQL  
+
+> π
+
+W
+
+]
+
+=
+
+[
+
+1 − αδ (1 − γ) ℓ⊤ACLQL  
+
+> π
+
+W
+
+0 LA CLQL  
+
+> π
+
+W
+
+]
+
+.
+
+The lower-right block is the matrix of the induced quotient mode in the basis given by W , so write ¯ACLQL  
+
+> π
+
+= LA CLQL  
+
+> π
+
+W, ¯ACLQL = { ¯ACLQL  
+
+> π
+
+: π ∈ Θ}.
+
+For any product ACLQL  
+
+> πk
+
+· · · ACLQL  
+
+> π1
+
+, the same similarity gives 
+
+S−1ACLQL  
+
+> πk
+
+· · · ACLQL  
+
+> π1
+
+S =
+
+[(1 − αδ (1 − γ))k Bk
+
+0 ¯ACLQL  
+
+> πk
+
+· · · ¯ACLQL 
+
+> π1
+
+]
+
+for some upper-right block Bk. Hence the whole family is simultaneously block upper triangu-lar with diagonal families {1 − αδ (1 − γ)} and ¯ACLQL . The block-triangular JSR identity in 
+
+Lemma A.5 gives 
+
+ρ(ACLQL ) = max 
+
+{
+
+|1 − αδ (1 − γ)|, ρ ( ¯ACLQL )
+
+}
+
+.
+
+Under Assumption 4.1 , 1 − αδ (1 − γ) > 0, so this is exactly Equation (10.12) .
+
+The decomposition in Equation (10.12) immediately gives the following lower bounds. 
+
+Corollary 10.1. The following inequality holds: 
+
+ρ( ¯ACLQL ) ≤ ρ(ACLQL ).
+
+Proof. Using Equation (10.12) , we have ρ(ACLQL ) = max 
+
+{
+
+1 − αδ (1 − γ), ρ ( ¯ACLQL )
+
+}
+
+. The max-imum is at least its second entry, so ρ( ¯ACLQL ) ≤ ρ(ACLQL ). 
+
+Lemma 10.7. Under Assumption 4.1 , the following inequality holds: 
+
+1 − αδ (1 − γ) ≤ ρ(ACLQL ).
+
+Proof. The claim follows directly from Equation (10.12) , since the maximum is at least its first entry. 
+
+As in the tabular case, acceleration is certified under a strict JSR gap between the full SLS family ACLQL and the projected SLS family ¯ACLQL as summarized in the following assumption. 
+
+Assumption 10.4. Suppose that the following strict inequality holds: 
+
+ρ( ¯ACLQL ) < ρ (ACLQL ). (10.13) Under Assumption 10.4 , the decomposition in Equation (10.12) shows that ρ(ACLQL ) is iden-tical to the eigenvalue associated with the common eigenvector direction. 27 Lemma 10.8. Under Assumption 10.4 , we have 
+
+ρ(ACLQL ) = (1 − αδ (1 − γ)). (10.14) 
+
+Proof. By Equation (10.12) ,
+
+ρ(ACLQL ) = max 
+
+{
+
+1 − αδ (1 − γ), ρ ( ¯ACLQL )
+
+}
+
+.
+
+The strict inequality in Equation (10.13) rules out the second entry as the maximum. Therefore, 
+
+ρ(ACLQL ) = 1 − αδ (1 − γ).
+
+This is exactly Equation (10.14) .
+
+We now add the heavy-ball momentum term to the CLQL recursion in Algorithm 7 . The resulting algorithm is summarized in Algorithm 8 and is called heavy-ball corrected linear Q-learning (HBCLQL). 
+
+Algorithm 8 Deterministic HBCLQL 
+
+Require: θ−1, θ 0 ∈ Rm, stepsize α > 0, momentum η ≥ 0, features Φ, and G
+
+from Equation (10.5) 
+
+for k = 0 , 1, 2, . . . do 
+
+Update 
+
+θk+1 ← θk + αG {F (Φ θk ) − Φθk} + η(θk − θk−1). (10.15) 
+
+end for 
+
+The next lemma writes the resulting second-order error recursion as a first-order augmented SLS. 
+
+Lemma 10.9. Around any fixed point θ⋆ of the map in Equation (10.7) , the heavy-ball error satisfies [
+
+θk+1 − θ⋆
+
+θk − θ⋆
+
+]
+
+= AHBCLQL 
+
+> μk
+
+[
+
+θk − θ⋆
+
+θk−1 − θ⋆
+
+]
+
+(10.16) 
+
+for a stochastic Bellman-difference selector μk, where 
+
+AHBCLQL  
+
+> μ
+
+:= 
+
+[
+
+ACLQL  
+
+> μ
+
++ ηI m −ηI m
+
+Im 0
+
+]
+
+. (10.17) 
+
+Proof. Subtracting θ⋆ from Equation (10.15) gives 
+
+θk+1 − θ⋆ = ( θk − θ⋆) + αG {F (Φ θk ) − F (Φ θ⋆) − Φ( θk − θ⋆)}
+
++ η{(θk − θ⋆) − (θk−1 − θ⋆)}.
+
+By the fixed-point error identity in Lemma 10.5 ,(θk − θ⋆) + αG {F (Φ θk ) − F (Φ θ⋆) − Φ( θk − θ⋆)} = ACLQL  
+
+> μk
+
+(θk − θ⋆).
+
+Therefore 
+
+θk+1 − θ⋆ = ( ACLQL  
+
+> μk
+
++ ηI m)( θk − θ⋆) − η(θk−1 − θ⋆).
+
+Stacking θk+1 − θ⋆ and θk − θ⋆ yields Equation (10.16) with the mode in Equation (10.17) .The matrix ACLQL  
+
+> μ
+
+depends linearly on P Πμ, so the convex-hull statement in Lemma 3.5 gives 
+
+AHBCLQL  
+
+> μk
+
+∈ co( AHBCLQL ). 
+
+28 The corresponding SLS family is given by 
+
+AHBCLQL := 
+
+{
+
+AHBCLQL  
+
+> π
+
+: π ∈ Θ
+
+}
+
+. (10.18) As in the tabular case, the augmented feature-space dynamics preserve the subspace 
+
+I := 
+
+{[ 
+
+ac bc 
+
+]
+
+: a, b ∈ R
+
+}
+
+⊂ R2m.
+
+Indeed, for every policy μ, Equations (10.11) and (10.17) imply that AHBCLQL  
+
+> μ
+
+maps any vector in I to another vector in I. If the augmented error belongs to this subspace, then the next augmented error also belongs to it, and the scalar coefficients are updated by the following constant matrix: 
+
+C := 
+
+[( 1 − αδ (1 − γ)) + η −η
+
+1 0
+
+]
+
+.
+
+Using the quotient basis from Proposition 10.1 , define ¯AHBCLQL  
+
+> π
+
+:= 
+
+[ ¯ACLQL  
+
+> π
+
++ ηI m−1 −ηI m−1
+
+Im−1 0
+
+]
+
+, ¯AHBCLQL := 
+
+{ ¯AHBCLQL  
+
+> π
+
+: π ∈ Θ
+
+}
+
+.
+
+The block-triangular decomposition in the same basis gives 
+
+ρ(AHBCLQL ) = max {ρ(C), ρ ( ¯AHBCLQL )}. (10.19) The next theorem gives conditions under which HBCLQL converges faster than CLQL. 
+
+Theorem 10.1. Under Assumptions 4.1 and 10.4 , there exists η0 > 0 such that every 
+
+0 < η < min {(1 − αδ (1 − γ))2, η 0}
+
+satisfies 
+
+ρ(AHBCLQL ) < ρ (ACLQL ) = (1 − αδ (1 − γ)). (10.20) 
+
+Proof. From Equations (10.13) and (10.14) ,
+
+ρ(ACLQL ) = 1 − αδ (1 − γ), ρ( ¯ACLQL ) < 1 − αδ (1 − γ).
+
+At η = 0, the quotient augmented family induced by Equation (10.18) has matrices 
+
+[ ¯ACLQL  
+
+> π
+
+0
+
+I 0
+
+]
+
+,
+
+and therefore has JSR ρ( ¯ACLQL ). By continuity of the JSR for finite matrix families [ 20 , Chap-ter 1], there exists η0 > 0 such that 
+
+ρ( ¯AHBCLQL ) < 1 − αδ (1 − γ), 0 < η < η 0.
+
+If 0 < η < (1 − αδ (1 − γ))2, then Proposition A.2 gives ρ(C) < 1 − αδ (1 − γ). Us-ing Equation (10.19) ,
+
+ρ(AHBCLQL ) = max {ρ(C), ρ ( ¯AHBCLQL )}
+
+< 1 − αδ (1 − γ) = ρ(ACLQL ).
+
+This proves Equation (10.20) .
+
+This result establishes a condition in which HBCLQL improves over CLQL. Conditions under which both HBCLQL and CLQL improve over LQL can be obtained by the same argument as in the tabular case; the details are omitted to avoid repetition. 29 11 Numerical illustration 
+
+This example compares Algorithms 6 to 8. We use the same two-state, two-action MDP as in Section 7 , together with the feature matrix specified below. Throughout this comparison, we use the parameters α = 2 .5, δ = 2 , η = 0 .1, and Φ = 
+
+> 
+
+1 1 11 1 −11 −1 11 −1 −1 
+
+> 
+
+,
+
+and one verifies that c = (1 , 0, 0) ⊤ satisfies Φ c = 1. The feature recursions use θ−1 = θ0 =(3 , −2.5, 1.5) ⊤ . In this example, the fixed points of LQL and CLQL coincide numerically: 
+
+θ⋆ ≈ (6 .21874 , 0.75652 , 0.02213) ⊤ , Φθ⋆ ≈ (6 .99739 , 6.95313 , 5.48435 , 5.44009) ⊤ .
+
+For the comparison, we define the relative error 
+
+eθk = ‖θk − θ⋆‖2
+
+‖θ0 − θ⋆‖2
+
+.
+
+Figure 3 compares the three algorithms. CLQL reaches the 10 −6 threshold after 22 iterations, compared with 28 iterations for LQL. Adding the small heavy-ball momentum term further reduces the hit time to 15 iterations. All three final relative parameter errors are at the 10 −15 
+
+scale by the end of the run. 
+
+0 0 0 0 0 0 0 0 0 
+
+0   
+
+0   
+
+0   
+
+0  
+
+0  
+
+0   
+
+0   
+
+0   
+
+>    
+
+ 
+
+  
+
+  
+
+Figure 3: The plot contains exactly the three method curves in Algorithms 6 to 8.The momentum parameter remains deliberately small in this illustration. Larger values of δ
+
+or η can make the numerical comparison even more aggressive, but this moderate setting already shows the intended ordering: CLQL is faster than the direct feature recursion, and HBCLQL is faster than CLQL on this instance. 
+
+# 12 Sampled stochastic heavy-ball linear function approximation 
+
+Based on the deterministic HBCLQL analysis, this section extends the sampled model-free construction to linear function approximation. For comparison, we first recall sampled Q-learning 30 with linear function approximation. Let Qk = Φ θk. Given θk, draw ik = ( sk, a k) ∼ d, draw 
+
+s′ 
+
+> k
+
+∼ P (· | sk, a k), and define ∆k := r(sk, a k, s ′
+
+> k
+
+) + γ max  
+
+> b∈A
+
+(Φ θk)( s′
+
+> k
+
+, b ) − (Φ θk)( sk, a k). (12.1) The corresponding standard linear Q-learning update is given in Algorithm 9 .
+
+Algorithm 9 Stochastic LQL 
+
+Require: θ0 ∈ Rm, stepsizes αk > 0, features Φ, and full-support sampling distribution d
+
+for k = 0 , 1, 2, . . . do 
+
+Draw ik = ( sk, a k) ∼ d
+
+Draw s′ 
+
+> k
+
+∼ P (· | sk, a k) and compute ∆ k by Equation (12.1) 
+
+Update 
+
+θk+1 ← θk + αk∆kΦ⊤eik .
+
+end for 
+
+We now consider a stochastic HBCLQL counterpart. Set Qk = Φ θk and start from θ−1, θ 0 ∈
+
+Rm. At time k, we draw ik ∼ d and jk ∼ d independently. If ik = ( sk, a k ), draw s′ 
+
+> k
+
+∼ P (· | sk, a k)and form ∆k := r(sk, a k, s ′
+
+> k
+
+) + γ max  
+
+> b∈A
+
+(Φ θk)( s′
+
+> k
+
+, b ) − (Φ θk)( sk, a k). (12.2) The parameter is then updated as in Algorithm 10 .
+
+Algorithm 10 Stochastic HBCLQL 
+
+Require: θ−1, θ 0 ∈ Rm, stepsize α > 0, momentum η ≥ 0, scalar δ > 0, features Φ, constant direction c, and full-support d
+
+for k = 0 , 1, 2, . . . do 
+
+Draw ik = ( sk, a k) ∼ d and jk ∼ d independently Draw s′ 
+
+> k
+
+∼ P (· | sk, a k) and compute ∆ k by Equation (12.2) 
+
+Update 
+
+θk+1 ← θk + α∆k
+
+(
+
+Φ⊤eik + δc − Φ⊤ejk
+
+)
+
++ η(θk − θk−1).
+
+end for 
+
+The update in Algorithm 10 is an unbiased stochastic approximation of the deterministic HBCLQL recursion in Equation (10.15) . The next lemma summarizes this conditional-mean relation. 
+
+Lemma 12.1. The following equation holds: 
+
+E[θk+1 − θk | θk, θ k−1] = αG {F (Φ θk) − Φθk} + η(θk − θk−1). (12.3) 
+
+This is the sampled conditional-mean counterpart of Equation (10.15) .Proof. The conditional identities are 
+
+E[∆ kΦ⊤eik | θk] = Φ ⊤D{F (Φ θk) − Φθk},
+
+E[∆ kΦ⊤ejk | θk] = (d⊤{F (Φ θk) − Φθk})Φ⊤D1,
+
+E[∆ k | θk] = d⊤{F (Φ θk) − Φθk}.
+
+31 Therefore 
+
+E
+
+> [
+
+∆k
+
+> (
+
+Φ⊤eik + δc − Φ⊤ejk
+
+> )
+
+| θk
+
+> ]
+
+= Φ ⊤D{F (Φ θk) − Φθk} +
+
+> (
+
+δc − Φ⊤D1
+
+> )
+
+d⊤{F (Φ θk) − Φθk}
+
+= G{F (Φ θk) − Φθk}.
+
+Taking the conditional mean of the update in Algorithm 10 gives the second claim. 
+
+By the same argument used in Lemma 10.9 , the right-hand side of Equation (12.3) is rep-resented by the SLS in Equation (10.16) . Therefore, the convergence and acceleration certifi-cates for stochastic HBCLQL hold at the conditional-mean level by the deterministic analysis in Section 10 . A full stochastic RL analysis, including martingale noise, constant-stepsize neigh-borhoods, and Markovian sampling, can be developed by combining this drift representation with Lyapunov-based stochastic approximation arguments as in [ 22 ]. We do not repeat those technical steps here. 
+
+# 13 Numerical illustration 
+
+Consider again the example in Section 11 , where the MDP, feature matrix, sampling distribution 
+
+d, constant direction c, initial parameter, and fixed point θ⋆ are the same as in that section. We use the constant stepsize α = 0 .002, the correction parameter δ = 2, and the momentum parameter η = 0 .1 for HBCLQL. Stochastic CLQL is obtained from Algorithm 10 by setting 
+
+η = 0, while stochastic LQL uses Algorithm 9 . The three methods are run for 12 ,000 iterations over 400 independent sample paths. To make the comparison depend on the update rule rather than sampling variation, the same sampled state-action pairs, centering samples, and next-state draws are used across the methods whenever applicable. The quantity in Figure 4 is the median, over the 400 paths, of the relative parameter error 
+
+eθk defined in Section 11 . In this run, stochastic HBCLQL reaches median error 10 −1, 5 × 10 −2,and 2 × 10 −2 after 4074, 5418, and 7177 iterations, respectively. Stochastic CLQL reaches the same thresholds after 4560, 6036, and 8202 iterations, while stochastic LQL reaches the first two thresholds after 6840 and 9219 iterations and does not reach 2 × 10 −2 within 12 ,000 iterations. Thus the sampled experiment preserves the early-stage ordering observed in the deterministic example in Section 11 . At later iterations, stochastic fluctuations produce a small neighborhood around the fixed point, so the final curves need not remain strictly ordered. 32 0 000 000 000 000 0000 000  
+
+0   
+
+0 0
+
+>   
+
+ 
+
+  η 0 
+
+  
+
+Figure 4: Sampled stochastic version of the example in Section 11 . The curves give the median relative parameter error over 400 independent paths. 
+
+# 14 Conclusion 
+
+This paper proposed CQL and combined it with heavy-ball momentum. The analysis used SLS and JSR tools to separate the dynamics along a common eigenvector direction from the dynamics along the orthogonal directions. Under the stated projected-gap and small-momentum conditions, HBCQL has a smaller JSR certificate than CQL, and analogous statements hold for linear function approximation. 33 References 
+
+[1] Christopher J. C. H. Watkins and Peter Dayan. Q-learning. Machine Learning , 8(3–4):279– 292, 1992. doi:10.1007/BF00992698. [2] Richard S. Sutton and Andrew G. Barto. Reinforcement learning: an introduction . Second edition, MIT Press, Cambridge, MA, 2018. [3] Mohammad Ghavamzadeh, Hilbert J. Kappen, Mohammad G. Azar, and Rémi Munos. Speedy q-learning. In Advances in Neural Information Processing Systems 24 , pages 2411– 2419, 2011. [4] Amir-Massoud Farahmand and Mohammad Ghavamzadeh. Pid accelerated value itera-tion algorithm. In Proceedings of the 38th International Conference on Machine Learning ,Proceedings of Machine Learning Research, Vol. 139, pages 3143–3153, PMLR, 2021. [5] Vineet Goyal and Julien Grand-Clément. A first-order approach to accelerated value it-eration. Operations Research , 71(2):517–535, 2023. Published online March 24, 2022; doi:10.1287/opre.2022.2269. [6] Meir Herzberg and Uri Yechiali. Accelerating procedures of the value iteration algorithm for discounted markov decision processes, based on a one-step lookahead analysis. Operations Research , 42(5):940–946, 1994. doi:10.1287/opre.42.5.940. [7] Oleksandr Shlakhter, Chi-Guhn Lee, Dmitry Khmelev, and Nasser Jaber. Acceleration op-erators in the value iteration algorithms for markov decision processes. Operations Research ,58(1):193–202, 2010. doi:10.1287/opre.1090.0705. [8] Dimitri P. Bertsekas. Generic rank-one corrections for the value iteration in markovian decision problems. Operations Research Letters , 17(3):111–119, 1995. doi:10.1016/0167-6377(95)00007-7. [9] Arman Sharifi Kolarijani, Tolga Ok, Peyman Mohajerin Esfahani, and Mohamad Amin Sharifi Kolarijani. Rank-one modified value iteration. In Proceedings of the 42nd Interna-tional Conference on Machine Learning , Proceedings of Machine Learning Research, Vol. 267, pages 31182–31201, PMLR, 2025. [10] Jongmin Lee, Amin Rakhsha, Ernest K. Ryu, and Amir-Massoud Farahmand. Deflated dynamics value iteration. Transactions on Machine Learning Research , 2025. [11] Donghwan Lee. Switching-geometry analysis of deflated q-value iteration .arXiv:2605.10811v2, 2026. doi:10.48550/arXiv.2605.10811. [12] Donghwan Lee. Spectral analysis of heavy-ball q-value iteration . Manuscript, 2026. [13] Bowen Weng, Huaqing Xiong, Yingbin Liang, and Wei Zhang. Analysis of q-learning with adaptation and momentum restart for gradient descent. In Proceedings of the Twenty-Ninth International Joint Conference on Artificial Intelligence , pages 3051–3057, 2020. doi:10.24963/ijcai.2020/422. [14] Bowen Weng, Huaqing Xiong, Lin Zhao, Yingbin Liang, and Wei Zhang. Finite-time theory for momentum q-learning. In Proceedings of the Thirty-Seventh Conference on Uncertainty in Artificial Intelligence , Proceedings of Machine Learning Research, Vol. 161, pages 665– 674, PMLR, 2021. [15] Matthieu Geist and Bruno Scherrer. Anderson acceleration for reinforcement learning. In 
+
+Proceedings of the 14th European Workshop on Reinforcement Learning (EWRL 2018) , Lille, France, 2018. 34 [16] Nino Vieillard, Bruno Scherrer, Olivier Pietquin, and Matthieu Geist. Momentum in re-inforcement learning. In Proceedings of the Twenty Third International Conference on Artificial Intelligence and Statistics , Proceedings of Machine Learning Research, Vol. 108, pages 2529–2538, PMLR, 2020. [17] Jongmin Lee and Ernest K. Ryu. Accelerating value iteration with anchoring. In Advances in Neural Information Processing Systems 36 , pages 53924–53963, 2023. doi:10.52202/075280-2346. [18] Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei A. Rusu, Joel Veness, Marc G. Bellemare, Alex Graves, Martin Riedmiller, Andreas K. Fidjeland, Georg Ostrovski, Stig Petersen, Charles Beattie, Amir Sadik, Ioannis Antonoglou, Helen King, Dharshan Kumaran, Daan Wierstra, Shane Legg, and Demis Hassabis. Human-level control through deep reinforcement learning. Nature , 518(7540):529–533, 2015. doi:10.1038/nature14236. [19] Carl D. Meyer. Matrix analysis and applied linear algebra . Society for Industrial and Applied Mathematics, Philadelphia, 2000. ISBN 978-0-89871-454-8; doi:10.1137/1.9780898719512. [20] Raphaël M. Jungers. The joint spectral radius: theory and applications . Lecture Notes in Control and Information Sciences, Vol. 385, Springer, Berlin, Heidelberg, 2009. doi:10.1007/978-3-540-95980-9. [21] Eliahu I. Jury. Theory and application of the z-transform method . John Wiley & Sons, New York, 1964. [22] Donghwan Lee. Lyapunov-certified direct switching theory for q-learning .arXiv:2604.19569v3, 2026. doi:10.48550/arXiv.2604.19569. [23] Donghwan Lee. Beyond the bellman fixed point: geometry and fast policy identification in value iteration . arXiv:2604.17457v4, 2026. doi:10.48550/arXiv.2604.17457. [24] Zaiwei Chen, Siva T. Maguluri, Sanjay Shakkottai, and Karthikeyan Shanmugam. A lyapunov theory for finite-sample guarantees of markovian stochastic approxima-tion. Operations Research , 72(4):1352–1367, 2024. Published online October 6, 2023; doi:10.1287/opre.2022.0249. [25] Daniel Liberzon. Switching in systems and control . Systems & Control: Foundations & Applications, Birkhäuser Boston, 2003. doi:10.1007/978-1-4612-0017-8. [26] Hai Lin and Panos J. Antsaklis. Stability and stabilizability of switched linear systems: a survey of recent results. IEEE Transactions on Automatic Control , 54(2):308–322, 2009. doi:10.1109/TAC.2008.2012009. [27] Robert Shorten, Fabian Wirth, Oliver Mason, Kai Wulff, and Christopher King. Sta-bility criteria for switched and hybrid systems. SIAM Review , 49(4):545–592, 2007. doi:10.1137/05063516X. [28] Gian-Carlo Rota and Gilbert Strang. A note on the joint spectral radius. Indagationes Mathematicae , 22:379–381, 1960. doi:10.1016/S1385-7258(60)50046-1. [29] Jianghai Hu, Jinglai Shen, and Wei Zhang. Generating functions of switched linear systems: analysis, computation, and stability applications. IEEE Transactions on Automatic Control ,56(5):1059–1074, 2011. doi:10.1109/TAC.2010.2067590. [30] Martin L. Puterman. Markov decision processes: discrete stochastic dynamic program-ming . Wiley Series in Probability and Statistics, John Wiley & Sons, New York, 1994. doi:10.1002/9780470316887. 35 [31] Dimitri P. Bertsekas and John N. Tsitsiklis. Neuro-dynamic programming . Athena Scientific, Belmont, MA, 1996. [32] Leemon Baird. Residual algorithms: reinforcement learning with function approximation. In Proceedings of the Twelfth International Conference on Machine Learning , pages 30–37. Morgan Kaufmann, 1995. 36 A Auxiliary results 
+
+A.1 Nonnegative matrix row-sum bounds 
+
+The following standard row-sum bound is the form of the Collatz–Wielandt inequality used below; see, for example, [ 19 , Chapter 8]. 
+
+Lemma A.1. Let B ∈ Rm×m be nonnegative. Then 
+
+min 
+
+> 1≤i≤mm∑
+> j=1
+
+Bij ≤ ρ(B) ≤ max 
+
+> 1≤i≤mm∑
+> j=1
+
+Bij . (A.1) 
+
+Proof. The Collatz–Wielandt inequality for nonnegative matrices gives min 
+
+> i
+
+(Bx )i
+
+xi
+
+≤ ρ(B) ≤ max 
+
+> i
+
+(Bx )i
+
+xi
+
+for every vector x with strictly positive entries. Taking x = 1 gives Equation (A.1) .
+
+Lemma A.2. Assume 
+
+0 < αd (s, a ) ≤ 1 for every (s, a ) ∈ S × A .
+
+Then each matrix AQL  
+
+> π
+
+in the direct family Equation (6.4) is nonnegative. Moreover, its row indexed by (s, a ) has row sum 
+
+1 − αd (s, a )(1 − γ), (A.2) 
+
+and every deterministic policy π satisfies 
+
+ρ(AQL  
+
+> π
+
+) ≥ 1 − αd max (1 − γ). (A.3) 
+
+Proof. For a deterministic policy π, the mode in Equation (6.3) is 
+
+AQL  
+
+> π
+
+= I − αD + αγDP Ππ .
+
+The diagonal part I − αD is nonnegative by the assumption 0 < αd (s, a ) ≤ 1, and DP Ππ
+
+is nonnegative because D is nonnegative diagonal and P Ππ is row-stochastic. Hence AQL  
+
+> π
+
+is nonnegative. Since every row of P Ππ sums to one, the row indexed by ( s, a ) has sum 1 − αd (s, a ) + αγd (s, a ) = 1 − αd (s, a )(1 − γ),
+
+which proves Equation (A.2) . Applying Lemma A.1 gives 
+
+ρ(AQL  
+
+> π
+
+) ≥ min 
+
+> (s,a )
+
+{1 − αd (s, a )(1 − γ)} = 1 − αd max (1 − γ),
+
+which proves Equation (A.3) .
+
+A.2 Standard JSR lemmas 
+
+Lemma A.3. For a finite matrix family H, one has 
+
+ρ(co( H)) = ρ(H),
+
+where the left-hand side is computed over all convex combinations of matrices in H.Proof. This is the convex-hull invariance property of the JSR; see, for example, [ 20 , Chapter 1]. We omit the proof. 
+
+37 Lemma A.4. Let S be nonsingular. For every bounded matrix family H ⊂ Rm×m,
+
+ρ
+
+> ({
+
+S−1AS : A ∈ H 
+
+> })
+
+= ρ(H).
+
+This standard property follows from norm equivalence in the definition of the JSR; see, for example, [ 20 , Chapter 1]. 
+
+Lemma A.5. Let T be a bounded family of block upper triangular matrices of the form 
+
+Ti =
+
+> [
+
+Bi Ei
+
+0 Di
+
+> ]
+
+.
+
+Then 
+
+ρ(T ) = max {ρ ({Bi : Ti ∈ T } ) , ρ ({Di : Ti ∈ T } )} .
+
+The same statement holds with any finite number of diagonal blocks. Proof. This is the block upper triangular decomposition property of the joint spectral radius; see, for example, [ 20 , Chapter 1]. We omit the proof. 
+
+A.3 Feature-space two-point difference identity 
+
+The following identity is the two-point version of the fixed-point error system in Lemma 10.5 . It is placed in the appendix because the main feature-space development only needs the fixed-point form. 
+
+Lemma A.6. For any two parameter vectors θ, ¯θ ∈ Rm, there exists a stochastic Bellman-difference selector μθ, ¯θ such that the map in Equation (10.7) satisfies 
+
+T (θ) − T (¯θ) = ACLQL   
+
+> μθ, ¯θ
+
+(θ − ¯θ), (A.4) 
+
+where 
+
+T (θ) := θ + αG {F (Φ θ) − Φθ}.
+
+Proof. By Lemma 3.5 , there exists a stochastic policy μθ, ¯θ such that 
+
+F (Φ θ) − F (Φ ¯θ) = γP Πμθ, ¯θ Φ( θ − ¯θ).
+
+Subtracting the two feature updates gives 
+
+T (θ) − T (¯θ) = ( θ − ¯θ) + αG {F (Φ θ) − F (Φ ¯θ) − Φ( θ − ¯θ)}
+
+= ( θ − ¯θ) + αG (γP Πμθ, ¯θ − I)Φ( θ − ¯θ)= {Im + αG (γP Πμθ, ¯θ − I)Φ }(θ − ¯θ)= ACLQL   
+
+> μθ, ¯θ
+
+(θ − ¯θ),
+
+which proves Equation (A.4) .
+
+A.4 Jury stability criterion 
+
+Lemma A.7. For the real quadratic 
+
+p(z) = z2 − az + b, 
+
+all roots of p belong to {z ∈ C : |z| < 1} if and only if 
+
+1 − a + b > 0, 1 + a + b > 0, 1 − b > 0.
+
+This is the second-order Jury stability criterion [ 21 ]. 
+
+The proof is omitted; see [ 21 ]. 38 A.5 Scalar heavy-ball acceleration conditions 
+
+Proposition A.1. Under Assumption 4.1 ,
+
+ρ(C) < (1 − αδ (1 − γ)) ⇐⇒ 0 < η < (1 − αδ (1 − γ))2.
+
+Proof. By Assumption 4.1 ,0 < 1 − αδ (1 − γ) < 1.
+
+The characteristic polynomial of C is 
+
+λ2 − (1 − αδ (1 − γ) + η) λ + η = 0 .
+
+The inequality 
+
+ρ(C) < 1 − αδ (1 − γ)is equivalent to all roots of the polynomial obtained by setting λ = (1 − αδ (1 − γ)) z lying in the open unit disk. After dividing by (1 − αδ (1 − γ)) 2, this polynomial is 
+
+z2 − 1 − αδ (1 − γ) + η
+
+1 − αδ (1 − γ) z + η
+
+(1 − αδ (1 − γ)) 2 = 0 .
+
+For a real quadratic z2 − az + b, the second-order Jury criterion in Lemma A.7 says that all roots lie in the open unit disk if and only if 1 − a + b > 0, 1 + a + b > 0, 1 − b > 0.
+
+Here these three inequalities become 1 − 1 − αδ (1 − γ) + η
+
+1 − αδ (1 − γ) + η
+
+(1 − αδ (1 − γ)) 2
+
+= ηαδ (1 − γ)
+
+(1 − αδ (1 − γ)) 2 > 0,
+
+1 + 1 − αδ (1 − γ) + η
+
+1 − αδ (1 − γ) + η
+
+(1 − αδ (1 − γ)) 2
+
+= 2 + η
+
+1 − αδ (1 − γ) + η
+
+(1 − αδ (1 − γ)) 2 > 0,
+
+1 − η
+
+(1 − αδ (1 − γ)) 2 > 0.
+
+Because 0 < 1 − αδ (1 − γ) < 1, the first two inequalities hold exactly when η > 0, while the third is equivalent to η < (1 − αδ (1 − γ)) 2. This proves the claimed equivalence. 
+
+Proposition A.2. Under Assumption 4.1 ,
+
+ρ(C) < (1 − αδ (1 − γ)) ⇐⇒ 0 < η < (1 − αδ (1 − γ))2.
+
+Proof. Under Assumption 4.1 , 0 < 1 − αδ (1 − γ) < 1, and 
+
+C =
+
+> [
+
+1 − αδ (1 − γ) + η −η
+
+1 0
+
+> ]
+
+.
+
+Its characteristic polynomial is λ2 − (1 − αδ (1 − γ) + η) λ + η. The same rescaling λ = (1 −
+
+αδ (1 − γ))z used in Proposition A.1 gives the second-order Jury inequalities [ 21 ]
+
+ηαδ (1 − γ)
+
+(1 − αδ (1 − γ)) 2 > 0,
+
+2 + η
+
+1 − αδ (1 − γ) + η
+
+(1 − αδ (1 − γ)) 2 > 0,
+
+1 − η
+
+(1 − αδ (1 − γ)) 2 > 0.
+
+39 Since 0 < 1 − αδ (1 − γ) < 1, these inequalities are equivalent to 0 < η < (1 − αδ (1 − γ))2, which proves the claimed equivalence. 
+
+40
