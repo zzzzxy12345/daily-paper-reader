@@ -1,0 +1,2682 @@
+Title: Entropy Regularized Reinforcement Learning for Zero-Sum Stochastic Differential Games in a Regime-Switching Jump-Diffusion Process
+
+URL Source: https://arxiv.org/pdf/2606.28669v1
+
+Published Time: Tue, 30 Jun 2026 00:22:27 GMT
+
+Number of Pages: 35
+
+Markdown Content:
+# Entropy Regularized Reinforcement Learning for Zero-Sum Stochastic Differential Games in a Regime-Switching Jump-Diffusion Process 
+
+## Congde Hu 1, Zhuo Jin 2, Danping Li 3, Lin Xu 1* 
+
+> 1*
+
+School of Mathematics and Statistics, Anhui Normal University, Wuhu, 241002, Anhui, China. 
+
+> 2
+
+Department of Actuarial Studies and Business Analytics, Macquarie University, Sydney, 2109, NSW, Australia. 
+
+> 3
+
+School of Statistics, KLATASDS-MOE, China Inclusive Ageing Finance Research Center, East China Normal University, Shanghai, 200062, Shanghai, China. *Corresponding author(s). E-mail(s): xulinahnu@gmail.com; Contributing authors: hcd.math@gmail.com; zhuo.jin@mq.edu.au; dpli@fem.ecnu.edu.cn; 
+
+Abstract 
+
+To address parameter misspecification and sudden structural environmental changes in conventional stochastic differential game (SDG) frameworks, this paper introduces a distributional control approach that characterizes opti-mal strategies as probability distributions over actions, conditioned on the continuous state, the discrete regime state, and parameters. This forms areinforcement learning framework for entropy-regularized zero-sum stochastic dif-ferential games (ERRL-ZSSDGs) in a regime-switching jump-diffusion process. Using the dynamic programming principle (DPP), we derive the associated cou-pled systems of Hamilton-Jacobi-Bellman-Isaacs (HJBI) equations, from which equilibrium strategies are expressed via gradients of the value function. For linear-quadratic problems, semi-analytical solutions for both value function and equilibrium strategies are obtained by solving a system of coupled ordinary dif-ferential equations (ODEs). In more general settings, an Actor-Critic policy improvement algorithm is developed to approximate the value functions and equi-librium policies across different regimes. The method is applied to an investment game, and numerical examples illustrate the effect of the temperature parameter and regime transitions on optimal policies and values. 
+
+1 
+
+> arXiv:2606.28669v1 [cs.LG] 27 Jun 2026 Keywords: Stochastic differential game, Reinforcement learning, Regime-switching, Jump-diffusion, Entropy regularized.
+
+# 1 Introduction 
+
+Stochastic differential games (SDGs) provide a mathematical framework for mod-eling decision-making processes involving multiple agents in dynamic environments influenced by randomness and structural shifts. These games are typically formulated through stochastic differential equations (SDEs), which describe the evolution of the system state over time under the combined effects of deterministic and stochastic forces. SDGs are usually used in scenarios where agents have conflicting or cooper-ative objectives and the environment introduces uncertainty. The past decades have witnessed a rapidly expanding literature on the research of the SDGs, such as mod-eling construction and theoretical analysis ([1], [2]) , numerical methods ([3], [4]) and applications in industry ([5], [6]), insurance ([7], [8]), economics and management ([9], [10]). Zero-sum stochastic differential games (ZSSDGs) are a specialized class of SDGs in which the total payoffs of all players sum to zero, meaning any gain by one player is exactly balanced by an equivalent loss of another. This framework represents scenarios where players’ interests are strictly adversarial, and the overall benefit or loss remains constant. In recent years, several papers have focused on theoretical research on ZSS-DGs. For example, [11] establishes sufficient conditions for the existence of a saddle point in a time-dependent discrete Markov zero-sum game up to a specified stopping time. [12] demonstrates the equivalence between the value function of a ZSSDG and the viscosity solution to the associated Hamilton-Jacobi-Bellman-Isaacs (HJBI) equation. [13] studies a class of zero-sum stopping games in a regime-switching model. Beyond these theoretical advances, given the broad applicability of ZSSDGs in diverse fields, research on ZSSDGs has been highly active and productive. For instance, in risk man-agement, [14] considers risk-minimizing ZSSDG via path integral control; [15] applies the ZSSDG framework to analyze interactions between two defined-contribution (DC) pension plans. To date, the majority of studies have presumed that the parameters of the con-trolled system are either constants or deterministic functions of the system. Within the framework of feedback control, optimal strategies depend on the model parame-ters, the current system state, and the feedback control function. However, in practical applications, these system parameters must be estimated. Due to data inaccuracies, methodological errors, or abrupt macroeconomic structural changes (regime shifts), the validity of these parameters may be compromised. This introduces risks such as estimation errors, failure to adapt to new environmental states, or the possibility of identifying a local optimizer as the global optimizer during the search for optimal strategies. To address these challenges, we develop a novel framework for determining optimal strategies in SDGs using reinforcement learning (RL). RL inherently balances explo-ration and exploitation, thereby circumventing local optima and adapting to dynamic 2environments. This balance allows for a trade-off between exploring new actions and leveraging existing information to maximize rewards. By continuously experimenting with diverse strategies, the algorithm avoids being trapped in local optima. However, a significant challenge in the numerical design of RL agents is their tendency to inad-equately explore various states, which can impede the discovery of superior strategies. To counteract this, we aim to distribute the output probabilities of the policy net-work across multiple actions, assigning non-zero probabilities to enhance exploration. Entropy quantifies the dispersion of this probability distribution: low entropy indicates concentration, while high entropy signifies greater randomness. The decision-maker seeks a high-entropy policy to achieve faster exploration. This exploratory paradigm has been widely applied in various domains. [16] pio-neered the application of this approach to stochastic control problems in continuous time and space. Furthermore, [17] and [18] consider the mean-variance problem in a reinforcement learning framework. [19] and [20] discuss entropy regularization for mean-field games. [21], [22] introduce the entropy-regularized RL framework into the study of SDGs and Huang et al. [23] analyzes the covergence of the policy iterations for entropy regularized control problems. However, the optimal control problems discussed previously are predominantly driven by pure Brownian motion and have been extensively examined through the lens of RL. Recently, [24] investigates an RL model with jump-diffusion processes, provid-ing optimal exploratory solutions for the linear quadratic regulator (LQR) problem. This paper integrates recent advancements in RL and constructs a ZSSDG within the RL framework under a regime-switching jump-diffusion model. By incorporating a continuous-time Markov chain alongside the jump-diffusion process, our model simul-taneously captures both discrete tail events (jumps) and persistent macroeconomic or environmental structural changes (regimes). In fact, There are three main contributions in this paper. First, this paper advances the theoretical and numerical understanding of ZSSDGs by integrating RL into a regime-switching jump-diffusion framework. Unlike traditional approaches that assume constant or simply state-dependent parameters, our work addresses inherent uncertainties, estimation errors, and structural shifts by introducing a novel distri-butional control mechanism. This mechanism ensures that the optimal strategies for both players are characterized by probability distributions that depend on the con-tinuous state, the current discrete regime, and the system parameters, rather than deterministic functions. Second, we establish an exploratory regime-switching ZSSDG framework for par-ticipants from both sides and apply it to two problems. This framework not only enhances the exploration-exploitation trade-off in RL but also mitigates the risk of converging to local optima under varying market regimes. Third, although regime-switching effects have been increasingly considered in var-ious control and game-theoretic settings [3, 4, 23, 25–29], state-dependent structural shifts are ubiquitous in real-world economic, financial, and engineering dynamical sys-tems [7, 13]. Regime-switching causes discrete transitions in the drift, diffusion, and jump intensity of the system according to external environments or internal states, essentially introducing extra stochastic structure and mode-dependent characteristics. 3Within the jump-diffusion and exploratory RL framework, regime-switching further complicates the model: on the one hand, the switching mechanism itself is stochastic and time-varying, making it incompatible with conventional parameter estimation and policy optimization methods; on the other hand, the three types of uncertainty, namely regime-switching, jump behavior, and randomized exploration, are mutually coupled, which breaks the logic of moment averaging and policy exploration construction in classical diffusion models and directly invalidates the original exploratory dynamics modeling approach. The structure of this paper is organized as follows. Section 2 constructs a the-oretical framework for ZSSDGs under the regime-switching jump-diffusion model incorporating a learning process. Section 4 applies the proposed framework to the regime-switching linear-quadratic ZSSDG problem. Section 3 designs an actor-critic RL algorithm to solve the ZSSDG problem in general cases. Section 5 applies this algorithm to a regime-switching investment game. Finally, Section 6 concludes the paper. 
+
+Notations: R+ denotes the positive reals, and RdK := {x ∈ Rd : |x| ≤ K}. Let 
+
+Rk×ℓ be the space of real k × ℓ matrices. For a matrix A, A⊤ is its transpose, |A|
+
+its Frobenius norm, A2 = AA ⊤, A ◦ B = tr( AB ⊤), and A1/2 the square root of a positive semidefinite matrix. For a function f , fx and fxx denote the first- and second-order partial derivatives. The symbol Et,x,i [·] denotes the conditional expectation given 
+
+Xt = x, θt = i. For a, b ∈ R, a ∧ b = min {a, b }. The symbol δ denotes the variational operator. Finally, U (B) denotes the uniform distribution on B, N (μ, Σ) a Gaussian distribution, and Φ the cdf of N (0 , 1). 
+
+# 2 Formulation and problem 
+
+This section develops the mathematical framework for a ZSSDG within a regime-switching jump-diffusion model incorporating learning. To facilitate comparison between the cases with and without learning, we adopt as a benchmark the jump-diffusion ZSSDG, introduced by [30], outlined in Subsection 2.1. Subsection 2.2 then presents the construction of an ERRL framework for pure diffusion-controlled systems, discusses the challenges in extending it to systems with jumps and regime-switching, and proposes methods to address these challenges. Finally, Subsection 2.3 provides the integrated model of ZSSDG with ERRL. 
+
+## 2.1 Classical ZSSDG within regime-switching jump-diffusion model 
+
+For a fixed positive constant T and t ∈ [0 , T ], let (Ω t, Ft, {F t,s }t≤s≤T , Pt) be a filtered probability space satisfying the usual conditions. Let θ = {θs, t ≤ s ≤ T } be a continuous-time Markov chain on this probability space, taking values in a finite state space S = {1, 2, . . . , m }, which represents the regime states. The generator matrix of this Markov chain is defined as Q = ( qij )m×m, where qij ≥ 0 ( i̸ = j) represents the transition rate from regime i to regime j, satisfying qii = − Pmj=1 ,j ̸ =i qij . The ZSSDG 4is defined on (Ω t, Ft, {F t,s }t≤s≤T , Pt), and consists of the following controlled SDE 
+
+
+
+dX s = b(s, X s, θ s; ys, z s)ds + σ(s, X s, θ s; ys, z s)dW s
+
++
+
+Z
+
+> E
+
+η(s, X s−, θ s−; ys, z s; w) ˜N (ds, dw ), s ∈ (t, T ],Xt = x, θt = i, 
+
+(1) as well as the payoff function 
+
+Jcl (t, x, i ; y, z ) = Et,x,i 
+
+"Z Tt
+
+r(s, X s, θ s; ys, z s)ds + g(XT , θ T )
+
+#
+
+, (2) where 
+
+b :[0 , T ] × Rd × S × Y × Z → Rd, E := Rℓ \ { 0},σ :[0 , T ] × Rd × S × Y × Z → Rd×k,η :[0 , T ] × Rd × S × Y × Z × Rℓ → Rd×ℓ,r :[0 , T ] × Rd × S × Y × Z → R, g : Rd × S → R,y and z are two predictable control processes with values in compact metric spaces 
+
+Y ⊆ Rn1 and Z ⊆ Rn2, respectively. Ws is a k-dimensional Brownian motion on (Ω t, Ft, {F t,s }t≤s≤T , Pt). Furthermore, N (ds, dw ) := ( N1(ds, dw 1), · · · , N ℓ(ds, dw ℓ)) ⊤
+
+is a Poisson random measure on [0 , T ] × E with intensity measure ν(dw ) := (ν1(dw ), · · · , ν ℓ(dw )) ⊤ and compensated Poisson measure is ˜N (ds, dw ) = N (ds, dw ) −
+
+ν(dw )ds . ηk represents the k-th column vector of η.For a function h(x) on Rd that satisfies local Lipschitz continuity and linear growth, its Lipschitz norm || h|| K is defined as 
+
+|| h|| K := sup 
+
+> x∈Rd
+
+|h(x)|
+
+1 + |x| + sup  
+
+> x,y ∈RdK;x̸=y
+
+|h(x) − h(y)||x − y| . (3) 
+
+Assumption 1. The following conditions hold. 
+
+(i) The spaces Y and Z are compact metric spaces, and for each i ∈ S , σ, r, b, and η
+
+are continuous functions of t, x, y, z (for η, w are also included); 
+
+(ii ) ∃CK > 0 such that (|| b|| K + || σ|| K ) ( t, ·, i ; y, z ) ≤ CK and || η(t, ·, i ; y, z ; w)|| K ≤
+
+CK min( |w|, 1) for all t, i, y, z and w;
+
+(iii ) The L´ evy measure ν is a positive measure that satisfies R 
+
+> E
+
+min  |w|2, 1 ν(dw ) <
+
+∞.
+
+(iv ) ∃C > 0, p ≥ 1 s.t. ∀t, x, i, y, z , |r(t, x, i ; y, z )| + |g(x, i )| ≤ C (1 + |x|p);
+
+(v) The Markov chain θ is independent of the Brownian motion W and the Poisson random measure N .
+
+Under Assumption 1, the conditions guarantee that the SDE (1) and the payoff function (2) are well-defined. In the ZSSDG, player I and player II maximize and minimize the payoff function 
+
+Jcl by controlling y and z, respectively. At any time s ∈ (t, T ), both players observe 5the historical states ( X, θ, y, z )( r) for r < s . As a result, the player who acts first at time s is clearly at a disadvantage. Following [31], the problem is formalized into two approximate games: the upper game and the lower game. In the upper game, player 
+
+I can know zs before choosing ys; in the lower game, player II can know ys before choosing zs. [30] has established the DPP for this game under a single regime (i.e., 
+
+S = {1}), and provided a verification theorem for viscosity solutions. 
+
+## 2.2 Challgens for building ERRL regime-switching jump-diffusion SDEs 
+
+We perceive that there are three main aspects of the model proposed by [30] that can be further explored. First, it assumes that all parameters are known, whereas in practice, both model parameters and structures are often uncertain. The traditional “separation principle” decouples parameter estimation from decision optimization: historical data are first used to estimate the parameters, and the estimated values are then treated as true inputs for optimization ([32]). While this approach may be valid asymptotically, in many cases the sample size required for reliable estimation far exceeds the available data ([33]). Second, deterministic optimal strategies derived under known parameters are critically sensitive to estimation errors, which tend to be amplified through the opti-mization procedure, thereby undermining the practical applicability of theoretical solutions. In contrast, modern RL operates under a fundamentally different paradigm. While RL also presumes that data originate from an underlying structural model-such as a Markov process—it does not rely on prior knowledge or explicit parameter esti-mation. Instead, optimal policies are learned directly through interaction with data. This rationale naturally motivates the incorporation of randomized exploration, which broadens the search space, enhances flexibility, and supports learning through trial and error. Pioneering work by [16] and [17] introduced this approach to stochastic con-trol in diffusion models, while [22] later formulated an exploratory ZSSDG framework for linear-quadratic regulators in diffusion processes. Third, although regime-switching effects have been increasingly considered in var-ious control and game-theoretic settings [3, 4, 23, 25–29], state-dependent structural shifts are ubiquitous in real-world economic, financial, and engineering dynamical sys-tems [7, 13]. Regime-switching causes discrete transitions in the drift, diffusion, and jump intensity of the system according to external environments or internal states, essentially introducing extra stochastic structure and mode-dependent characteristics. Within the jump-diffusion and exploratory RL framework, regime-switching further complicates the model: on the one hand, the switching mechanism itself is stochastic and time-varying, making it incompatible with conventional parameter estimation and policy optimization methods; on the other hand, the three types of uncertainty, namely regime-switching, jump behavior, and randomized exploration, are mutually coupled, which breaks the logic of moment averaging and policy exploration construction in classical diffusion models and directly invalidates the original exploratory dynamics modeling approach. 6Given the importance of regime-switching jump-diffusion models in SDGs, develop-ing an ERRL framework for ZSSDGs with regime-switching and exploratory dynamics is of great theoretical and practical significance. This subsection outlines the core chal-lenges in constructing such a model and presents the methodology adopted to address them. For background, in the pure diffusion setting with regime-switching, the state dynamics are governed by a continuous-time Markov chain θt ∈ S = {1, 2, . . . , m } and are given by 
+
+dX t = b(t, X t, θ t, a t)dt + σ(t, X t, θ t, a t)dW t.
+
+When employing a stochastic policy π(·| t, x, i ) conditional on the current regime i ∈ S ,applying the Law of Large Numbers (LLN) yields the averaged drift and diffusion coefficients 1
+
+N
+
+> N
+
+X
+
+> k=1
+
+∆Xkt ≈
+
+Z
+
+> A
+
+b(t, x, i, a ) π(a|t, x, i )da ∆t
+
+= Ea∼π [b(t, x, i, a )]∆ t = ˜b(t, x, i, π)∆ t, 
+
+1
+
+N
+
+> N
+
+X
+
+> k=1
+
+(∆ Xkt )2 ≈
+
+Z
+
+> A
+
+σ2(t, x, i, a ) π(a|t, x, i )da ∆t
+
+= Ea∼π [σ2(t, x, i, a )]∆ t = ˜ σ2(t, x, i, π)∆ t. 
+
+Consequently, the exploratory state process is 
+
+d ˜Xt = ˜b(t, ˜Xt, θ t, π)dt + ˜ σ(t, ˜Xt, θ t, π)dW t.
+
+The key observation is that a diffusion process is fully characterized by its first and sec-ond moments (drift and volatility); thus, averaging these moments suffices to construct the exploratory dynamics. However, this straightforward moment-averaging approach fails for jump-diffusion processes. The state dynamics in this generalized regime-switching setting are 
+
+dX t = b(t, X t, θ t, a t)dt + σ(t, X t, θ t, a t)dW t +
+
+Z
+
+> R+
+
+η(t, X t−, θ t−, a t; w) ˜N (dt, dw ), (4) where ˜N (dt, dw ) = N (dt, dw ) − ν(dw )dt is the compensated Poisson random measure and ν(dw ) is the L´ evy measure. A jump process is characterized by three components: the drift, the diffusion, and the L´ evy measure describing the jump distribution. The difficulty arises if one attempts to naively average the jump coef-ficient as ˜η(t, x, i, π; w) = Ea∼π [η(t, x, i, a ; w)] and then use the term R 
+
+> R+
+
+˜η(t, x, i, π; w) ˜N (dt, dw ). This leads to two fundamental problems. First, it risks losing the discrete ”event nature” of jumps; a non-zero ˜ η might be misinterpreted as a continuous drift rather than discrete events. Second, and more critically, it alters the true distribution of jump sizes. For instance, consider a policy that randomizes between two actions: one causing a jump of magnitude M with probability p, and 7another causing a jump of magnitude m with probability 1 −p. Simple averaging yields an effective jump size of pM + (1 − p)m, which represents a dynamic fundamentally different from the original mixture of large ( M ) and small ( m) jumps. Mathematically, the core difficulty is nonlinearity. Consider the jump and regime-switching components of the infinitesimal generator for a fixed action a and current regime i, with a transition rate matrix Q = ( qij )m×m:
+
+Laf (t, x, i ) ⊃
+
+Z
+
+> R+
+
+h
+
+f (t, x + η(t, x, i, a ; w), i ) − f (t, x, i )
+
+− η(t, x, i, a ; w) · fx(t, x, i )
+
+i
+
+ν(dw ) + 
+
+> m
+
+X
+
+> j=1
+
+qij f (t, x, j ).
+
+While the regime transition sum is linear and averages trivially, the jump term does not. Averaging this expression over actions sampled from π yields a double integral 
+
+Z
+
+> A
+
+Z
+
+> R+
+
+h
+
+f (t, x + η(t, x, i, a ; w), i ) − f (t, x, i )
+
+− η(t, x, i, a ; w) · fx(t, x, i )
+
+i
+
+ν(dw )π(a|t, x, i )da. 
+
+(5) Because f (t, x + η, i ) is a nonlinear function of η, the expression in (5) cannot be simplified to a form with a single averaged ˜ η, i.e., 
+
+Z
+
+> R+
+
+h
+
+f (t, x + ˜ η(t, x, i, π; w), i )
+
+− f (t, x, i ) − ˜η(t, x, i, π; w) · fx(t, x, i )
+
+i
+
+ν(dw ),
+
+except in the trivial case where f is linear in x.To address this challenge, we adopt the grid-sampling approach from [24] to avoid measurability issues associated with continuous-time action randomization. Actions are sampled only on a discrete time grid S = {0 = t0 < t 1 < · · · < t N = T }. On the interval ( tk−1, t k], the action is held constant as ak = Gπ (tk−1, X tk−1 , θ tk−1 , U k), where Uk ∼ Uniform[0 , 1]. Here, Gπ : [0 , T ] × R × S × [0 , 1] → A is a function that transforms a uniform random vector into an action distributed according to π(·| t, x, i ); formally, for any ( t, x, i ), if U ∼ Uniform[0 , 1], then a = Gπ (t, x, i, U ) ∼ π(· | t, x, i ). The grid-sampled state process then follows 
+
+dX π,S 
+
+> s
+
+=b(s, X π,S 
+
+> s
+
+, θ s, a k)ds + σ(s, X π,S 
+
+> s
+
+, θ s, a k)dW s
+
++
+
+Z
+
+> R+
+
+η(s, X π,S 
+
+> s−
+
+, θ s−, a k; w) ˜N (ds, dw ), s ∈ (tk−1, t k].
+
+The key to this solution is to reparameterize the action randomization using Gπ and then embed it directly into an enriched Poisson random measure. Define a new Poisson random measure N ′(dt, dw, du ) on R+ × R+ × [0 , 1] with intensity measure ν(dw )dudt ,8and denote its compensated measure by ˜N ′. The exploratory state process is then formally defined as 
+
+d ˜Xπ 
+
+> t
+
+=˜b(t, ˜Xπ 
+
+> t
+
+, θ t, π)dt + ˜ σ(t, ˜Xπ 
+
+> t
+
+, θ t, π)dW t
+
++
+
+Z
+
+> R+×[0 ,1]
+
+η(t, ˜Xπ
+
+> t−
+
+, θ t−, G π (t, ˜Xπ
+
+> t−
+
+, θ t−, u ); w) ˜N ′(dt, dw, du ).
+
+The corresponding infinitesimal generator for this process at state ( t, x, i ) is 
+
+Lπ f (t, x, i ) = ˜b · fx + 12 ˜σ2 · fxx +
+
+> m
+
+X
+
+> j=1
+
+qij f (t, x, j )+
+
+Z
+
+> R+×[0 ,1]
+
+h
+
+f (t, x + η(t, x, i, G π (t, x, i, u ); w), i ) − f (t, x, i ) − η · fx
+
+i
+
+ν(dw )du. 
+
+Crucially, this generator is exactly the average of the classical generators across actions: 
+
+Lπ f (t, x, i ) = 
+
+Z
+
+> A
+
+Laf (t, x, i )π(a|t, x, i )da. 
+
+Philosophically, this method does not attempt to simplify the inherent nonlinearity 
+
+f (t, x + η(a), i ). Instead, it accepts this nonlinearity and embeds the policy ran-domization into the jump measure via the function Gπ . This construction yields a well-defined stochastic process whose generator automatically computes the correct average Ea∼π [f (t, x + η(a), i )], thereby preserving the essential structure needed for RL algorithms. 
+
+## 2.3 Entropy regularized exploratory SDG framework 
+
+A key concept in RL is exploring the unknown environment through randomized actions. Randomization employs probability distributions (measures) to substitute deterministic actions for the purpose of exploration. Entropy is used to quantify the dispersion of these probability distributions, where low entropy indicates concentration and high entropy signifies greater randomness. While there are various methods to determine distributional controls, this paper focuses solely on feedback distributional controls, i.e., the current policy depends only on the current state t, x and the regime state i.Let π : ( t, x, i ) ∈ [0 , T ] × Rd × S → π(· | t, x, i ) ∈ P (Y) ( resp., γ : ( t, x, i ) ∈
+
+[0 , T ] × Rd × S → γ(· | t, x, i ) ∈ P (Z)) be a given stochastic feedback control, where P(Y) ( resp., P(Z)) is the set of probability density functions defined on Y
+
+(resp., Z). Player I samples an action y from π(·| t, x, i ), which can be represented as 
+
+y = Gπ (t, x, i, u ), where Gπ is a measurable function and u follows a uniform distribu-tion on [0 , 1] n1. Player II samples an action z from γ(·| t, x, i ), which can be expressed as z = Mγ (t, x, i, v ), where Mγ is a measurable function and v follows a uniform dis-tribution on [0 , 1] n2. Next, we define the random control processes πs = π(·| s, X s, θ s)and γs = γ(·| s, X s, θ s), and will also use the more concise notations Gπs (u) for 9Gπ (s, X s, θ s, u ) (resp., Mγs (v) for Mγ (s, X s, θ s, v )). Based on the method in [24], we extend the control process to an exploratory control process, and the corresponding regime-switching exploratory SDE is 
+
+
+
+dX s = ˜b(s, X s, θ s; πs, γs)ds + ˜ σ(s, X s, θ s; πs, γs)dW s
+
++
+
+Z
+
+> E×[0 ,1] n1×[0 ,1] n2
+
+η(s, X s−, θ s−; Gπs (u), M γs (v); w) ˜N ′(ds, dw, du, dv ),Xt = x, θt = i, 
+
+(6) where ˜b(t, x, i ; π, γ) := 
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x, i ; y, z )γ dz 
+
+
+
+π dy, 
+
+˜σ(t, x, i ; π, γ) := 
+
+Z 
+
+> Y
+
+Z 
+
+> Z
+
+σ2(t, x, i ; y, z )γ dz 
+
+
+
+π dy 
+
+1/2
+
+.
+
+˜N ′(ds, dw, du, dv ) = N ′(ds, dw, du, dv ) − dsν (dw )dudv is the extended ℓ-dimensional compensated Poisson measure, and u (resp., v ) is a real-valued vector following the 
+
+n1( resp., n 2)-dimensional uniform distribution U([0 , 1] n1) ( resp., U([0 , 1] n2). The exploratory payoff function is 
+
+J(t, x, i ; π, γ) = Et,x,i 
+
+Z Tt
+
+
+
+˜r(s, X s, θ s; πs, γs) − λ1
+
+Z
+
+> Y
+
+πs ln πs dy 
+
++λ2
+
+Z
+
+> Z
+
+γs ln γs dz 
+
+
+
+ds + g(XT , θ T )
+
+
+
+,
+
+(7) where ˜r(t, x, i ; π, γ) := 
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+r(t, x, i ; y, z ) γ dz 
+
+
+
+π dy, 
+
+and λ1, λ2 > 0 are called the temperature parameters .
+
+Remark 1 In ERRL, entropy encourages exploration by increasing policy randomness. Player 
+
+I maximizes the payoff, so the positive entropy term −λ1
+
+R 
+
+> Y
+
+π ln πdy acts as a reward. Player 
+
+II minimizes the payoff, making the negative entropy term λ2
+
+R 
+
+> Z
+
+γ ln γdz a reward for them. The parameters λ1 and λ2 control the temperature parameter , influencing how quickly each agent updates its policy using new information and the entropy incentive. 
+
+Assumption 2. The following conditions hold. 
+
+(i) For all t ∈ [0 , T ], x ∈ RdK , i ∈ S, y, y′ ∈ Y, z, z′ ∈ Z, and w ∈ Rℓ,there exists CK > 0, such that R 
+
+> R+
+
+|ηk(t, x, i ; y, z ; w) − ηk(t, x, i ; y′, z ′; w)| νk(dw ) ≤
+
+CK (|y − y′| + |z − z′|);
+
+(ii ) For all t ∈ [0 , T ], x, x′ ∈ RdK and i ∈ S there exists a positive constant CK such that R 
+
+> [0 ,1] n1
+
+|Gπ (t, x, i, u ) − Gπ (t, x ′, i, u )| du + R 
+
+> [0 ,1] n2
+
+|Mγ (t, x, i, v ) − Mγ (t, x ′, i, v )| dv ≤
+
+CK |x − x′| .
+
+10 Definition 1 (Admissible control). The controls π = π(· | t, x, i ), γ = γ(· | t, x, i ) are called admissible, and denote the sets by M and N , if (i) ∀(t, x, i ) ∈ [0 , T ] × Rd × S , π(· | t, x, i ) ∈ P (Y), and γ(· | t, x, i ) ∈ P (Z) a.s.; (ii ) For all t, x, x′ ∈ RdK and i ∈ S there exists a positive constant CK such that, R 
+
+> Y
+
+π(y | t, x, i ) − π(y | t, x ′, i ) dy + R 
+
+> Z
+
+γ(z | t, x, i ) − γ(z | t, x ′, i ) dz ≤ CK x − x′ ;(iii ) For all t, x, i ∈ S and some p ≥ 2, there exists a positive constant C such that R 
+
+> Y
+
+|ln π(y | t, x, i )| π(y | t, x, i ) dy + R 
+
+> Z
+
+|ln γ(z | t, x, i )| γ(z | t, x, i ) dz ≤ C  1 + |x|p ;(iv ) For all t, x, i ∈ S and some p ≥ 1, there exists a positive constant C such that R 
+
+> Y
+
+|y|p π(y |
+
+t, x, i ) dy + R 
+
+> Z
+
+|z|p γ(z | t, x, i ) dz ≤ C  1 + |x|p .
+
+Proposition 1 Under Assumption 1 and Assumption 2, for any admissible controls π =
+
+π(· | t, x, i ) ∈ M and γ = γ(· | t, x, i ) ∈ N , the exploratory SDE (6) has a unique strong solution. 
+
+The proof can be found in Appendix A. 
+
+Remark 2 For the stochastic feedback controls 
+
+π(· | t, x, i ) ∼ N 
+
+
+
+A1(t, x, i ), B 1(t, i )B1(t, i )⊤
+
+,
+
+γ(· | t, x, i ) ∼ N 
+
+
+
+A2(t, x, i ), B 2(t, i )B2(t, i )⊤
+
+,
+
+we have the following representations using standard uniform random variables u and v:
+
+Gπ (t, x, i, u ) = A1(t, x, i ) + B1(t, i )Φ −1(u),Mγ (t, x, i, v ) = A2(t, x, i ) + B2(t, i )Φ −1(v).
+
+It can be verified that if A1 and A2 satisfy the local Lipschitz condition with respect to x,then the stochastic feedback controls π and γ satisfy Assumption 2. Furthermore, if A1 and 
+
+A2 also satisfy the linear growth condition with respect to x, and for any ( t, i ) the covariance matrices B1(t, i )B1(t, i )⊤ and B2(t, i )B2(t, i )⊤ are positive definite, then these two stochastic feedback controls are admissible. 
+
+Similar to the classical case, we give the definitions of the admissible strategies and value function. 
+
+Definition 2 (Admissible strategy). An admissible strategy α (resp., β) for player I
+
+(resp., II ) is a mapping α : N → M (resp., β : M → N ). Such that α[γ] ∈ M
+
+(resp., β[π] ∈ N ), and if γ ≈ ˜γ (resp., π ≈ ˜π) on [ t, s ], then α[γ] ≈ α[˜ γ] ( resp., β[π] ≈ β[ ˜ π]) on [ t, s ] for every s ∈ [t, T ]. The set of all admissible strategies for player I (resp., II ) is denoted by Γ( t) ( resp., ∆( t)). 
+
+Definition 3 (Value function). The exploratory upper value of the SDG (6)-(7), with initial data ( t, x, i ), is given by 
+
+ϕ(t, x, i ) := sup 
+
+> α∈Γ( t)
+
+inf   
+
+> γ∈N (t)
+
+J(t, x, i ; α[γ], γ). (8) The exploratory lower value of the game is defined as 
+
+ψ(t, x, i ) := inf  
+
+> β∈∆( t)
+
+sup 
+
+> π∈M (t)
+
+J(t, x, i ; π, β[π]) . (9) 
+
+11 If ϕ(t, x, i ) = ψ(t, x, i ), then the game has a value in the sense of [34], and we call this common value the value of the game, denoted by V (t, x, i ). This means that 
+
+V (t, x, i ) = ϕ(t, x, i ) = ψ(t, x, i ).
+
+The exploratory upper value HJBI equation associated with upper value (8) is 
+
+ϕt(t, x, i ) + sup 
+
+> α∈Γ( t)
+
+inf  
+
+> γ∈N (t)
+
+˜H(t, x, i, ϕ x, ϕ xx ; α[γ], γ; ϕ(t, ·, i )) = 0 ,
+
+∀(t, x, i ) ∈ [0 , T ) × Rd × S ,ϕ(T, x, i ) = g(x, i ), (x, i ) ∈ Rd × S ,
+
+(10) and the exploratory lower value HJBI equation associated with lower value (9) is 
+
+ψt(t, x, i ) + inf  
+
+> β∈∆( t)
+
+sup 
+
+> π∈M (t)
+
+˜H(t, x, i, ψ x, ψ xx ; π, β[π]; ψ(t, ·, i )) = 0 ,
+
+∀(t, x, i ) ∈ [0 , T ) × Rd × S ,ψ(T, x, i ) = g(x, i ), (x, i ) ∈ Rd × S ,
+
+(11) where ˜H(t, x, i, p, A ; π, γ; φ(t, ·, i )) := 
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+H(t, x, i, p, A ; y, z ; φ(t, ·, i )) γ dz 
+
+
+
+π dy 
+
++
+
+> m
+
+X
+
+> j=1
+
+qij φ(t, x, j ) − λ1
+
+Z
+
+> Y
+
+π ln π dy + λ2
+
+Z
+
+> Z
+
+γ ln γ dz, 
+
+H(t, x, i, p, A ; y, z ; φ(t, ·, i )) := r(t, x, i ; y, z ) + b(t, x, i ; y, z ) ◦ p + 12 σ2(t, x, i ; y, z ) ◦ A
+
++
+
+> ℓ
+
+X
+
+> k=1
+
+Z
+
+> R+
+
+h
+
+φ(t, x + ηk(t, x, i ; y, z ; w), i ) − φ(t, x, i ) − ηk(t, x, i ; y, z ; w) ◦ φx
+
+i
+
+νk(dw ).
+
+It is said that the Isaacs condition is hold if sup 
+
+> α∈Γ( t)
+
+inf  
+
+> γ∈N (t)
+
+˜H(t, x, i, ϕ x, ϕ xx ; α[γ], γ; ϕ(t, ·, i )) = inf  
+
+> β∈∆( t)
+
+sup 
+
+> π∈M (t)
+
+˜H(t, x, i, ψ x, ψ xx ; π, β[π]; ψ(t, ·, i )) . (12) Under the Isaacs condition , the exploratory HJBI equations are equivalent-they share a solution, denoted ψ.The goal of the game is to establish optimal feedback strategies ( π∗, γ∗) for player 
+
+I and player II that satisfy the equilibrium. Once ( π∗, γ∗) is obtained, the value 12 function can be determined by the following PIDE, 
+
+ψt(t, x, i ) + ˜H(t, x, i, ψ x, ψ xx ; π∗, γ∗; ψ(t, ·, i )) = 0 ,
+
+∀(t, x, i ) ∈ [0 , T ) × Rd × S ,ψ(T, x, i ) = g(x, i ), (x, i ) ∈ Rd × S .
+
+Theorem 2 below provides the optimal response strategies for player I and player 
+
+II given any arbitrary strategy of the opponent. 
+
+Theorem 2 (Optimal response strategies). If the HJBI equations admit solutions 
+
+ϕ(·, ·, i ), ψ (·, ·, i ) ∈ C1,2([0 , T ] × Rd) ∩ C([0 , T ] × Rd) for each i ∈ S , respectively, then the optimal response strategies α∗[γ] and β∗[π] are given by 
+
+α∗[γ] = exp 
+
+ 1
+
+λ1
+
+Z
+
+> Z
+
+H(t, x, i, ϕ x, ϕ xx ; y, z ; ϕ(t, ·, i )) γdz 
+
+Z
+
+> Y
+
+exp 
+
+ 1
+
+λ1
+
+Z
+
+> Z
+
+H(t, x, i, ϕ x, ϕ xx ; y, z ; ϕ(t, ·, i )) γdz 
+
+
+
+dy ,
+
+β∗[π] = exp 
+
+ −1
+
+λ2
+
+Z
+
+> Y
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) πdy 
+
+Z
+
+> Z
+
+exp 
+
+ −1
+
+λ2
+
+Z
+
+> Y
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) πdy 
+
+
+
+dz .
+
+Proof Starting from the lower value HJBI equation, ∀γ ∈ N (t), the maximizer α∗[γ] is 
+
+α∗[γ] ∈ arg sup 
+
+> π∈M (t)
+
+
+
+−λ1
+
+Z
+
+> Y
+
+π ln π dy 
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) γ dz 
+
+
+
+π dy 
+
+
+
+subject to the constraints that π is a probability distribution, namely R 
+
+> Y
+
+π dy = 1.
+
+Introducing the Lagrange multiplier μ to this problem immediately yields 
+
+L(π, μ ) = 
+
+Z
+
+> Y
+
+ Z 
+
+> Z
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) γ dz 
+
+
+
+π−λ1π ln π
+
+
+
+dy −μ
+
+Z 
+
+> Y
+
+π dy − 1
+
+
+
+.
+
+The stationary condition is 
+
+
+
+δL =
+
+Z
+
+> Y
+
+ Z 
+
+> Z
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) γ dz 
+
+
+
+− λ1(1 + ln π) − μ
+
+
+
+δπdy = 0 ,
+
+0 =
+
+Z
+
+> Y
+
+π dy − 1.
+
+Consequently, the maximizer α∗[γ] can be obtained by solving the above equation. Similarly, starting from the upper value HJBI equation, the minimizer β∗[π] can also be derived. □
+
+# 3 Actor-Critic RL algorithm design 
+
+Deriving analytical solutions for the HJBI equations in a regime-switching jump-diffusion ZSSDG is generally intractable due to the non-linear PIDEs and the coupling induced by the Markov chain generator Q = ( qij )m×m. Motivated by [35], [36] ,[21], 13 and [17], we propose a Continuous-Time Actor-Critic RL algorithm to approximate the value function and the optimal strategies. The algorithm alternates between Policy Evaluation (PE) and Policy Improvement (PI). In the PE step, the critic estimates the value function of the current policies via the Episodic Online Continuous-Time Temporal Difference (CTD) method, which minimizes the martingale residual. In the PI step, the actors update their policies by minimizing the Kullback-Leibler (KL) divergence between their parameterized distri-butions and the optimal Gibbs response distributions characterized in Theorems 3 and 4. 
+
+Theorem 3 (Policy improvement for player I) Let γ be fixed and π be an arbitrarily given admissible strategy. Suppose that the corresponding value function V π (·, ·, i ) ∈ C1,2([0 , T ) ×
+
+Rd)∩C0([0 , T ]×Rd) for each i ∈ S , for any (t, x, i ) ∈ [0 , T )×Rd ×S , the strategy ˜π defined by 
+
+˜π =exp 
+
+ 1
+
+λ1
+
+Z
+
+> Z
+
+H(t, x, i, V π 
+
+> x
+
+, V π
+
+> xx
+
+; y, z ; V π (t, ·, i )) γ dz 
+
+Z
+
+> Y
+
+exp 
+
+ 1
+
+λ1
+
+Z
+
+> Z
+
+H(t, x, i, V π 
+
+> x
+
+, V π
+
+> xx
+
+; y, z ; V π (t, ·, i )) γ dz 
+
+
+
+dy 
+
+(13) 
+
+is admissible. Then, the value function under specific strategies ˜π and π satisfies 
+
+V ˜π (t, x, i ) ≥ V π (t, x, i ), (t, x, i ) ∈ [0 , T ] × Rd × S . (14) 
+
+Proof Fix γ and ( t, x, i ) ∈ [0 , T ] × Rd × S . Let Xπ 
+
+> h
+
+be the state for ( π, γ), X ˜π 
+
+> h
+
+be the state for ( ˜ π, γ), and define ˜J (t, x, i ; π, γ; ϕ(t, ·, i )) := 
+
+Z
+
+> Y
+
+" Z
+
+> Z
+> ℓ
+
+X
+
+> k=1
+
+Z
+
+> R+
+
+h
+
+ϕ(t, x + ηk(t, x, i ; y, z ; w), i )
+
+− ϕ(t, x, i ) − ηk(t, x, i ; y, z ; w) ◦ ϕx
+
+i
+
+νk(dw )γ dz 
+
+#
+
+π dy. 
+
+By applying Itˆ o-L´ evy’s formula with regime switching, we have 
+
+V π (s, X π 
+
+> s
+
+, θ s) − V π (t, x, i )=
+
+Z st
+
+V π 
+
+> x
+
+(h, X π
+
+> h−
+
+, θ h−) ◦ ˜σ(h, X π
+
+> h−
+
+, θ h−; πh, γh)dW h +
+
+Z st
+
+dM θh
+
++
+
+Z st
+
+˜J (h, X π
+
+> h−
+
+, θ h−; πh, γh; V π (h, ·, ·)) dh +
+
+Z st
+
+h˜b(h, X π
+
+> h−
+
+, θ h−; πh, γh)◦
+
+V π 
+
+> x
+
+(h, X π
+
+> h−
+
+, θ h−) + 12 ˜σ2(h, X π
+
+> h−
+
+, θ h−; πh, γh) ◦ V π
+
+> xx
+
+(h, X π
+
+> h−
+
+, θ h−)+ V π 
+
+> h
+
+(h, X π
+
+> h−
+
+, θ h−) + 
+
+> m
+
+X
+
+> j=1
+
+qθh−,j V π (h, X π
+
+> h−
+
+, j )
+
+i
+
+dh 
+
++
+
+> ℓ
+
+X
+
+> k=1
+
+Z st
+
+Z
+
+> R+×[0 ,1] n1×[0 ,1] n2
+
+h
+
+V π (h, X π 
+
+> h−
+
++ ηk(h, X π
+
+> h−
+
+, θ h−; Gπh (u), M γh (v); w), θ h−)
+
+− V π (h, X π
+
+> h−
+
+, θ h−)
+
+i ˜N ′
+
+> k
+
+(dh, dw, du, dv ),
+
+14 where M θh is the zero-mean local martingale associated with the jumps of the continuous-time Markov chain θ. Define the stopping times τn := inf {s ≥ t : R st |V π 
+
+> x
+
+(h, X π
+
+> h−
+
+, θ h−) ◦
+
+˜σ(h, X π
+
+> h−
+
+, θ h−; πh, γh)|2dh ≥ n}, for n ≥ 1. Then, by taking the conditional expectation, the martingale terms vanish, and we obtain 
+
+V π (s ∧ τn, X π 
+
+> s∧τn
+
+, θ s∧τn ) − V π (t, x, i )=Et,x,i 
+
+Z s∧τn
+
+> t
+
+˜J (h, X π
+
+> h−
+
+, θ h−; πh, γh; V π (h, ·, ·)) dh 
+
++
+
+Z s∧τn
+
+> t
+
+˜b(h, X π
+
+> h−
+
+, θ h−; πh, γh) ◦ V π 
+
+> x
+
+(h, X π
+
+> h−
+
+, θ h−)+ 12 ˜σ2(h, X π
+
+> h−
+
+, θ h−; πh, γh) ◦ V π
+
+> xx
+
+(h, X π
+
+> h−
+
+, θ h−)+V π 
+
+> t
+
+(h, X π
+
+> h−
+
+, θ h−) + 
+
+> m
+
+X
+
+> j=1
+
+qθh−,j V π (h, X π
+
+> h−
+
+, j )
+
+
+
+dh 
+
+ .
+
+(15) On the other hand ∀(t, x, i ) ∈ [0 , T ) × Rd × S , we have 
+
+−V π 
+
+> t
+
+(t, x, i ) = ˜H(t, x, i, V π 
+
+> x
+
+, V π
+
+> xx
+
+; π, γ; V π (t, ·, i )) 
+
+≤ ˜H(t, x, i, V ˜π 
+
+> x
+
+, V ˜π
+
+> xx
+
+; ˜ π, γ; V ˜π (t, ·, i )) . (16) Substituting (16) into (15) yields 
+
+V π (t, x, i ) ≤Et,x,i 
+
+ Z s∧τn
+
+> t
+
+
+
+˜r(h, X ˜π
+
+> h−
+
+, θ h−; ˜ πh, γh) −
+
+Z
+
+> Y
+
+˜πh ln ˜ πh dy 
+
++
+
+Z
+
+> Z
+
+γh ln γh dz 
+
+
+
+dh + V π (s ∧ τn, X π 
+
+> s∧τn
+
+, θ s∧τn )
+
+
+
+.
+
+Set s = T and let n → ∞ . Then, combining with the condition V π (T, X π 
+
+> T
+
+, θ T ) = g(Xπ 
+
+> T
+
+, θ T ), we derive that ∀(t, x, i ) ∈ [0 , T ] × Rd × S ,
+
+V π (t, x, i ) ≤Et,x,i 
+
+ Z Tt
+
+
+
+˜r(h, X ˜π
+
+> h−
+
+, θ h−; ˜ πh, γh) −
+
+Z
+
+> Y
+
+˜πh ln ˜ πh dy 
+
++
+
+Z
+
+> Z
+
+γh ln γh dz 
+
+
+
+dh + g(X ˜π 
+
+> T
+
+, θ T )
+
+
+
+= V ˜π (t, x, i ).
+
+□
+
+Theorem 4 (Policy improvement for player II ). Let π be fixed and γ be an arbitrarily given admissible strategy. Suppose that the corresponding value function V γ (·, ·, i ) ∈ C1,2([0 , T ) ×
+
+Rd)∩C0([0 , T ]×Rd) for each i ∈ S , for any (t, x, i ) ∈ [0 , T )×Rd ×S , the strategy ˜γ defined by 
+
+˜γ =exp 
+
+ −1
+
+λ2
+
+Z
+
+Y
+
+H(t, x, i, V γ
+
+x , V γ
+
+xx ; y, z ; V γ (t, ·, ·)) π dy 
+
+Z
+
+Z
+
+exp 
+
+ −1
+
+λ2
+
+Z
+
+Y
+
+H(t, x, i, V γ
+
+x , V γ
+
+xx ; y, z ; V γ (t, ·, ·)) π dy 
+
+
+
+dz 
+
+(17) 
+
+is admissible. Then, the value function under specific strategies ˜γ and γ satisfies 
+
+V ˜γ (t, x, i ) ≤ V γ (t, x, i ), (t, x, i ) ∈ [0 , T ] × Rd × S . (18) 
+
+Proof The proof is similar to that of Theorem 3 and is omitted here. □
+
+15 3.1 Parameterization of value function and policies 
+
+In general continuous state-action spaces, (13) and (17) involve numerous integrals that are computationally prohibitive. Thus, we introduce parameterized function approximators (e.g., neural networks or polynomial basis expansions). Let ψ denote the parameters of the Critic network, V ψ (t, x, i ), which approximates the value function for each regime i ∈ S . Let ϕ1 and ϕ2 denote the parameters of the Actor networks for player I and player II , representing the stochastic policies 
+
+πϕ1 (y|t, x, i ) and γϕ2 (z|t, x, i ), respectively. 
+
+## 3.2 Discrete-time interaction and regime-switching 
+
+Learning is achieved through episodic interactions with the environment. We adopt a discrete-time interaction scheme over a fixed time horizon T . Choose a small step size ∆t > 0 and define the grid tk = k∆t for k = 0 , 1, . . . , K − 1. At time tk, given the current state Xtk and regime θtk = i, the players sample actions yk ∼ πϕ1 (·| tk, X tk , i ) and zk ∼ γϕ2 (·| tk, X tk , i ). The regime state θt transitions according to the generator matrix Q = ( qij )m×m. We simulate the regime transition over ∆ t by drawing from the transition probabilities P (θtk+1 = j|θtk = i) ≈ δij +qij ∆t,where δij is the Kronecker delta satisfying δij = 1 for i = j and δij = 0 otherwise. The continuous state is then advanced using the Euler-Maruyama discretization for the jump-diffusion process: 
+
+Xtk+1 = Xtk + b(tk, X tk , θ tk ; yk, z k)∆ t + σ(tk, X tk , θ tk ; yk, z k)∆ Wk
+
++
+
+> ℓ
+
+X
+
+> l=1
+
+ηl(tk, X tk , θ tk ; yk, z k; wk)∆ ˜Nl,k , (19) where ∆ Wk is the k-dimensional Brownian increment. For each l ∈ { 1, . . . , ℓ }, ηl
+
+denotes the l-th column vector of the matrix function η, and ∆ ˜Nl,k is the compensated Poisson jump increment of the l-th component. The one-step realized reward is rk =
+
+r(tk, X tk , θ tk ; yk, z k). 
+
+## 3.3 Policy Evaluation (Critic Update) 
+
+Under the exploratory policies πϕ1 and γϕ2 , the process 
+
+M ψt := V ψ (t, X t, θ t) + 
+
+Z t
+
+> 0
+
+ˆHϕ1,ϕ 2 
+
+> λ
+
+(s, X s, θ s) ds 
+
+must be a martingale. Where the entropy-regularized running reward is: ˆHϕ1,ϕ 2 
+
+> λ
+
+(tk, X tk , θ tk ) = rk − λ1 ln πϕ1 (yk|tk, X tk , θ tk ) + λ2 ln γϕ2 (zk|tk, X tk , θ tk ). (20) 16 Following the continuous-time TD approach, the one-step martingale residual (TD error) at time tk for non-terminal steps ( k < K − 1) is given by: ∆ψk = V ψ (tk+1 , X tk+1 , θ tk+1 ) − V ψ (tk, X tk , θ tk ) + ˆHϕ1,ϕ 2 
+
+> λ
+
+(tk, X tk , θ tk )∆ t. (21) Crucially, to enforce the terminal boundary condition of the HJBI equation, the true terminal payoff g(·, ·) must be incorporated at the final step ( k = K − 1). The TD error transitions directly to the known terminal reward: ∆ψK−1 = g(XT , θ T ) − V ψ (tK−1, X tK−1 , θ tK−1 ) + ˆHϕ1,ϕ 2 
+
+> λ
+
+(tK−1, X tK−1 , θ tK−1 )∆ t. (22) The Critic parameters ψ are updated to minimize the mean squared TD error. Addi-tionally, a boundary loss term can be added to explicitly regularize the network towards the terminal condition. The parameter update rule is: 
+
+ψ ← ψ + ηψ · ∆ψk · ∇ ψ V ψ (tk, X tk , θ tk ), (23) 
+
+ψ ← ψ − ηψ · ∇ ψ
+
+ V ψ (T, X T , θ T ) − g(XT , θ T )2 , (24) where ηψ > 0 is the critic learning rate. 
+
+## 3.4 Policy Improvement (Actor Updates) 
+
+The policy improvement theorems 3 and 4 indicate that the optimal policies should align with the Gibbs distributions proportional to exp( 1 
+
+> λ1
+
+Hψ ) and exp( − 1 
+
+> λ2
+
+Hψ ). Minimizing the KL divergence between the parameterized actors and these target dis-tributions is equivalent to maximizing (for player I) and minimizing (for player II )the expected Hamiltonian augmented by the entropy. Let Hψk be the empirical Hamiltonian evaluated at the sampled transition using the Critic network V ψ :
+
+Hψk = rk + bk ◦ V ψx + 12 σ2 
+
+> k
+
+◦ V ψxx +
+
+> ℓ
+
+X
+
+> l=1
+
+Z h
+
+V ψ (tk, X tk + ηl, θ tk ) − V ψ − ηl ◦ V ψx
+
+i
+
+νl(dw ).
+
+Minimizing the KL divergence between the parameterized actor distributions and the target Gibbs distributions is mathematically equivalent to optimizing the following objectives: 1. For player I: Minimizing E[λ1 ln πϕ1 (yk) − H ψk ]; 2. For player II : Minimizing E[λ2 ln γϕ2 (zk) + Hψk ]. The Actor parameters ϕ1 and ϕ2 are updated via stochastic gradient descent (SGD): 
+
+ϕ1 ← ϕ1 − ηϕ1 · ∇ ϕ1 (λ1 ln πϕ1 − H ψk ), (25) 
+
+ϕ2 ← ϕ2 − ηϕ2 · ∇ ϕ2 (λ2 ln γϕ2 + Hψk ), (26) where ηϕ1 , η ϕ2 > 0 are actor learning rates. 17 These updates push player I’s policy to assign higher probabilities to actions y
+
+that yield higher Hamiltonian values, and player II to actions z that yield lower Hamiltonian values, scaled by their respective temperature parameters λ1 and λ2.
+
+## 3.5 Algorithm Pseudocode 
+
+The complete Actor-Critic learning procedure for the regime-switching jump-diffusion ZSSDG is summarized in Algorithm 1. 
+
+Algorithm 1 Actor-Critic RL for Regime-Switching Jump-Diffusion ZSSDG 
+
+Input: function b, σ, η; reward function r, g; Markov chain generator matrix Q = ( qij ), L´ evy measures νl; initial state X0, initial regime θ0 ∈ S , time horizon T , time step ∆ t,temperature parameters λ1, λ 2, learning rates ηθ , η ϕ1 , η ϕ2 , number of episodes Nep .
+
+Initialization: Initialize Critic network parameters ψ, and Actor network parameters 
+
+ϕ1, ϕ 2. 
+
+> 1:
+
+for episode n = 1 to Nep do  
+
+> 2:
+
+Set t0 = 0 , X t0 = X0, θ t0 = θ0. 
+
+> 3:
+
+for step k = 0 to K − 1 do  
+
+> 4:
+
+Action Sampling:  
+
+> 5:
+
+Sample yk ∼ πϕ1 (·| tk, X tk , θ tk ).  
+
+> 6:
+
+Sample zk ∼ γϕ2 (·| tk, X tk , θ tk ).  
+
+> 7:
+
+Environment Transition:  
+
+> 8:
+
+Determine θtk+1 using transition probabilities P (j|i) ≈ δij + qij ∆t. 
+
+> 9:
+
+Advance state to Xtk+1 using the Euler-Maruyama jump-diffusion update via Eq. (19).  
+
+> 10:
+
+Policy Evaluation (Critic Update):  
+
+> 11:
+
+Compute Hψk and ˆHϕ1,ϕ 2 
+
+> λ
+
+. 
+
+> 12:
+
+if k == K − 1 then  
+
+> 13:
+
+Apply terminal boundary regularization  
+
+> 14:
+
+ψ ← ψ − ηψ · ∇ ψ
+
+ V ψ (T, X T , θ T ) − g(XT , θ T )2. 
+
+> 15:
+
+end if  
+
+> 16:
+
+Compute TD error ∆ ψk via Eq. (21).  
+
+> 17:
+
+Update Critic parameters:  
+
+> 18:
+
+ψ ← ψ + ηψ · ∆ψk · ∇ ψ V ψ (tk, X tk , θ tk ).  
+
+> 19:
+
+Policy Improvement (Actor Update):  
+
+> 20:
+
+Update player I: 
+
+> 21:
+
+ϕ1 ← ϕ1 − ηϕ1 · ∇ ϕ1 (λ1 ln πϕ1 − H ψk ).  
+
+> 22:
+
+Update player II : 
+
+> 23:
+
+ϕ2 ← ϕ2 − ηϕ2 · ∇ ϕ2 (λ2 ln γϕ2 + Hψk ).  
+
+> 24:
+
+end for  
+
+> 25:
+
+end for Output: Learned value function V ψ∗
+
+and optimal policies ( πϕ∗ 
+
+> 1
+
+, γϕ∗ 
+
+> 2
+
+). 18 4 Applications to linear-quadratic ZSSDG 
+
+The exploratory linear-quadratic problem was first proposed by [16], who proved that the optimal exploration strategy follows a Gaussian distribution in a pure diffu-sion setting. Subsequently, [22] studied the two-player linear-quadratic ZSSDG within an exploratory framework. In this section, we consider the exploratory two-player linear-quadratic ZSSDG based on a regime-switching jump-diffusion model. We first review the classical regime-switching linear-quadratic ZSSDG by drawing on the model established by [37]. For the simplicity of exposition, we consider a one-dimensional continuous state case, and the conclusions can be extended to multi-dimensional cases. 
+
+## 4.1 Model and solution 
+
+Consider the following controlled regime-switching SDE 
+
+
+
+dX s = ( A(θs)Xs + B1(θs)ys + B2(θs)zs)ds 
+
++( C(θs)Xs + D1(θs)ys + D2(θs)zs)dW s
+
++
+
+Z
+
+> R+
+
+
+
+E(θs−, w )Xs− + F1(θs−, w )ys + F2(θs−, w )zs
+
+ ˜N (ds, dw ),Xt = x, θt = i, (x ∈ R, i ∈ S ).
+
+The payoff function is 
+
+Jcl (t, x, i ; y, z ) = Et,x,i 
+
+" Z Tt
+
+
+
+Q1(θs)X2 
+
+> s
+
++R1(θs)y2 
+
+> s
+
++R2(θs)z2
+
+> s
+
+
+
+ds +Q2(θT )X2
+
+> T
+
+#
+
+. (27) Player I and player II maximize and minimize the payoff function Jcl (t, x, i ; y, z ) by controlling y and z, respectively. Now we introduce the exploratory ZSSDG framework, and the exploratory SDE is 
+
+
+
+dX s =
+
+
+
+A(θs)Xs + B1(θs)
+
+Z
+
+> Y
+
+y πsdy + B2(θs)
+
+Z
+
+> Z
+
+z γsdz 
+
+
+
+ds 
+
++
+
+
+
+C(θs)Xs + D1(θs)
+
+Z
+
+> Y
+
+y πsdy + D2(θs)
+
+Z
+
+> Z
+
+z γsdz 
+
+
+
+dW s
+
++
+
+Z
+
+> R+×[0 ,1] ×[0 ,1]
+
+
+
+E(θs−, w )Xs− + F1(θs−, w )Gπs (u)+F2(θs−, w )Mγs (v)
+
+ ˜N ′(ds, dw, du, dv ),Xt = x, θt = i, (x ∈ R, i ∈ S ),
+
+19 where Y = [ −My , M y ] ⊆ R and Z = [ −Mz , M z ] ⊆ R, with My , M z > 0 chosen sufficiently large and held fixed; the exploratory payoff function is given by 
+
+J (t, x, i ; π, γ) = Et,x,i 
+
+( Z Tt
+
+"
+
+Q1(θs)( Xs)2 + R1(θs)
+
+Z
+
+> Y
+
+y2 πsdy + R2(θs)
+
+Z
+
+> Z
+
+z2 γsdz 
+
+− λ1
+
+Z
+
+> Y
+
+πs ln πs dy + λ2
+
+Z
+
+> Z
+
+γs ln γs dz 
+
+#
+
+ds + Q2(θT )( XT )2
+
+)
+
+.
+
+Player I and player II maximize and minimize the payoff function J(t, x, i ; π, γ) by controlling π and γ, respectively. We suppose that the exploratory value function takes the following form 
+
+V (t, x, i ) = 12 P (t, i )x2 + S(t, i ).
+
+For the convenience of the subsequent discussion, we introduce several notations: 
+
+a(t, i ) := R1(i) + 12 P (t, i )
+
+
+
+D1(i)2 +
+
+Z
+
+> R+
+
+F1(i, w )2ν(dw )
+
+
+
+,b(t, i ) := P (t, i )
+
+
+
+B1(i) + C(i)D1(i) + 
+
+Z
+
+> R+
+
+E(i, w )F1(i, w )ν(dw )
+
+
+
+,c(t, i ) := P (t, i )
+
+
+
+D1(i)D2(i) + 
+
+Z
+
+> R+
+
+F1(i, w )F2(i, w )ν(dw )
+
+
+
+,d(t, i ) := R2(i) + 12 P (t, i )
+
+
+
+D2(i)2 +
+
+Z
+
+> R+
+
+F2(i, w )2ν(dw )
+
+
+
+,e(t, i ) := P (t, i )
+
+
+
+B2(i) + C(i)D2(i) + 
+
+Z
+
+> R+
+
+E(i, w )F2(i, w )ν(dw )
+
+
+
+.
+
+Assumption 3. We assume that a(t, i ) < 0, d(t, i ) > 0 for all t ∈ [0 , T ] and i ∈ S .
+
+Theorem 5 Under Assumption 3, the Isaacs condition holds, and the optimal strategies are given by 
+
+π∗(y|t, x, i ) = N
+
+ c(t, i )e(t, i ) − 2b(t, i )d(t, i )4a(t, i )d(t, i ) − c2(t, i ) x, −λ1
+
+2a(t, i )
+
+
+
+,
+
+γ∗(z|t, x, i ) = N
+
+ b(t, i )c(t, i ) − 2a(t, i )e(t, i )4a(t, i )d(t, i ) − c2(t, i ) x, λ2
+
+2d(t, i )
+
+
+
+,
+
+20 where P (t, i ) and S(t, i ) are determined by the following coupled system of ordinary differential equations (ODE): 
+
+
+
+12 Pt(s, i ) = − P (s, i )2
+
+
+
+C(i)2 +
+
+Z
+
+> R+
+
+E(i, w )2ν(dw )
+
+
+
++ a(s, i )e(s, i )2 + b(s, i )2d(s, i ) − b(s, i )c(s, i )e(s, i )4a(s, i )d(s, i ) − c2(s, i )
+
+−Q1(i) − P (s, i )A(i) − 12
+
+Pmj=1 qij P (s, j ),St(s, i ) = −λ2 + λ1
+
+2 − λ1
+
+2 ln 
+
+
+
+− πeλ 1
+
+a(s, i )
+
+
+
++ λ2
+
+2 ln 
+
+ πeλ 2
+
+d(s, i )
+
+
+
+− Pmj=1 qij S(s, j ),P (T, i ) = 2 Q2(i), S(T, i ) = 0 .
+
+Proof Starting from the lower value HJBI equation, ∀γ ∈ N (t), it follows from Theorem 2 that the maximizer α∗[γ] is 
+
+α∗[γ] = exp 
+
+ 1
+
+λ1
+
+Z
+
+> Z
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) γ dz 
+
+Z
+
+> Y
+
+exp 
+
+ 1
+
+λ1
+
+Z
+
+> Z
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) γ dz 
+
+
+
+dy .
+
+where ψ(t, x, i ) = 12 P (t, i )x2 + S(t, i ), and 
+
+H(t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, i )) =Q1(i)x2 + R1(i)y2 + R2(i)z2 + ψx (A(i)x + B1(i)y + B2(i)z)+ 12 ψxx (C(i)x + D1(i)y + D2(i)z)2
+
++
+
+Z
+
+> R+
+
+h
+
+ψ(t, x + E(i, w )x + F1(i, w )y + F2(i, w )z, i )
+
+− ψ(t, x, i ) − ψx(E(i, w )x + F1(i, w )y + F2(i, w )z)
+
+i
+
+ν(dw ).
+
+Simplifying yields 
+
+α∗[γ] = N
+
+
+
+− b(t, i )x + c(t, i ) R 
+
+> R
+
+zγdz 
+
+2a(t, i ) , −λ1
+
+2a(t, i )
+
+
+
+.
+
+According to Assumption 3, a(t, i ) < 0, which indicates that α∗[γ] exists. Substitute α∗[γ]into formula 
+
+γ∗ ∈ arg inf  
+
+> γ∈N (t)
+
+
+
+λ2
+
+Z
+
+> Z
+
+γ ln γ dz − λ1
+
+Z
+
+> Y
+
+α∗[γ] ln α∗[γ]dy 
+
++
+
+Z
+
+> Z
+
+Z 
+
+> Y
+
+H (t, x, i, ψ x, ψ xx ; y, z ; ψ(t, ·, ·)) α∗[γ]dy 
+
+
+
+γdz 
+
+
+
+.
+
+With similar discussion, the minimizer γ∗ is 
+
+γ∗ = N
+
+ b(t, i )c(t, i ) − 2a(t, i )e(t, i )4a(t, i )d(t, i ) − c2(t, i ) x, λ2
+
+2d(t, i )
+
+
+
+.
+
+According to Assumption 3, d(t, i ) > 0, which indicates that γ∗ exists. 
+
+21 So for sup 
+
+> α∈Γ( t)
+
+inf  
+
+> γ∈N (t)
+
+˜H(t, x, i, ψ x, ψ xx ; α[γ], γ; ψ(t, ·, i )) ,
+
+we have 
+
+α∗[γ∗] = N
+
+ c(t, i )e(t, i ) − 2b(t, i )d(t, i )4a(t, i )d(t, i ) − c2(t, i ) x, −λ1
+
+2a(t, i )
+
+
+
+,
+
+γ∗ = N
+
+ b(t, i )c(t, i ) − 2a(t, i )e(t, i )4a(t, i )d(t, i ) − c2(t, i ) x, λ2
+
+2d(t, i )
+
+
+
+.
+
+Using a similar derivation for the inf-sup case, we can obtain α∗[γ∗] = π∗, γ∗ = β∗[π∗]. Therefore, the Isaacs condition (12) holds and the optimal strategies are obtained. The current problem is to solve the following PIDE, ˜H(t, x, i, ψ x, ψ xx ; π∗, γ∗; ψ(t, ·, i )) + ψt(t, x, i ) = 0 ,
+
+∀(t, x, i ) ∈ [0 , T ) × R × S ,ψ(T, x, i ) = Q2(i)x2.
+
+Substituting ψ(t, x, i ) = 12 P (t, i )x2 +S(t, i ) and the optimal strategies into the PIDE, we have 
+
+ψt + ˜H(t, x, i, ψ x, ψ xx ; π∗, γ∗; ψ(t, ·, ·)) = 12 Pt(t, i )x2 + St(t, i ) + 
+
+
+
+Q1(i) + 12
+
+> m
+
+X
+
+> j=1
+
+qij P (t, j )+ P (t, i )A(i) + P (t, i )2
+
+
+
+C(i)2 +
+
+Z
+
+> R+
+
+E(i, w )2ν(dw )
+
+
+
+− a(t, i )e(t, i )2 + b(t, i )2d(t, i ) − b(t, i )c(t, i )e(t, i )4a(t, i )d(t, i ) − c(t, i )2
+
+
+
+x2
+
++ λ2 − λ1
+
+2 + λ1
+
+2 ln 
+
+
+
+− πeλ 1
+
+a(t, i )
+
+
+
+− λ2
+
+2 ln 
+
+ πeλ 2
+
+d(t, i )
+
+
+
++
+
+> m
+
+X
+
+> j=1
+
+qij S(t, j ) = 0 ,ψ(T, x, i ) = 12 P (T, i )X2 
+
+> T
+
++ S(T, i ) = Q2(i)X2 
+
+> T
+
+.
+
+Matching the coefficients of x2 and the constant terms, we conclude that the coupled ODE system holds. □
+
+## 4.2 Numerical example 
+
+In general, it is difficult to obtain an analytical solution for the coupled ODE system derived in Theorem 5. Owing to its semi-analytical nature, we numerically solve this system of ODEs using the Runge-Kutta-Fehlberg method (RK45). The system param-eters are provided in Table 1, with the error tolerance set to 10 −6. Fig. 1 contains two subplots: the left shows the numerical solutions P (t, i ) for each regime i ∈ S , and the right shows S(t, i ). Over t ∈ [0 , 10], P (t, i ) is strictly decreasing, falling smoothly from its initial value to the terminal value 2 Q2(i) and exhibiting overall concavity. By contrast, S(t, i ) increases linearly over time for each regime. Fig. 2 presents the optimal feedback strategies, showing that the strategy variance is independent of the continuous state x, although it depends on the regime. We are interested in the relationship between the value function under exploratory strategies and that under classical strategies. To this end, we discuss the problem 22 Table 1 System parames 
+
+Params Value Params Value 
+
+A(1) −0.5 A(2) −0.6
+
+C(1) 0.2 C(2) 0.25 
+
+Q1(1) 1.0 Q1(2) 1.2
+
+Q2(1) 0.5 Q2(2) 0.4
+
+R1(1) −3.0 R1(2) −3.2
+
+R2(1) 1.5 R2(2) 1.8
+
+D1(1) 0.05 D1(2) 0.06 
+
+D2(1) 0.05 D2(2) 0.06 
+
+B1(1) 0.5 B1(2) 0.55 
+
+B2(1) 0.3 B2(2) 0.35 
+
+q11 −0.5 q12 0.5
+
+q21 0.3 q22 −0.3
+
+λ1 1 λ2 2
+
+e 2.718 T 10 .0
+
+E(w, 1) exp {− 0.5w} E(w, 2) exp {− 0.6w}
+
+F1(w, 1) w exp {− w} F1(w, 2) w exp {− 1.1w}
+
+F2(w, 1) exp {− 2w} F2(w, 2) exp {− 2.2w}
+
+ν(w, 1) exp {− w} ν(w, 2) exp {− w}
+
+Fig. 1 P (t, i = 1), P (t, i = 2), S(t, i = 1) and S(t, i = 2) .
+
+Fig. 2 Optimal strategies ( π∗, γ∗) under regime i ∈ { 1, 2}.
+
+within the framework of the regime-switching linear-quadratic ZSSDG. We suppose that in the classical case, the value function takes the form V cl (t, x, i ) = 12 P (t, i )x2 +
+
+S(t, i ). At this point, the following proposition holds. 23 Proposition 6 Under Assumption 3, the classical optimal strategies in regime i are given by                                            
+
+> 
+> y∗=c(t, i )e(t, i )−2b(t, i )d(t, i )4a(t, i )d(t, i )−c2(t, i )x, z∗=b(t, i )c(t, i )−2a(t, i )e(t, i )4a(t, i )d(t, i )−c2(t, i )x,
+> where P(t, i )and S(t, i )are determined by the coupled ODE system:
+> 
+> 12Pt(s, i ) = −P(s, i )2
+> 
+> C(i)2+
+> Z
+> R+
+> E(i, w )2ν(dw )
+> 
+> +a(s, i )e(s, i )2+b(s, i )2d(s, i )−b(s, i )c(s, i )e(s, i )4a(s, i )d(s, i )−c2(s, i )
+> −Q1(i)−P(s, i )A(i)−12
+> Pmj=1 qij P(s, j ),S(s, i )≡0.
+> Proof The proof is standard and thus omitted here. □
+
+By comparing the ODE system for S(s, i ) in Theorem 5 and Proposition 6, it is evident that as the temperature parameters λ1, λ 2 → 0+, the source terms in the exploratory ODE for S(s, i ) vanish. The system reduces to St(s, i ) + Pmj=1 qij S(s, j ) = 0 with S(T, i ) = 0, which yields the unique solution S(s, i ) ≡ 0. Therefore, we have lim 
+
+> λ1,λ 2→0+
+
+ V (s, x, i ) − V cl (s, x, i )
+
+= lim 
+
+> λ1,λ 2→0+
+
+
+
+− λ2 − λ1
+
+2 − λ1
+
+2 ln 
+
+
+
+− πeλ 1
+
+a(s)
+
+
+
++ λ2
+
+2 ln 
+
+ πeλ 2
+
+d(s)
+
+
+
+−
+
+> m
+
+X
+
+> j=1
+
+qij S(s, j )
+
+
+
+= 0 .
+
+The above results indicate that, at least in the setting of regime-switching linear-quadratic ZSSDG, the optimal exploratory strategy π∗ (resp. γ∗) converges to the classical strategy y∗ (resp. z∗) as the temperature parameter λ1 (resp. λ2) decreases, and the exploratory value function also converges to the classical value function as the temperature parameter diminishes. It can be observed that the optimal strategies ( π∗, γ∗) for player I and player II 
+
+both follow a Gaussian distribution, and their means are consistent with the optimal strategies under the classical scenario. Compared with the studies by [16], [22], and [24], the optimal strategy pair ( π∗, γ∗) obtained in this paper indicates that the jump term and regime-switching mechanics play a crucial role: they not only affect the variance of the optimal strategies but also influence their means through the coupled ODEs. Specifically, the variance of the optimal strategy π∗ for player I in regime i is only positively correlated with the weight parameters ( R1(i), D 1(i), F 1(i, w )) of its own con-trol terms and the temperature parameter λ1. This implies that the stronger player 
+
+I’s ability to control the system within a specific regime, the higher the uncertainty of its strategy. In contrast, the variance of the optimal strategy γ∗ for player II is nega-tively correlated with the weight parameters ( R2(i), D 2(i), F 2(i, w )) of its own control 24 terms, while being positively correlated with the temperature parameter λ2. This sug-gests that the stronger player II ’s control over the system, the more deterministic its strategy tends to be. As λ1 and λ2 decrease, the optimal strategies approach the classical ones, and the exploratory value function converges to the classical value function. Conversely, as λ1
+
+and λ2 increase, the variances of both players’ optimal strategies rise, because a higher temperature parameter enlarges the search range over the decision space. In particular, when E(i, w ) = F1(i, w ) = F2(i, w ) = 0 for all i (i.e., there is no jump term) and there is only a single regime ( S = {1}), our results reduce to those reported in [22].   
+
+> Remark 3 The mean of the optimal feedback strategy pair ( π∗,γ∗) is linear in the state
+> x. It can be verified that under this strategy pair, the exploratory regime-switching SDG is well-defined.
+
+# 5 Applications to optimal investment game 
+
+In this section, we apply the exploratory framework to a ZSSDG between an investor and the market under a regime-switching jump-diffusion model. For the classical formulation, we refer to [10]. 
+
+## 5.1 Model 
+
+Consider a financial market consisting of one risk-free asset (bond) and one risky asset. The states of the economy are modeled by a continuous-time Markov chain 
+
+θ taking values in a finite state space S = {1, 2, . . . , m }, which represents different macroeconomic environments (e.g., bull and bear markets). The price of the risk-free asset S0(s) evolves according to 
+
+dS 0(s) = S0(s)r(θs)ds, S 0(0) = s0 > 0,
+
+where r(θs) is the regime-dependent continuous compound risk-free interest rate. The market acts as a player (player II ) that can influence the expected return rate of the risky asset, denoted by the control variable zs ∈ Z = R+. The price of the risky asset 
+
+S1(s) is modeled by the following regime-switching jump-diffusion process: 
+
+dS 1(s) = zsS1(s)ds + σ(θs)S1(s)dW s
+
++
+
+Z
+
+> R+
+
+S1(s−)η(θs−, w ) ˜N (ds, dw ), S 1(0) = s > 0,
+
+where σ(θs) > 0 is the volatility, and η(θs−, w ) is the jump size of the risky asset. The investor (player I) controls the proportion of wealth invested in the risky asset, denoted by ys ∈ Y = [0 , 1]. The remaining wealth proportion 1 − ys is invested in the 25 risk-free asset. The wealth process Xs of the investor follows 
+
+
+
+dX s = Xs
+
+ (1 − ys)r(θs) + yszs
+
+ds + ysσ(θs)XsdW s
+
++
+
+Z
+
+> R+
+
+ysXs−η(θs−, w ) ˜N (ds, dw ),Xt = x, θt = i. 
+
+The investor aims to maximize the expected utility of terminal wealth, while the market, acting as a fictitious opponent, seeks to minimize this expected utility. The payoff function of the classical zero-sum game is defined as 
+
+Jcl (t, x, i ; y, z ) := Et,x,i 
+
+U (XT , θ T ),
+
+where U (·, ·) is a regime-dependent utility function. Now we introduce the exploratory ZSSDG framework. The investor and the market adopt stochastic feedback controls πs and γs, respectively. The exploratory wealth process is given by 
+
+
+
+dX s =
+
+
+
+Xs
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+ (1 − y)r(θs) + yz γsdz 
+
+
+
+πsdy 
+
+
+
+ds 
+
++
+
+Z 
+
+> Y
+
+y2σ2(θs)πsdy 
+
+1/2
+
+XsdW s
+
++
+
+Z
+
+> R+×[0 ,1]
+
+Gπs (u)Xs−η(θs−, w ) ˜N ′(ds, dw, du ),Xt = x, θt = i. 
+
+(28) The exploratory payoff function with entropy regularization is given by 
+
+J (t, x, i ; π, γ) = Et,x,i 
+
+ Z Tt
+
+
+
+− λ1
+
+Z
+
+> Y
+
+πs ln πs dy 
+
++ λ2
+
+Z
+
+> Z
+
+γs ln γs dz 
+
+
+
+ds + U (XT , θ T )
+
+
+
+.
+
+(29) 
+
+## 5.2 Numerical example 
+
+Solving the exploratory SDG (28)-(29) is highly challenging. This subsection will adopt the RL algorithm proposed in Section 3 to solve for the optimal strategies and the value function. We assume that the continuous-time Markov chain consists of two regimes ( m = 2), representing the bull market and the bear market, respectively. For the optimal investment game, we adopt the standard power utility function given by 
+
+U (x) = xζ
+
+ζ , ζ < 1, ζ ̸ = 0 . (30) Here, we assume the investor’s intrinsic risk preference ζ remains constant, meaning the terminal utility evaluation is independent of the terminal macroeconomic regime. 26 However, due to the regime-dependent market parameters and the Markovian transi-tions, the investor’s optimal exploratory policy and the resulting value function will still dynamically adapt to the current regime i.Table 2 presents the parameter settings. Figure 3 illustrates the optimal exploratory policies, π∗(y) and γ∗(z), for the investor (player I) and the market (player II ) across different time-state combinations ( t = 0 .5; x = 0 .5 and x = 1 .0).                              
+
+> Table 2 System parames
+> Params Value Params Value
+> r(1) 0.7r(2) 0.4
+> σ(1) 0.15 σ(2) 0.30
+> q11 −0.5q12 0.5
+> q21 1.0q22 −1.0
+> λ10.1λ20.1
+> η(1 , w )−0.1η(2 , w )−0.3
+> T1.0ζ0.5
+> Fig. 3 Optimal strategy π∗and γ∗.
+
+For the investor, the probability density of the optimal strategy π∗(y) is highly concentrated near y = 0. This indicates an extremely conservative investment stance, where the investor allocates almost no wealth to risky assets. Interestingly, due to the boundedness of the action space [0 , 1], the distribution exhibits a slight U-shaped characteristic; however, the density at the lower bound is exceptionally high, domi-nating the overall risk-averse strategy. Furthermore, comparing the top and bottom 27 rows of the figure (for x = 0 .5 and x = 1 .0), it is evident that the investor’s strat-egy is largely unaffected by the wealth level x. This is perfectly consistent with the wealth-independent property of the chosen power utility function. In contrast, the market’s optimal strategy γ∗(z) exhibits a unimodal, bell-shaped distribution, characterized by a high density in the central region and a gradual decay in the tails. The peak of this distribution consistently resides within the z < 1 interval. Furthermore, a clear regime-dependent behavior is observed: compared to the bull market regime (solid blue line), the mean of the market’s optimal strategy γ∗(z) shifts significantly to the left under the bear market regime (dashed red line). This suggests that within the game-theoretic framework, the expected return of the risky asset is lower in a bear market and higher in a bull market. These results offer a fascinating comparison to the classical, non-exploratory frame-work studied by [10]. In their research, the optimal strategies are purely deterministic, yielding y∗ = 0 for the investor and z∗ = r(θs) for the market. Our numerical distribu-tions align closely with these theoretical findings, as the highest density regions of our graphs hover around these classical point masses. However, they are not strictly equal. This expected divergence is precisely due to the introduction of entropy regularization in our framework. The entropy terms intrinsically prevent the policies from collapsing into deterministic Dirac measures, promoting a broader exploration of the continuous action spaces Y and Z while still gravitating toward the classical optimal solutions. This analysis explores the behavior of the value function V (x, i ) at t = 0.5under different economic regimes within the exploratory ZSSDG framework through numerical examples. As illustrated in Figure 4, regardless of whether it is a Bull or Bear regime, the value function exhibits a monotonically increasing trend as the ini-tial wealth x increases. This intuitively validates the positive contribution of wealth accumulation to the expected terminal utility. More importantly, the figure clearly demonstrates that at any given initial wealth level, the value function in the Bull regime is consistently and significantly higher than that in the Bear regime (i.e., the blue solid line lies strictly above the red dashed line). This finding is consistent with financial and economic intuition: although the market, acting as the minimizing player (player II ) in our ZSSDG framework, continuously applies adversarial controls to sup-press the investor’s utility, the superior potential asset returns and underlying market fundamentals in the Bull regime remain dominant, thereby yielding a higher expected utility for the investor. Simultaneously, the variation in the curve’s slope across dif-ferent wealth intervals, along with its overall smooth extension, reflects the stabilizing effect of the exploratory stochastic strategies¡ ªfollowing the introduction of entropy regularization¡ ªin balancing jump-diffusion risks and regime-switching shocks. This effectively characterizes the dynamic features of the game equilibrium across different market cycles. To evaluate the training dynamics and the stability of our proposed Actor-Critic algorithm in solving the highly challenging exploratory SDG defined by (28) and (29), Figure 5 illustrates the L2 norm evolution for the neural network parameters over 300 episodes. The critic network parameters ( ψ), responsible for approximating the highly complex exploratory value function J(t, x, i ; π, γ), undergo an initial phase of significant adaptation before stabilizing around an L2 norm of 8 .3. In contrast, the 28 Fig. 4 Value function V (t, x ). 
+
+parameters for Actor I (ϕ1, governing the investor’s policy πs) and Actor II (ϕ2,governing the market’s policy γs) remain remarkably stable throughout the entire training process. This bounded behavior in the parameter space demonstrates the robustness of the policy update mechanism, effectively preventing gradient explosion despite the complex jump-diffusion dynamics.     
+
+> Fig. 5 Network parameter L2norm evolution.
+> Fig. 6 Loss function over episodes.
+
+29 Figure 6 further confirms the algorithm’s convergence by plotting the average loss functions over the training episodes. The critic’s loss drops rapidly to near-zero within the first 25 episodes, indicating that the network swiftly and accurately learns to evaluate the temporal-difference error. Crucially, the loss trajectories of Actor I and Actor II exhibit a distinct, mirror-like oscillation during the early stages of training. This symmetric fluctuation directly reflects the minimax nature of the zero-sum game: the investor seeks to maximize the expected utility while the market seeks to minimize it. As training progresses, these adversarial oscillations gradually dampen and converge toward a narrow band near zero, indicating that the parameterized policies πs and γs
+
+have successfully reached a Nash equilibrium for the exploratory game. 
+
+# 6 Conclusions 
+
+In this paper, we develop an exploratory RL framework for ZSSDGs under a regime-switching jump-diffusion model. By incorporating entropy regularization, we derive the expressions for the exploratory SDEs and the payoff function, introducing a dis-tributional control mechanism to effectively address inherent uncertainties, estimation errors, and structural shifts. We first apply this framework theoretically to a regime-switching linear-quadratic ZSSDG. To address problems in general settings, we design an Actor-Critic RL algorithm and utilize it to solve a regime-switching investment game. Several promising directions for future research remain open, including investi-gating non-zero-sum SDGs with regime switching; exploring SDGs under constraints; analyzing the convergence between exploratory and classical value functions in gen-eral settings; extending the framework to cooperative games; and exploring broader engineering and financial applications in risk management and control systems. 30 Appendix A Proof of Proposition 1 
+
+Proof 1. Local Lipschitz continuity for ˜b and ˜σ: Under Assumption 1, for all t, x ∈ RdK ,
+
+x′ ∈ RdK , i ∈ S , and admissible controls, we have ˜b(t, x, i ; π(· | t, x, i ), γ(· | t, x, i )) − ˜b(t, x ′, i ; π(· | t, x ′, i ), γ(· | t, x ′, i )) =
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+
+
+b(t, x, i ; y, z ) − b(t, x ′; i; y, z )
+
+
+
+γ(z | t, x, i ) dz 
+
+
+
+π(y | t, x, i ) dy 
+
++
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x ′, i ; y, z )  γ(z | t, x, i ) − γ(z | t, x ′, i ) dz 
+
+
+
+π(y | t, x, i ) dy 
+
++
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x ′, i ; y, z )γ(z | t, x ′, i ) dz 
+
+  π(y | t, x, i ) − π(y | t, x ′, i ) dy 
+
+≤
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x, i ; y, z ) − b(t, x ′, i ; y, z ) γ(z | t, x, i ) dz 
+
+
+
+π(y | t, x, i ) dy 
+
++
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x ′, i ; y, z ) γ(z | t, x, i ) − γ(z | t, x ′, i ) dz 
+
+
+
+π(y | t, x, i ) dy 
+
++
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x ′, i ; y, z )γ(z | t, x ′, i ) dz 
+
+
+
+π(y | t, x, i ) − π(y | t, x ′, i ) dy 
+
+≤CK x − x′ + MbLγ x − x′ + MbLπ x − x′ ≤ C x − x′ .
+
+Similarly, we can prove that ˜ σ(t, x, i ; π(· | t, x, i ), γ(· | t, x, i )) is Local Lipschitz continuous for each i ∈ S .
+
+2. Linear growth in x for ˜b and ˜σ: Under Assumption 1, for all t, x, i ∈ S , and admissible controls, we have 
+
+˜b(t, x, i ; π(· | t, x, i ), γ(· | t, x, i )) 
+
+≤
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+b(t, x, i ; y, z ) γ(z | t, x, i ) dz 
+
+
+
+π(y | t, x, i ) dy 
+
+≤
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+(C1 x + C2)γ(z | t, x, i ) dz 
+
+
+
+π(y | t, x, i ) dy = C1 x + C2.
+
+Similarly, we can prove that ˜ σ(t, x, i ; πt,x,i , γt,x,i ) has linear growth in x.
+
+3. Local Lipschitz continuity for jump: Under Assumption 1 and 2, for all t, x ∈ RdK ,
+
+x′ ∈ RdK , i ∈ S , and admissible controls, using the triangle inequality, we observe that for each k = 1 , · · · , ℓ ,
+
+|ηk(t, x, i ; Gπ (t, x, i, u ), M γ (t, x, i, v ); w)
+
+− ηk(t, x ′, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)|≤| ηk(t, x, i ; Gπ (t, x, i, u ), M γ (t, x, i, v ); w)
+
+− ηk(t, x, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)| (Te 1) + |ηk(t, x, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)
+
+− ηk(t, x ′, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)| (Te 2) .
+
+From Assumption 2, we can derive the property of (Te 1): 
+
+|ηk(t, x, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)
+
+− ηk(t, x, i ; Gπ (t, x, i, u ), M γ (t, x, i, v ); w)|≤Lηk ( Gπ (t, x ′, i, u ) − Gπ (t, x, i, u )
+
++ Mγ (t, x ′, i, v ) − Mγ (t, x, i, v ) ) ≤ Lηk (LG + LM ) x − x′ .
+
+31 From Assumption 1, we can derive the property of (Te 2): 
+
+|ηk(t, x, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)
+
+− ηk(t, x ′, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w)| ≤ Lx x − x′ .
+
+Finally, we have Z
+
+> R+×[0 ,1] n1×[0 ,1] n2
+
+|ηk(t, x, i ; Gπ (t, x, i, u ), M γ (t, x, i, v ); w)
+
+−ηk(t, x ′, i ; Gπ (t, x ′, i, u ), M γ (t, x ′, i, v ); w) p νk(dw )dudv 
+
+≤
+
+Z
+
+> R+×[0 ,1] n1×[0 ,1] n2
+
+L x − x′ p νk(dw )dudv ≤ L x − x′ p .
+
+4. Linear growth in x for jump: Under Assumption 1, for all t, x, i ∈ S , and admissible controls, we observe that for each k = 1 , · · · , ℓ ,
+
+Z
+
+> R+×[0 ,1] n1×[0 ,1] n2
+
+|ηk (t, x, i ; Gπ (t, x, i, u ), M γ (t, x, i, v ); w)| νk(dw )dudv 
+
+=
+
+Z
+
+> Y
+
+Z 
+
+> Z
+
+Z
+
+> R+
+
+ηk(t, x, i ; y, z ; w) νk(dw )γ(z | t, x, i ) dz 
+
+
+
+π(y | t, x, i ) dy. 
+
+From Assumption 1, we have 
+
+> ℓ
+
+X
+
+> k=1
+
+Z
+
+> R+
+
+ηk(t, x, i ; y, z ; w) νk(dw ) ≤ C1 + C2|x|.
+
+Combining 1, 2, 3, 4 and applying Theorem 119 in [38] (along with the standard extension for piecewise constant c` adl` ag processes to accommodate the finite-state continuous-time Markov chain αt), we can establish the existence and uniqueness of the strong solution to the regime-switching exploratory SDE. □
+
+# References 
+
+[1] Moon, J., Duncan, T.E., Ba¸ sar, T.: Risk-sensitive zero-sum differential games. IEEE Transactions on Automatic Control 64 (4), 1503–1518 (2018) [2] Lv, S., Xiong, J., Zhang, X.: Linear quadratic leader–follower stochastic dif-ferential games for mean-field switching diffusions. Automatica 154 , 111072 (2023) [3] Kushner, H.: Numerical approximations for stochastic differential games: The ergodic case. SIAM Journal on Control and Optimization 42 (6), 1911–1933 (2004) [4] Song, Q., Yin, G.G., Zhang, Z.: Numerical solutions for stochastic differential games with regime switching. IEEE Transactions on Automatic Control 53 (2), 509–521 (2008) [5] Yeung, D.W., Petrosyan, L.A.: A cooperative stochastic differential game of transboundary industrial pollution. Automatica 44 (6), 1532–1544 (2008) 32 [6] Song, J., Wu, D., Bian, Y., Dong, J.: A decision support system based on stochas-tic differential game model in pollution control chain. IEEE Transactions on Systems, Man, and Cybernetics: Systems 54 (3), 1670–1682 (2023) [7] Jin, Z., Yin, G., Wu, F.: Optimal reinsurance strategies in regime-switching jump diffusion models: Stochastic differential game formulation and numerical methods. Insurance: Mathematics and Economics 53 (3), 733–746 (2013) [8] Wang, N., Zhang, N., Jin, Z., Qian, L.: Stochastic differential investment and reinsurance games with nonlinear risk processes and var constraints. Insurance: Mathematics and Economics 96 , 168–184 (2021) [9] Dockner, E.: Differential Games in Economics and Management Science. Cam-bridge university press, Cambridge (2000) [10] Savku, E., Weber, G.-W.: Stochastic differential games for optimal invest-ment problems in a markov regime-switching jump-diffusion market. Annals of Operations Research 312 (2), 1171–1196 (2022) [11] Li, X., Shen, J., Song, Q.: Saddle points of discrete markov zero-sum game with stopping. Automatica 48 (8), 1898–1903 (2012) [12] Lv, S.: Two-player zero-sum stochastic differential games with regime switching. Automatica 114 , 108819 (2020) [13] Lv, S., Yang, X.: Solving a class of zero-sum stopping game with regime switching. Systems & Control Letters 192 , 105889 (2024) [14] Patil, A., Zhou, Y., Fridovich-Keil, D., Tanaka, T.: Risk-minimizing two-player zero-sum stochastic differential game via path integral control. In: 2023 62nd IEEE Conference on Decision and Control (CDC), pp. 3095–3101 (2023). IEEE [15] Guan, G., Liang, Z.: A stochastic nash equilibrium portfolio game between two dc pension funds. Insurance: Mathematics and Economics 70 , 237–244 (2016) [16] Wang, H., Zariphopoulou, T., Zhou, X.Y.: Reinforcement learning in continu-ous time and space: A stochastic control approach. Journal of Machine Learning Research 21 (198), 1–34 (2020) [17] Wang, H., Zhou, X.Y.: Continuous-time mean–variance portfolio selection: A rein-forcement learning framework. Mathematical Finance 30 (4), 1273–1308 (2020) [18] Dai, M., Dong, Y., Jia, Y.: Learning equilibrium mean-variance strategy. Math-ematical Finance 33 (4), 1166–1212 (2023) [19] Firoozi, D., Jaimungal, S.: Exploratory lqg mean field games with entropy regularization. Automatica 139 , 110177 (2022) 33 [20] Guo, X., Xu, R., Zariphopoulou, T.: Entropy regularization for mean field games with learning. Mathematics of Operations Research 47 (4), 3239–3260 (2022) [21] Hao, D., Zhang, D., Shi, Q., Li, K.: Entropy regularized actor-critic based multi-agent deep reinforcement learning for stochastic games. Information Sciences 617 ,17–40 (2022) [22] Sun, Z., Jia, G.: Reinforcement learning for exploratory linear-quadratic two-person zero-sum stochastic differential games. Applied Mathematics and Compu-tation 442 , 127763 (2023) [23] Huang, Y.-j., Wang, Z., Zhou, Z.: Convergence of policy iteration for entropy-regularized stochastic control problems 63 (2), 752–777 (2025) [24] Gao, X., Li, L., Zhou, X.Y.: Reinforcement learning for jump-diffusions, with financial applications. arXiv preprint arXiv:2405.16449 (2024) [25] Gruen, C.: A probabilistic-numerical approximation for an obstacle problem arising in game theory. Applied Mathematics and Optimization 66 (3), 363–385 (2012) [26] Feng, Q., Shao, J.: Optimal singular control problem in infinite horizon for stochastic processes with regime-switching. SIAM Journal on Control and Opti-mization 59 (2), 906–930 (2021) [27] Nguyen, S.L., Yin, G., Nguyen, D.T.: A general stochastic maximum principle for mean-field controls with regime switching. APPLIED MATHEMATICS and OPTIMIZATION 84 (3), 3255–3294 (2021) [28] Chen, Y., Nie, T., Wu, Z.: The stochastic maximum principle for relaxed control problem with regime-switching. Systems & Control Letters 169 (2022) [29] Gutierrez, E.J.R., Nguyen, S.L., Yin, G.: Markovian-switching systems: backward and forward-backward stochastic differential equations, mean-field interactions, and nonzero-sum differential games. Applied Mathematics and Optimization 
+
+89 (2) (2024) [30] Biswas, I.H.: On zero-sum stochastic differential games with jump-diffusion driven state: a viscosity solution framework. SIAM Journal on Control and Optimization 
+
+50 (4), 1823–1858 (2012) [31] Fleming, W.H., Souganidis, P.E.: On the existence of value functions of two-player, zero-sum stochastic differential games. Indiana University Mathematics Journal 38 (2), 293–314 (1989) [32] Gao, S., Guo, J., Liang, X.: Bayesian adaptive portfolio optimization for dc pension plans. Insurance: Mathematics and Economics 122 , 262–274 (2025) 34 [33] Merton, R.C.: On estimating the expected return on the market: An exploratory investigation. Journal of Financial Economics 8(4), 323–361 (1980) [34] Elliott, R.J., Kalton, N.J.: The Existence of Value in Differential Games vol. 126. American Mathematical Soc., Providence, R.I. (1972) [35] Zhou, M., Han, J., Lu, J.: Actor-critic method for high dimensional static hamilton–jacobi–bellman partial differential equations based on neural networks. SIAM Journal on Scientific Computing 43 (6), 4043–4066 (2021) [36] Jia, Y., Zhou, X.Y.: Policy evaluation and temporal-difference learning in con-tinuous time and space: A martingale approach. Journal of Machine Learning Research 23 (154), 1–55 (2022) [37] Moon, J.: Linear-quadratic stochastic stackelberg differential games for jump-diffusion systems. SIAM Journal on Control and Optimization 59 (2), 954–976 (2021) [38] Situ, R.: Theory of Stochastic Differential Equations with Jumps and Applica-tions: Mathematical and Analytical Techniques with Applications to Engineering. Springer, New York (2005) 35
