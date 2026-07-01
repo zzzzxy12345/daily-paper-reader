@@ -1,0 +1,12519 @@
+Title: Policy Optimization Achieves Data-Dependent Regret Bounds in MDPs with Unknown Transitions
+
+URL Source: https://arxiv.org/pdf/2606.31769v1
+
+Published Time: Wed, 01 Jul 2026 01:17:52 GMT
+
+Number of Pages: 70
+
+Markdown Content:
+# Policy Optimization Achieves Data-Dependent Regret Bounds in MDPs with Unknown Transitions 
+
+Mingyi Li 
+
+Department of Mathematical Informatics, The University of Tokyo 
+
+mingyi-mike@g.ecc.u-tokyo.ac.jp 
+
+Taira Tsuchiya 
+
+Department of Mathematical Informatics, The University of Tokyo Center for Advanced Intelligence Project, RIKEN 
+
+tsuchiya@mist.i.u-tokyo.ac.jp 
+
+Kenji Yamanishi 
+
+Department of Mathematical Informatics, The University of Tokyo 
+
+yamanishi@g.ecc.u-tokyo.ac.jp 
+
+## Abstract 
+
+We study policy optimization for online episodic tabular Markov decision pro-cesses with unknown transition kernels, aiming for best-of-both-worlds guaran-tees together with data-dependent regret bounds. Recent work (Dann et al., 2023; Li et al., 2026) has shown that policy optimization can adapt to both adversar-ial and stochastic losses with first-order, second-order, and path-length bounds, but only under known transitions, leaving open whether such data-dependent guarantees are achievable by policy optimization when the transition kernel is unknown. We resolve this by developing a new algorithm based on optimistic follow-the-regularized-leader that attains these guarantees under unknown tran-sitions. The key ingredient is a new design of optimistic Q-function estima-tors together with a data-dependent transition bonus that controls estimator bias through the loss-prediction error. Our analysis further identifies an unavoidable transition-dependent complexity term that captures the intrinsic cost of estimat-ing the transition kernel. As a result, we obtain first-order, second-order, and path-length bounds with the transition-dependent complexity term while simulta-neously achieving gap-dependent polylog( T ) regret in the stochastic regime. 
+
+## 1 Introduction 
+
+We study policy optimization for online finite-horizon episodic tabular Markov decision processes (MDPs) with unknown transitions. In this setting, the learner interacts with an MDP over T episodes. In each episode, the environment selects a loss function while the learner selects a policy. The learner then executes it and receives feedback on the loss function. The goal is to minimize the regret, the gap between the cumulative loss of the learner and that of the best fixed policy in hindsight. Policy optimization directly updates the policy and is a central paradigm in reinforcement learning (e.g., Schulman et al. 2015, 2017). For tabular MDPs, this approach updates a separate action distribution for each state (Shani et al., 2020; Luo et al., 2021), which is often more computationally efficient and practical than global optimization over the occupancy-measure space. The difficulty of tabular MDPs depends on how the loss sequence is generated. In the adversarial regime, the worst-case regret scales as eO(√T ) (Jin et al., 2020; Luo et al., 2021). In contrast, in the 
+
+> Preprint.
+> arXiv:2606.31769v1 [cs.LG] 30 Jun 2026
+
+Table 1: Comparison of regret upper bounds based on policy optimization. Here, Λ( π) =min {L(π), HT − L(π), Q ∞, V 1} is the loss-dependent complexity, Qπ1: T
+
+> trans
+
+(ℓ) is the transition-dependent complexity satisfying E[Qπ1: T
+
+> trans
+
+(ℓ)] ≤ H(L(π) + Reg T (π)) for any policy π, and FO in-dicates that only first-order adaptivity is achieved. For the stochastic regime with adversarial cor-ruption, we report only the leading term U in bounds of the form O(U + √U C).Reference Adversarial regime Stochastic regime with adversarial corruption Unknown transition Data-dependent Bandit feedback                                        
+
+> Luo et al. (2021) eO(√H4S2AT )–✓✓
+> Dann et al. (2023, Theorem 4.2) eO(√H4S2AT )H4S2Alog 2(T)∆min ✓✓
+> Dann et al. (2023, Theorem 4.3) eO(pH2SAL (π)) P
+> s
+> P
+> a̸=π⋆(s)
+> H2log 2(T)∆( s,a )FO ✓
+> Li et al. (2026) eO(pH2SA Λ( π)) P
+> s
+> P
+> a̸=π⋆(s)
+> H2log 2(T)∆( s,a )✓✓
+> This work (Theorem 4.1) eO(pH2SA Λ( π) + pS2AE[Qπ1: T
+> trans (ℓ)) H2S2Alog 2(T)∆min ✓✓
+> This work (Theorem 4.2) eO(pH3S2AΛ( π) + pS2AE[Qπ1: T
+> trans (ℓ)]) H2S4Alog 2(T)∆min ✓✓✓
+
+stochastic regime, one can often achieve much faster gap-dependent polylog( T ) regret (Simchowitz and Jamieson, 2019; Chen et al., 2025). This contrast has motivated best-of-both-worlds algorithms, which aim to achieve near-optimal guarantees in both the adversarial and stochastic regimes with a single algorithm (Jin and Luo, 2020; Jin et al., 2021; Dann et al., 2023). Beyond adapting to the underlying regime, another natural goal is to obtain regret bounds that scale with the difficulty of the realized loss sequence in the adversarial regime. Algorithms only with worst-case regret guarantees ignore the structure of losses and are often overly pessimistic in practi-cal environments. Motivated by this, data-dependent bounds, such as first-order, second-order, and path-length bounds, have been actively studied in online learning, including prediction with expert advice and multi-armed bandits (Cesa-Bianchi et al., 1996; Allenberg et al., 2006; Neu, 2015; Wei and Luo, 2018; Bubeck et al., 2019). These depend, respectively, on the comparator’s cumulative loss, the magnitude of the loss fluctuations, and the temporal variation of the losses. Such data-dependent bounds have also been studied in episodic MDPs, but existing data-dependent guarantees in episodic MDPs are limited either in the algorithmic approach or in the transition model. Under unknown transitions, Lee et al. (2020) obtained a first-order bound, but only through occupancy-measure-based global optimization rather than policy optimization. For policy optimiza-tion, such data-dependent bounds have so far been obtained only under known transitions : Dann et al. (2023) established best-of-both-worlds guarantees with a first-order bound, and Li et al. (2026) provided algorithms achieving first-order, second-order, and path-length bounds simultaneously. Consequently, whether policy optimization can attain any data-dependent bound under unknown transitions, let alone combine first-order, second-order, and path-length adaptivity with best-of-both-worlds guarantees, was left open by Dann et al. (2023); Li et al. (2026). This raises the following question. 
+
+Can policy optimization achieve data-dependent bounds such as first-order, second-order, and path-length bounds in episodic MDPs with unknown transitions? 
+
+Contributions of this paper. We answer this question affirmatively by developing a policy op-timization algorithm for episodic tabular MDPs with unknown transitions under bandit feedback ,the harder setting in which the learner must estimate both the losses and the transition kernel from the realized trajectories. In the adversarial regime, its regret adapts to min {L(π), HT −
+
+L(π), Q ∞, V 1}, covering first-order, second-order, and path-length complexities, together with a transition-dependent complexity term Qπ1: T
+
+> trans
+
+(ℓ) in (2) that captures the intrinsic cost of estimating the transition kernel and can be connected to the first-order complexity L(π) (see Appendix B.2 for details). The same algorithm also enjoys gap-dependent polylog( T ) regret in the stochastic regime, achieving the best-of-both-worlds guarantee (see Theorem 4.2). To our knowledge, this is the first data-dependent guarantee for policy optimization under unknown transitions. It is worth noting that this is also the first algorithm for tabular MDPs achieving best-of-both-worlds and data-dependent bounds simultaneously under unknown transitions. A detailed comparison with prior policy-optimization results is given in Table 1. As a by-product, our algorithm carries over to the easier full-information setting, where it re-tains these data-dependent and best-of-both-worlds guarantees and, in the worst case, recovers 2the eO(√H2S2AT ) rate of occupancy-measure-based methods (Rosenberg and Mansour, 2019; Jin et al., 2021) (see Theorem 4.1). This implies that the extra H factor often attributed to Q-function estimation is not inherent for policy optimization in the full-information setting under unknown transitions. Technically, our algorithms build on the optimistic follow-the-regularized-leader framework, with new prediction terms and optimistic Q-function estimators designed for unknown transitions tai-lored for each feedback setting (see Section 3). For the full-information setting, the Q-function estimator uses the most optimistic transition kernel in the confidence set. For the bandit setting, we incorporate a new data-dependent transition bonus defined in (12) and (13) into the Q-function estimator. This bonus keeps the Q-function estimator optimistic while reducing the estimator bias to the loss-prediction error, with the remaining worst-case terms contributing only lower-order terms. Our analysis identifies the new transition-dependent complexity term Qπ1: T
+
+> trans
+
+(ℓ), which captures the cost of estimating the unknown transition kernel. We show that this term is unavoidable under unknown transitions: even for a time-invariant loss sequence with Q∞ = V1 = 0 , any algorithm still incurs regret from estimating the unknown transition kernel (see Proposition 4.3). This explains why data-dependent regret bounds under unknown transitions cannot be characterized solely by the loss-complexity measures used in the known-transition setting of Li et al. (2026). Due to space constraints, we defer a more detailed discussion of related work to Appendix B.1. 
+
+## 2 Preliminaries 
+
+Episodic tabular MDPs. We study an episodic tabular Markov decision process (MDP) M =(S, A, P, H, s 0), where S is a finite state space with S = |S| , A is a finite action space with 
+
+A = |A| , H is the horizon length, and s0 is the initial state. The transition kernel P is fixed but unknown to the learner. For each state-action pair (s, a ), P (s′ | s, a ) denotes the probability of moving to state s′ after taking action a in state s. We adopt the standard layered MDP assumption (Neu et al., 2010; Jin et al., 2020; Luo et al., 2021), where the state space is partitioned into H + 1 
+
+disjoint layers S0, S1, . . . , SH . Here, S0 = {s0} is the initial layer and SH = {sH } is a terminal absorbing layer. For simplicity, we exclude sH from S, so that H ≤ S. Transitions occur only between consecutive layers. Specifically, for any (s, a ) ∈ S h × A with h ∈ { 0, . . . , H − 1}, the distribution P (· | s, a ) is supported on Sh+1 . We write h(s) for the layer index of state s.The learner interacts with the MDP for T episodes, indexed by t = 1 , . . . , T . At the beginning of episode t, the environment selects a loss function ℓt : S × A → [0 , 1] . The learner then selects a policy πt based on past observations, executes it from s0 under P , and incurs the losses along the realized trajectory. Here, a stochastic policy maps each state s to a distribution π(· | s) over actions, and for a deterministic policy π, we write π(s) ∈ A for its selected action at state s. At the end of the episode, the learner receives feedback on ℓt. In the full-information setting, the feedback is the entire loss function ℓt, whereas in the bandit setting, it is limited to the realized losses {(st,h , a t,h , ℓ t(st,h , a t,h )) }H−1 
+
+> h=0
+
+. We assume T ≥ max {2, S, A } for notational convenience. 1
+
+For a policy π and a loss function ℓ, the value functions are defined recursively, with terminal condition V π (sH ; ℓ) = 0 . Specifically, the value function V π (s; ℓ) and the Q-function Qπ (s, a ; ℓ)
+
+satisfy V π (s; ℓ) = Ea∼π(·| s)[Qπ (s, a ; ℓ)] and Qπ (s, a ; ℓ) = ℓ(s, a ) + Es′∼P (·| s,a )[V π (s′; ℓ)] . We may overload notation by allowing any function g : S × A → R to play the role of the loss function, in which case V π (s; g) and Qπ (s, a ; g) are defined accordingly. The goal is to minimize the regret Reg T (π) := EP Tt=1 V πt (s0; ℓt) − PTt=1 V π (s0; ℓt) against any fixed comparator policy π, and we denote by ˚π ∈ arg min π EP Tt=1 V π (s0; ℓt) an optimal policy in hindsight. 
+
+Additional notation. For N ∈ N, let [N ] := {1, . . . , N }, given a vector x, let ∥x∥p be its ℓp-norm for p ∈ [1 , ∞], and for a scalar z, let [z]+ := max {z, 0}. For a set K, let ∆( K) denote the set of probability distributions over K. If f and g are functions with g(x) > 0, we write f ≲ g or f = O(g)
+
+when f (x) ≤ cg (x) holds on the relevant domain for some universal constant c > 0, and use eO(·)
+
+to hide logarithmic factors. Let {F t}t≥0 be the natural filtration generated by all observations up to the end of episode t − 1, and define Et[·] = E[· | F t]. We use 1[·] for indicators, which equal                
+
+> 1The assumptions T≥Sand T≥Aare not essential. If they fail, the analysis remains valid after replacing log( T)
+> with log( SAT )or log( AT ).
+
+31 on the event and 0 otherwise. Let It(s, a ) = 1[( st,h , a t,h ) = ( s, a ), ∃h ∈ { 0, . . . , H − 1}] denote whether a state-action pair (s, a ) is visited in episode t under policy πt and transition kernel P ,and let It(s) = P 
+
+> a
+
+It(s, a ). For each layer h, write ℓt(h) ∈ [0 , 1] Sh×A for the restriction of ℓt to 
+
+Sh × A , and use the same convention for other functions on S × A .
+
+2.1 Confidence sets of the transition 
+
+Following Jin et al. (2020), we construct confidence sets for the unknown transition kernel. Let 
+
+nt(s, a, s ′) be the number of observed transitions from (s, a ) to s′ up to episode t−1, and let nt(s, a )
+
+be the corresponding visitation count. Whenever nt(s, a ) = 0 , we set it to 1 in any denominator. The empirical transition estimate is then defined by bPt(s′ | s, a ) = nt(s,a,s ′) 
+
+> nt(s,a )
+
+for all h and (s, a, s ′) ∈Sh × A × S h+1 . The confidence set of the true transition at episode t is then defined as 
+
+Pt =
+
+(eP : eP (s′ | s, a ) − bPt(s′ | s, a ) ≤ min 
+
+
+
+2
+
+s bPt(s′ | s, a )ιnt(s, a ) + 14 ι
+
+3nt(s, a ) , 1
+
+
+
+,
+
+∀(s, a, s ′) ∈ S h × A × S h+1 , ∀h = 0 , . . . , H − 1, eP (· | s, a ) ∈ ∆( Sh+1 ).
+
+)
+
+, (1) where ι = log( SAT /δ ). Throughout the paper, we set δ = 1 /T 2.By Jin et al. (2020, Lemma 2), the true transition kernel P belongs to Pt for all episodes t = 1 , . . . , T 
+
+with probability at least 1 − 4δ. We note that the set Pt is rectangular, since its constraints are imposed independently for each state-action pair (s, a ).For a transition kernel eP and a policy π, let q eP ,π (s, a ) be the probability of visiting (s, a ) within an episode. We also use q eP ,π (s′ | s, a ) and q eP ,π (s′, a ′ | s, a ) for the corresponding conditional occupancy measures given that (s, a ) has been visited and set them to zero whenever h(s′) < h (s).For each state s, define q eP ,π (s) := P 
+
+> a
+
+q eP ,π (s, a ), so that q eP ,π (s, a ) = q eP ,π (s)π(a | s). When 
+
+eP = P , we simply write qπ . We also define the upper and lower occupancies qπt (s) and qπt (s) with respect to the confidence set Pt, and for the learner’s policy πt, the smoothed occupancy qt(s) and relative occupancy width ρt(s) using an exploration rate γt > 0:
+
+qπt (s) := max  
+
+> eP∈P t
+
+q eP ,π (s), qπt (s) := min  
+
+> eP∈P t
+
+q eP ,π (s), qt(s) := qπt 
+
+> t
+
+(s) + γt, ρt(s) := qt(s) − qπt 
+
+> t
+
+(s)
+
+qt(s) .
+
+These quantities can be computed efficiently by the dynamic-programming procedure of Jin et al. (2020, Algorithm 3). Similarly, for any transition kernel eP , policy π, and function g : S × A → R,we write V eP ,π (s; g) and Q eP ,π (s, a ; g) for the value and Q-functions computed under eP and π.When eP = P , we again omit the transition kernel and write V π (s; g) and Qπ (s, a ; g).
+
+2.2 Regime of environments 
+
+We consider three regimes for the loss sequence ℓ1, . . . , ℓ T . In the adversarial regime, we impose no assumption on the losses. At the beginning of each episode t, the environment selects an arbitrary loss function ℓt ∈ [0 , 1] S×A, which may depend on the learner’s algorithm, as well as on past trajectories and observed losses, but not on the learner’s internal randomness. In the stochastic regime, the loss functions ℓ1, . . . , ℓ T are sampled i.i.d. from a fixed but unknown distribution D. The stochastic regime with adversarial corruption interpolates between these two settings. In this regime, there is an underlying (non-corrupted) loss sequence ℓ′
+
+> 1
+
+, . . . , ℓ ′ 
+
+> T
+
+sampled i.i.d. from an unknown distribution D, while the learner observes a possibly corrupted loss sequence 
+
+ℓ1, . . . , ℓ T . The corruptions may depend arbitrarily on the past trajectories and observed losses, and their total magnitude is measured by C := EP Tt=1 
+
+PH−1 
+
+> h=0
+
+∥ℓ′
+
+> t
+
+(h)−ℓt(h)∥∞
+
+ ∈ [0 , HT ]. When C =0, this regime reduces to the stochastic regime; when C is arbitrary, it coincides with the adversarial regime. For the stochastic and corrupted stochastic regimes, let μ(s, a ) := Eℓ′∼D [ℓ′(s, a )] be the mean uncorrupted loss function. Assume that the optimal policy for μ is unique, and let it be denoted by π⋆. We define the suboptimality gap of a state-action pair (s, a ) by ∆ : S × A → [0 , H ]
+
+as ∆( s, a ) := Qπ⋆
+
+(s, a ; μ) − min a′∈A Qπ⋆
+
+(s, a ′; μ) and let ∆min := min s,a ̸=π⋆(s) ∆( s, a ) > 0.42.3 Complexity measures in online MDPs 
+
+We use the following data-dependent complexity measures to state refined regret bounds. The first-order quantity introduced by Lee et al. (2020) is L(π) := EP Tt=1 V π (s0; ℓt), which is the cumulative loss of a fixed comparator policy π. The second-order quantity Q∞ := min ℓ⋆∈[0 ,1] S×A EP Tt=1 
+
+PH−1 
+
+> h=0
+
+∥ℓt(h) − ℓ⋆(h)∥2
+
+> ∞
+
+, which is small when the losses stay close to a fixed baseline loss, and the path-length quantity V1 := EP T −1 
+
+> t=1
+
+∥ℓt+1 − ℓt∥1
+
+, which is small when the losses vary slowly over time, are defined as in Li et al. (2026). Under unknown transitions, our regret bounds contain a transition-dependent complexity term that reflects the difficulty of estimating the transition kernel. For a loss sequence ℓ = {ℓt}Tt=1 and a policy sequence π1: T = {πt}Tt=1 , define 
+
+Qπ1: T
+
+> trans
+
+(ℓ) := sup  
+
+> ∀t,s,a :|ϕt(s,a )|=ℓt(s,a )
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )[V πt (s′; ϕt)] ∈ [0 , H 2T ]. (2) This quantity measures the variance of future cumulative losses across next states. Thus, transition uncertainty affects regret only when possible next states have different values V πt (s′; ϕt). This mirrors transition-variance terms in stochastic MDPs, such as Var s′∼P (·| s,a )
+
+V π⋆
+
+(s′; μ) (Zanette and Brunskill, 2019; Simchowitz and Jamieson, 2019). Our definition replaces the optimal stochastic value V π⋆
+
+( · ; μ) with learner-induced value functions so that the same idea applies to arbitrary loss sequences. As discussed later, this transition-dependent term is unavoidable under unknown transitions, since learning the transition kernel can itself cause regret even when Q∞ = V1 = 0 .Furthermore, this term recovers a first-order regret bound through a self-bounding argument. In particular, the relation E[Qπ1: T
+
+> trans
+
+(ℓ)] ≤ H(L(π)+ Reg T (π)) , together with a regret bound of the form Reg T (π) ≲ pE[Qπ1: T
+
+> trans
+
+(ℓ)] + J, implies Reg T (π) ≲ pHL (π) + J. Thus, the transition-dependent complexity is at least as adaptive as the first-order complexity, while it can be sharper because it only counts transition uncertainty that affects future cumulative losses. We defer a detailed explanation and a simple illustrative example to Appendix B.2. 
+
+## 3 Algorithm and technical components 
+
+We are now ready to present our policy optimization algorithm for both the full-information and bandit settings. The common template is given in Algorithm 1, with the feedback-dependent def-initions specified in Figure 1. Both algorithms follow the same policy optimization template and use new Q-function estimators and prediction terms to handle unknown transitions and adversarial losses. We describe the key components below. 
+
+3.1 Common policy optimization template Optimistic follow-the-regularized-leader. Our algorithms rely on the optimistic follow-the-regularized-leader (OFTRL) framework (Chiang et al., 2012; Rakhlin and Sridharan, 2013; Stein-hardt and Liang, 2014), which incorporates a prediction of the next loss vector into the standard FTRL. Our policy update is based on the OFTRL policy-optimization scheme of Li et al. (2026), which was developed for known transitions, and we modify it to handle unknown transitions. Policy optimization reduces the MDP problem to a separate multi-armed bandit problem at each state. By the performance-difference lemma (Kakade and Langford, 2002), the regret can be written as Reg T (π) = EP  
+
+> s
+
+qπ (s) P
+
+> t
+
+⟨πt(· | s) − π(· | s), Q πt (s, · ; ℓt)⟩. Thus, the Q-function plays the role of the loss vector for updating the action distribution at each state. Under unknown transitions, we first form the loss prediction mt ∈ [0 , 1] S×A and then compute its Q-function using an optimistic transition kernel from the confidence set. The OFTRL update with a convex regularizer ψt is defined, for each state s ∈ S , by 
+
+πt(· | s) = arg min 
+
+> π(·| s)∈∆( A)
+
+ 
+
+π(· | s),
+
+> t−1
+
+X 
+
+> τ=1
+
+ bQτ (s, ·) − Bτ (s, ·)
+
+
+
++ QP mt ,π t (s, ·; mt)
+
+
+
++ ψt(π(· | s)) 
+
+
+
+.
+
+(3) 5Here, bQτ is a Q-function estimator, Bτ is a dilated exploration bonus, and QP mt ,π t (s, ·; mt) is the optimistic prediction of Qπt (s, ·; ℓt). The transition kernel P mt ∈ P t is chosen to minimize 
+
+Q eP ,π t (s, a ; mt) over eP ∈ P t for each state-action pair (s, a ). Both P mt and QP mt ,π t (s, ·; mt) are computable by backward dynamic programming over the layers, since for s ∈ S h, computing this 
+
+Q-function only requires later-layer values and policies. In our algorithms, we use the log-barrier regularizer ψt(π(· | s)) = P  
+
+> a∈A 1
+> ηt(s,a )
+
+log   1
+
+> π(a|s)
+
+ , where ηt(s, a ) > 0 are state-action-wise time-varying, data-dependent learning rates. In both the full-information and bandit settings, the algorithm uses the same update rule (3), and differs only in the construction of bQt, Bt, and ηt(s, a ).The optimistic prediction QP mt ,π t (s, ·; mt) is obtained from a loss prediction sequence mt. We construct mt from the realized trajectory, starting with m1(s, a ) = 1 /2 for all (s, a ) and setting 
+
+mt+1 (s, a ) = 
+
+(1 − ξ)mt(s, a ) + ξℓ t(s, a ), if It(s, a ) = 1 ,mt(s, a ), if It(s, a ) = 0 , (4) where ξ ∈ (0 , 1/2) is a step size. Since the transition kernel is unknown, we use this predictor even in the full-information setting, where it is useful for deriving path-length bounds. 
+
+Dilated exploration bonus. In policy optimization, a naive state-wise update of the action distri-butions can lead to insufficient exploration. To address this, Luo et al. (2021) introduced a dilated exploration bonus Bt(s, a ), which is constructed in the same form as a Q-function, 
+
+Bt(s, a ) = bt(s) + 
+
+
+
+1 + 1
+
+H
+
+
+
+max  
+
+> eP∈P t
+
+Es′∼ eP (·| s,a ),a ′∼πt(·| s′)[Bt(s′, a ′)] . (5) Since Bt is subtracted from the Q-function estimator in (3), a state-action pair (s, a ) with a larger dilated exploration bonus is evaluated more optimistically and is therefore more likely to be visited. This leads to the following lemma. 
+
+Lemma 3.1 (Luo et al. 2021, Lemma B.2) . Suppose that bt(s) is a nonnegative function. Suppose also that, for a comparator policy π, there exists Jπ ≥ 0 such that 
+
+E
+
+"X
+
+> s
+
+qπ (s)
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+(πt(a | s) − π(a | s))( Qπt (s, a ; ℓt) − Bt(s, a )) 
+
+#
+
+≤ Jπ + E
+
+" TX
+
+> t=1
+
+X
+
+> s
+
+qπ (s)bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a
+
+qπ (s)πt(a | s)Bt(s, a )
+
+#
+
+. (6) 
+
+Then, it holds that Reg T (π) ≤ Jπ + 3 E
+
+hPTt=1 V P Bt ,π t (s0; bt)
+
+i
+
++ EHT 1[P /∈ P t, ∃t ∈ [T ]] ,where P Bt ∈ P t simultaneously attains the maxima in (5) for all (s, a ).
+
+From this lemma, once the condition (6) is verified, it remains only to evaluate the value function 
+
+V P Bt ,π t (s0; bt) of the bonus under the learner’s own policies πt, rather than a comparator policy π.For further intuition on the dilated bonus, we refer the reader to Luo et al. (2021); Dann et al. (2023). 
+
+3.2 Feedback-dependent Q-function estimator 
+
+The main new component is the Q-function estimator. The estimator differs between the full-information and bandit settings, and this choice also affects the learning-rate update and the local exploration bonus bt. We collect the definitions in Figure 1 and explain the idea below. Note that the quantities P ℓt , P mt , Bt, and Ct in Figure 1 are efficiently computable by backward dynamic pro-gramming with a state-action-wise greedy procedure over the confidence set, as in Jin et al. (2020); Luo et al. (2021). 
+
+Full-information feedback. In the full-information setting, the learner observes the entire loss function ℓt after each episode, so the Q-function estimator can be formed directly from the entire loss ℓt. We choose P ℓt ∈ P t so that it minimizes Q eP ,π t (s, a ; ℓt) over eP ∈ P t for all state-action pairs (s, a ), and design the new optimistic Q-function estimator by (7). On the event that P ∈ P t for 6Algorithm 1 Data-Dependent Policy Optimization with Unknown Transitions  
+
+> 1
+
+Input: γt = 1 
+
+> t
+
+, η1 = 112 H3 , m1 = 12 , ξ = 14 , ψt(π(· | s)) = P  
+
+> a∈A 1
+> ηt(s,a )
+
+log   1
+
+> π(a|s)
+
+ 
+
+> 2
+
+for t = 1 , 2, . . . do  
+
+> 3
+
+Update Pt by (1).  
+
+> 4
+
+For each s ∈ S , compute πt by the OFTRL update (3).  
+
+> 5
+
+Set Yt ← 1 in the full-information setting, and Yt ← 1max s,a ηt(s,a ) 
+
+> qt(s)
+
+≤ 150 √H3S3A
+
+ in the bandit setting.  
+
+> 6
+
+If Yt = 0 , insert a virtual episode and shift the indices of real episodes.  
+
+> 7
+
+If Yt = 1 , execute πt, observe {(st,h , a t,h )}H−1 
+
+> h=0
+
+, and receive the corresponding loss feedback.  
+
+> 8
+
+Compute bQt, ηt+1 , and bt as in Figure 1, and compute Bt by (5).  
+
+> 9
+
+Compute loss prediction mt+1 (s, a ) by (4). all t, this estimator is optimistic, and the resulting bias is one-sided. This is the only additional bias caused by unknown transitions, and it is controlled by the transition-dependent complexity Qπ1: T
+
+> trans
+
+(ℓ)
+
+in the regret analysis. The corresponding learning-rate update and local exploration bonus are given in (8) and (9). The update of the learning rate is designed so that the penalty term (1 /η t+1 (s, a ) − 1/η t(s, a )) log( T )
+
+matches the stability term ηt(s, a )ζt(s, a ), where ζt is defined in (10). Thus, both terms are con-trolled through the same data-dependent quantity ζt. The local exploration bonus bt is directly induced by this learning-rate update, with transition-estimation error included through ζt, so no separate transition bonus is needed in the full-information setting. Since the estimator uses the observed loss directly, the stability condition typically needed when analyzing OFTRL is easy to satisfy without introducing virtual episodes. Accordingly, Algorithm 1 sets Yt = 1 throughout the full-information setting. 
+
+Bandit feedback. In the bandit setting, the learner observes losses only along the realized trajec-tory. To deal with this, our new Q-function estimator (11) therefore combines three ingredients: the optimistic prediction QP mt ,π t (s, a ; mt), estimator of the prediction-error Qπt (s, a ; ℓt − mt), and the transition bonus Ct(s, a ). The main challenge is designing the transition bonus. It has to account for both loss-estimation error from bandit feedback and transition-estimation error from the unknown transition kernel. More precisely, the local transition bonus ct(s, a ) must upper bound the estimator bias, while ct(s, a ) itself remains controllable by data-dependent quantities. In particular, it should satisfy a relation of the form Et[ct(s, a )] ≥ ρt(s)|Qπt (s, a ; ℓt − mt)| for all t, s, a . The simpler local transition bonus ct(s) = ρt(s)H used in Dann et al. (2023) controls the estimator bias only through a worst-case eO(√T ) bound and thus does not yield the desired data-dependent bound. To tackle this challenge, we instead define the data-dependent local transition bonus ct(s, a ) in (12) and its recursive version Ct(s, a ) in (13), both constructed from the bandit feedback. The key point in our estimator is that, in the local transition bonus ct(s, a ), the part that does not depend on the prediction error scales as ρt(s)2 rather than ρt(s). This makes the worst-case contribution of the estimator bias only polylog( T ), and the other terms can be bounded by data-dependent quantities. In addition, we use the prediction term QP mt ,π t (s, a ; mt), which is not automatically a lower estimate of Qπt (s, a ; ℓt), as also noted by Li et al. (2026). We therefore define Ct with an extra margin, so that the estimator remains optimistic without losing data-dependent control. The learning-rate update and local exploration bonus are given in (14) and (15). As in the full-information setting, the penalty term of regret (1 /η t+1 (s, a ) − 1/η t(s, a )) log( T ) is chosen to match the log-barrier stability term ηt(s, a )ζt(s, a )/q t(s)2, where ζt is defined in (16). The local explo-ration bonus bt contains the term induced by this learning-rate update, together with an additional term involving Ct(s, a )2, which accounts for transition-estimation error. 
+
+Virtual episodes. In the bandit setting, Bt(s, a ) can scale as 1/q t(s)2 through (15), so the resulting bonus-induced stability term cannot be controlled by the adaptive learning-rate update alone when 
+
+qt(s) is small. Therefore, following Dann et al. (2023), we insert virtual episodes to control the ratio 
+
+ηt(s, a )/q t(s). If max s,a ηt(s, a )/q t(s) > 1/(50 √H3S3A) at the beginning of episode t, we set 7Full-information. 
+
+Q-function estimator. 
+
+bQt(s, a ) = QP ℓt ,π t (s, a ; ℓt) with P ℓt ∈ arg min  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ℓt) for all (s, a ). (7) 
+
+Learning rate and exploration bonus. 
+
+1
+
+ηt+1 (s, a ) = 1
+
+ηt(s, a ) + ηt(s, a )ζt(s, a )log( T ) , (8) 
+
+bt(s) = 7 X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T ), (9) where ζt(s, a ) = πt(a | s)(1 − πt(a | s)) X
+
+> b
+
+πt(b | s)
+
+
+
+QP ℓt ,π t (s, b ; ℓt) − QP mt ,π t (s, b ; mt)
+
+2
+
+. (10) 
+
+Bandit feedback. 
+
+Q-function estimator. Let Lt,h = PH−1 
+
+> h′=h
+
+ℓt(st,h ′ , a t,h ′ ), Mt,h = PH−1 
+
+> h′=h
+
+mt(st,h ′ , a t,h ′ ), and Dt,h =
+
+PH−1
+
+> h′=h
+
+|ℓt(st,h ′ , a t,h ′ ) − mt(st,h ′ , a t,h ′ )|, and define 
+
+bQt(s, a ) = QP mt ,π t (s, a ; mt) + It(s, a ) Lt,h (s) − Mt,h (s)
+
+
+
+qt(s)πt(a | s) Yt − Ct(s, a )Yt, (11) where ct(s, a ) = ρt(s) It(s, a )Dt,h (s)
+
+qt(s)πt(a | s) + ρt(s)2H, (12) 
+
+Ct(s, a ) = ct(s, a ) + max  
+
+> eP∈P t
+
+Es′∼ eP (·| s,a ), a ′∼πt(·| s′)
+
+ct(s′, a ′) + Ct(s′, a ′). (13) 
+
+Learning rate and exploration bonus. Let (s† 
+
+> t
+
+, a † 
+
+> t
+
+) be any maximizer of ηt(s, a )/q t(s), and define 
+
+1
+
+ηt+1 (s, a ) =
+
+ 
+
+> 1
+> ηt(s,a )
+
++ ηt(s,a )ζt(s,a )   
+
+> qt(s)2log( T)
+
+, if t is a real episode ,
+
+> 1
+> ηt(s,a )
+
+
+
+1 + 1{(s†    
+
+> t,a †
+> t)=( s,a )}
+> 324 Hlog( T)
+
+
+
+, if t is a virtual episode , (14) 
+
+bt(s) = 6 X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T ) + 3 X
+
+> a
+
+ηt(s, a )πt(a | s)2Ct(s, a )2Yt, (15) where ζt(s, a ) = ( It(s, a ) − πt(a | s)It(s)) 2 Lt,h (s) − Mt,h (s)
+
+2. (16) 
+
+Figure 1: Definitions of the Q-function estimator bQt, the learning-rate update ηt+1 , and the local exploration bonus bt used in Algorithm 1. 
+
+Yt = 0 , make episode t virtual, and shift the indices of all subsequent real episodes. The algorithm then uses the zero loss function and only updates the pair (s† 
+
+> t
+
+, a † 
+
+> t
+
+) ∈ arg max s,a ηt(s, a )/q t(s),multiplying 1/η t(s† 
+
+> t
+
+, a † 
+
+> t
+
+) by 1+ 1324 H log( T ) . It still computes bQt, bt, and Bt, but keeps the prediction 
+
+mt and the confidence set Pt unchanged. Since the number of virtual episodes is O(HSA log 2(T )) ,their effect is lower-order, and we still use T to denote the total number of episodes. 2
+
+## 4 Main results 
+
+Regret upper bounds. We now state the guarantees of Algorithm 1. The first theorem is for the full-information setting, and the second is for the bandit setting. In both cases, the algorithm achieves first-order, second-order, and path-length bounds in the adversarial regime, and at the same time achieves a gap-dependent polylog( T ) bound in the stochastic regime. The transition-dependent complexity Qπ1: T
+
+> trans
+
+(ℓ) captures transition uncertainty that affects future cumulative losses and can imply first-order dependence on L(π) through self-bounding. 
+
+> 2
+
+The data-dependent complexity measures in the main statements are defined only over real episodes. 
+
+8Theorem 4.1. In the full-information setting, for any comparator policy π, Algorithm 1 guarantees 
+
+Reg T (π) ≲
+
+q
+
+H2SA log 2(T ) min {L(π), HT − L(π), Q ∞, V 1}
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + HS 3A 32 log 2(T ).
+
+Under the stochastic regime with adversarial corruption, it simultaneously ensures Reg T (π) ≲
+
+U + √U C + HS 3A 32 log 2(T ), where U = H2S2A log 2(T )∆min .
+
+The above bound recovers the eO(√H2S2AT ) worst-case rate of occupancy-measure-based algo-rithms (Rosenberg and Mansour, 2019; Jin et al., 2021). To our knowledge, this is the first policy-optimization result to remove the extra H factor (Luo et al., 2021; Dann et al., 2023). In the stochas-tic regime, the leading gap-dependent term also has sharper dependence on H, S, and A than that of Jin et al. (2021), up to logarithmic factors. 
+
+Theorem 4.2. In the bandit setting, for any comparator policy π, Algorithm 1 guarantees 
+
+Reg T (π) ≲
+
+q
+
+H3S2A log 2(T ) min {L(π), HT − L(π), Q ∞, V 1}
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + H 32 S 72 A 32 log 2(T ).
+
+Under the stochastic regime with adversarial corruption, it simultaneously ensures Reg T (π) ≲
+
+U + √U C + H 32 S 72 A 32 log 2(T ), where U = H2S4A log 2(T )∆min .
+
+In the worst case, the bound for the adversarial regime recovers the worst-case rate of Dann et al. (2023). For the first-order bound, the Qπ1: T
+
+> trans
+
+(ℓ) term is absorbed by the first-order term through the self-bounding argument. Thus, the final bound does not contain an explicit transition-dependent term. In the stochastic regime, the gap-dependent term incurs an additional factor S2/H 2 compared with Dann et al. (2023) due to the transition bonus, and whether this dependence can be improved remains open. However, the main contribution of Theorems 4.1 and 4.2 is their data-dependent regret bounds under unknown transitions. Together, these theorems give the first policy-optimization guarantees under unknown transitions with first-order, second-order, and path-length adaptivity. 
+
+Lower bounds. We show that the data-dependent terms in our adversarial guarantees cannot be avoided in general. First, by running a standard hard instance for adversarial MDPs with unknown transitions (Jin et al., 2018; Domingues et al., 2021) for the first T ′ ≤ T episodes and setting all later losses to zero, the complexities satisfy L(π) = O(HT ′), Q∞ = O(HT ′), V1 = O(SAT ′),and E[Qπ1: T
+
+> trans
+
+(ℓ)] = O(H2T ′), while max π Reg T (π) ≥ Ω( √H2SAT ′). Thus, one can ob-tain Ω( pHSAL (π)) , Ω( √HSAQ ∞), Ω( √H2V1) and Ω( pSA E[Qπ1: T
+
+> trans
+
+(ℓ)]) for the adversarial regime. Closing the remaining gaps is not specific to our data-dependent setting, and remains open even for worst-case policy optimization (Luo et al., 2021). The following proposition further shows that a transition-dependent term is necessary under un-known transitions. This follows from the lower-bound constructions of Jin et al. (2018, Theorem 3) and Domingues et al. (2021, Theorem 9) use time-invariant loss sequences, so the regret arises solely from transition uncertainty. 
+
+Proposition 4.3. There exists an episodic MDP with unknown transitions and a time-invariant loss sequence such that Q∞ = V1 = 0 , while any algorithm suffers max π Reg T (π) = Ω( √H2SAT ).This lower bound holds even under full-information feedback. 
+
+## 5 Proof overview 
+
+We sketch the proof for the bandit setting, which contains the main ideas also used in the full-information setting. The complete proofs are deferred to Appendix F for the full-information set-ting and Appendix G for the bandit setting. We use Lemma 3.1 as the main reduction for pol-icy optimization. Recall that once the inequality in (6) is verified, the lemma reduces the regret analysis to bounding PTt=1 V P Bt ,π t (s0; bt). We prove (6) by decomposing its left-hand side into 9EP  
+
+> s
+
+qπ (s)( reg π (s) + bias π (s) + error π (s)) , where 
+
+reg π (s) = X
+
+> t,a
+
+(πt(a | s)−π(a | s)) 
+
+bQt(s, a )−Bt(s, a )
+
+
+
+,
+
+bias π (s) = X
+
+> t,a
+
+(πt(a | s)−π(a | s)) 
+
+
+
+Qπt (s, a ; ℓt)− bQt(s, a )+ QP mt ,π t (s, a ; mt)−Qπt (s, a ; mt)
+
+
+
+,
+
+error π (s) = X
+
+> t,a
+
+(πt(a | s)−π(a | s)) 
+
+
+
+Qπt (s, a ; mt)−QP mt ,π t (s, a ; mt)
+
+
+
+.
+
+Here, bias π (s) is the estimator bias, while error π (s) comes from evaluating the prediction using 
+
+P mt instead of the true transition kernel. The standard analysis in Lemma G.7 bounds reg π (s) as 
+
+E[reg π (s)] ≤ O  HS 2A log( T ) + E
+
+" TX
+
+> t=1
+
+bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a )
+
+#
+
+.
+
+The remaining terms are controlled in Lemmas G.8 and G.9 by 
+
+E
+
+"X
+
+> s
+
+qπ (s)bias π (s)
+
+#
+
+≲ eO
+
+vuutH2S2Aι 2E
+
+" X
+
+> t:Yt=1
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+#,
+
+E
+
+"X
+
+> s
+
+qπ (s)error π (s)
+
+#
+
+≲ eO
+
+p S2Aι 2E[Qπ1: T
+
+> trans
+
+(m)] 
+
+
+
+.
+
+The key point is that bias π (s) is reduced to the prediction error ℓt − mt. This follows from the design of ct(s, a ), where the part independent of the prediction error scales with ρt(s)2 rather than 
+
+ρt(s), and P
+
+> t:Yt=1
+
+P 
+
+> s
+
+qπt (s)ρt(s)2 is only polylogarithmic in T (see Lemma G.5). The error term is captured by Qπ1: T
+
+> trans
+
+(m), which can be reduced to Qπ1: T
+
+> trans
+
+(ℓ) through Qπ1: T
+
+> trans
+
+(m) ≤ 2Qπ1: T
+
+> trans
+
+(ℓ) + 2H P 
+
+> t:Yt=1
+
+V πt (s0; ( ℓt −mt)2) in Lemma D.12. Thus, all remaining terms reduce to the prediction error ℓt − mt and Qπ1: T
+
+> trans
+
+(ℓ), yielding the desired first-order, second-order, and path-length bounds. For the stochastic regime with adversarial corruption, we use the same decomposition as above. We show in Lemmas G.8 and G.9 that the individual terms can be bounded by factors of the form 
+
+P
+
+> s
+
+P
+
+> a̸=π⋆(s)
+
+q
+
+EP  
+
+> t:Yt=1
+
+qπt (s, a ) or 
+
+q
+
+EP 
+
+> t:Yt=1
+
+P
+
+> s,a
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+. These quan-tities are then controlled by a self-bounding argument following Dann et al. (2023), yielding the desired gap-dependent bound under adversarial corruption. 
+
+## 6 Conclusion 
+
+In this work, we resolved the open problem raised by Dann et al. (2023) on data-dependent regret bounds for policy optimization in MDPs with unknown transitions. Our algorithms achieve refined best-of-both-worlds guarantees, adapting to L(π), Q∞, and V1 in the adversarial regime while at-taining a gap-dependent polylog( T ) bound in the stochastic regime with adversarial corruption. A natural future direction is to obtain variance-aware gap-dependent bounds as in Chen et al. (2025), and to investigate whether the refined data-dependent guarantees can be achieved under aggregate feedback. 
+
+## Acknowledgements 
+
+TT is supported by JSPS KAKENHI Grant Number JP26K21297 and KY is partially supported by JSPS KAKENHI Grant Number JP24H00703. 
+
+## References 
+
+Chamy Allenberg, Peter Auer, László Györfi, and György Ottucsák. Hannan consistency in on-line learning in case of unbounded losses under partial monitoring. In International Conference on Algorithmic Learning Theory , pages 229–243. Springer, 2006. 10 Jean-Yves Audibert, Rémi Munos, and Csaba Szepesvári. Tuning bandit algorithms in stochas-tic environments. In Algorithmic Learning Theory , pages 150–165. Springer Berlin Heidelberg, 2007. Peter Auer and Chao-Kai Chiang. An algorithm with nearly optimal pseudo-regret for both stochas-tic and adversarial bandits. In 29th Annual Conference on Learning Theory , volume 49, pages 116–120. PMLR, 2016. Peter Auer, Nicoló Cesa-Bianchi, Yoav Freund, and Robert E Schapire. The nonstochastic multi-armed bandit problem. SIAM Journal on Computing , 32(1):48–77, 2002. Mohammad Gheshlaghi Azar, Ian Osband, and Rémi Munos. Minimax regret bounds for rein-forcement learning. In Proceedings of the 34th International Conference on Machine Learning ,volume 70, pages 263–272. PMLR, 2017. Sébastien Bubeck, Yuanzhi Li, Haipeng Luo, and Chen-Yu Wei. Improved path-length regret bounds for bandits. In Proceedings of the Thirty-Second Conference on Learning Theory , volume 99, pages 508–528. PMLR, 2019. Sébastien Bubeck and Aleksandrs Slivkins. The best of both worlds: Stochastic and adversarial bandits. In Proceedings of the 25th Annual Conference on Learning Theory , volume 23, pages 42.1–42.23. PMLR, 2012. Nicolo Cesa-Bianchi, Philip M Long, and Manfred K Warmuth. Worst-case quadratic loss bounds for prediction using linear functions and gradient descent. IEEE Transactions on Neural Net-works , 7(3):604–619, 1996. Shulun Chen, Runlong Zhou, Zihan Zhang, Maryam Fazel, and Simon Shaolei Du. Sharp gap-dependent variance-aware regret bounds for tabular MDPs. In Advances in Neural Information Processing Systems , volume 38. Curran Associates, Inc., 2025. Chao-Kai Chiang, Tianbao Yang, Chia-Jung Lee, Mehrdad Mahdavi, Chi-Jen Lu, Rong Jin, and Shenghuo Zhu. Online optimization with gradual variations. In Proceedings of the 25th Annual Conference on Learning Theory , volume 23, pages 6.1–6.20. PMLR, 2012. Christoph Dann, Teodor Vanislavov Marinov, Mehryar Mohri, and Julian Zimmert. Beyond value-function gaps: Improved instance-dependent regret bounds for episodic reinforcement learning. 
+
+Advances in Neural Information Processing Systems , 34:1–12, 2021. Christoph Dann, Chen-Yu Wei, and Julian Zimmert. Best of both worlds policy optimization. In 
+
+International Conference on Machine Learning , pages 6968–7008. PMLR, 2023. Omar Darwiche Domingues, Pierre Ménard, Emilie Kaufmann, and Michal Valko. Episodic rein-forcement learning in finite MDPs: Minimax lower bounds revisited. In Proceedings of the 32nd International Conference on Algorithmic Learning Theory , volume 132, pages 578–598. PMLR, 2021. Eyal Even-Dar, Sham M Kakade, and Yishay Mansour. Online Markov decision processes. Mathe-matics of Operations Research , 34(3):726–736, 2009. Elad Hazan and Satyen Kale. Better algorithms for benign bandits. Journal of Machine Learning Research , 12(35):1287–1311, 2011. Shinji Ito. Parameter-free multi-armed bandit algorithms with hybrid data-dependent regret bounds. In Proceedings of Thirty Fourth Conference on Learning Theory , volume 134, pages 2552–2583. PMLR, 2021. Shinji Ito, Taira Tsuchiya, and Junya Honda. Adversarially robust multi-armed bandit algorithm with variance-dependent regret bounds. In Conference on Learning Theory , pages 1421–1422. PMLR, 2022. Shinji Ito, Kevin Jamieson, Haipeng Luo, Arnab Maiti, and Taira Tsuchiya. Adapting to stochastic and adversarial losses in episodic MDPs with aggregate bandit feedback. In Advances in Neural Information Processing Systems , volume 38. Curran Associates, Inc., 2025. 11 Thomas Jaksch, Ronald Ortner, and Peter Auer. Near-optimal regret bounds for reinforcement learning. Journal of Machine Learning Research , 11(51):1563–1600, 2010. Chi Jin, Zeyuan Allen-Zhu, Sebastien Bubeck, and Michael I Jordan. Is Q-learning provably ef-ficient? In Advances in Neural Information Processing Systems , volume 31, pages 4863–4873. Curran Associates, Inc., 2018. Chi Jin, Tiancheng Jin, Haipeng Luo, Suvrit Sra, and Tiancheng Yu. Learning adversarial Markov decision processes with bandit feedback and unknown transition. In Proceedings of the 37th International Conference on Machine Learning , volume 119, pages 4860–4869. PMLR, 2020. Tiancheng Jin and Haipeng Luo. Simultaneously learning stochastic and adversarial episodic MDPs with known transition. In Advances in Neural Information Processing Systems , volume 33, pages 16557–16566. Curran Associates, Inc., 2020. Tiancheng Jin, Longbo Huang, and Haipeng Luo. The best of both worlds: stochastic and adversarial episodic MDPs with unknown transition. In Advances in Neural Information Processing Systems ,volume 34, pages 20491–20502. Curran Associates, Inc., 2021. Tiancheng Jin, Junyan Liu, Chloé Rouyer, William Chang, Chen-Yu Wei, and Haipeng Luo. No-regret online reinforcement learning with adversarial losses and transitions. In Advances in Neural Information Processing Systems , volume 36, pages 38520–38585. Curran Associates, Inc., 2023. Sham Kakade and John Langford. Approximately optimal approximate reinforcement learning. In 
+
+Proceedings of the Nineteenth International Conference on Machine Learning , pages 267–274, 2002. Tal Lancewicki and Yishay Mansour. Near-optimal regret using policy optimization in online MDPs with aggregate bandit feedback. In Proceedings of the 42nd International Conference on Machine Learning , volume 267, pages 32467–32491. PMLR, 2025. Chung-Wei Lee, Haipeng Luo, Chen-Yu Wei, and Mengxiao Zhang. Bias no more: high-probability data-dependent regret bounds for adversarial bandits and mdps. In Advances in Neural Informa-tion Processing Systems , volume 33, pages 15522–15533. Curran Associates, Inc., 2020. Mingyi Li, Taira Tsuchiya, and Kenji Yamanishi. Data- and variance-dependent regret bounds for online tabular MDPs. In International Conference on Machine Learning , 2026. Nick Littlestone and Manfred K Warmuth. The weighted majority algorithm. Information and Computation , 108(2):212–261, 1994. Haipeng Luo, Chen-Yu Wei, and Chung-Wei Lee. Policy optimization in adversarial MDPs: Im-proved exploration via dilated bonuses. In Advances in Neural Information Processing Systems ,volume 34, pages 22931–22942. Curran Associates, Inc., 2021. Saeed Masoudian and Yevgeny Seldin. Improved analysis of the Tsallis-INF algorithm in stochas-tically constrained adversarial bandits and stochastic bandits with adversarial corruptions. In 
+
+Proceedings of Thirty Fourth Conference on Learning Theory , volume 134, pages 3330–3350. PMLR, 2021. Gergely Neu. First-order regret bounds for combinatorial semi-bandits. In Proceedings of the 28th Conference on Learning Theory , volume 40, pages 1360–1375. PMLR, 2015. Gergely Neu, András György, and Csaba Szepesvári. The online loop-free stochastic shortest-path problem. In Proceedings of the 23rd Conference on Learning Theory , pages 231–243, 2010. Alexander Rakhlin and Karthik Sridharan. Online learning with predictable sequences. In Proceed-ings of the 26th Annual Conference on Learning Theory , volume 30, pages 993–1019. PMLR, 2013. Aviv Rosenberg and Yishay Mansour. Online convex optimization in adversarial Markov decision processes. In Proceedings of the 36th International Conference on Machine Learning , volume 97, pages 5478–5486. PMLR, 2019. 12 John Schulman, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. Trust region policy optimization. In Proceedings of the 32nd International Conference on Machine Learning ,volume 37, pages 1889–1897. PMLR, 2015. John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 , 2017. Yevgeny Seldin and Gábor Lugosi. An improved parametrization and analysis of the EXP3++ algo-rithm for stochastic and adversarial bandits. In Proceedings of the 2017 Conference on Learning Theory , volume 65, pages 1743–1759. PMLR, 2017. Yevgeny Seldin and Aleksandrs Slivkins. One practical algorithm for both stochastic and adversarial bandits. In Proceedings of the 31st International Conference on Machine Learning , volume 32, pages 1287–1295. PMLR, 2014. Lior Shani, Yonathan Efroni, Aviv Rosenberg, and Shie Mannor. Optimistic policy optimization with bandit feedback. In Proceedings of the 37th International Conference on Machine Learning ,volume 119, pages 8604–8613. PMLR, 2020. Max Simchowitz and Kevin G Jamieson. Non-asymptotic gap-dependent regret bounds for tabular MDPs. In Advances in Neural Information Processing Systems , volume 32, pages 1153–1162. Curran Associates, Inc., 2019. Jacob Steinhardt and Percy Liang. Adaptivity and optimism: An improved exponentiated gradient algorithm. In Proceedings of the 31st International Conference on Machine Learning , volume 32, pages 1593–1601. PMLR, 2014. Daniil Tiapkin, Evgenii Chzhen, and Gilles Stoltz. Narrowing the gap between adversarial and stochastic MDPs via policy optimization. In The 28th International Conference on Artificial Intelligence and Statistics , 2025. Chen-Yu Wei and Haipeng Luo. More adaptive algorithms for adversarial bandits. In Proceedings of the 31st Conference On Learning Theory , volume 75, pages 1263–1291. PMLR, 2018. Haike Xu, Tengyu Ma, and Simon Du. Fine-grained gap-dependent bounds for tabular MDPs via adaptive multi-step bootstrap. In Proceedings of Thirty Fourth Conference on Learning Theory ,volume 134, pages 4438–4472. PMLR, 2021. Jia Yuan Yu, Shie Mannor, and Nahum Shimkin. Markov decision processes with arbitrary reward processes. In Recent Advances in Reinforcement Learning , pages 268–281. Springer Berlin Hei-delberg, 2008. Andrea Zanette and Emma Brunskill. Tighter problem-dependent regret bounds in reinforcement learning without domain knowledge using value function bounds. In International Conference on Machine Learning , pages 7304–7312. PMLR, 2019. Alexander Zimin and Gergely Neu. Online learning in episodic Markovian decision processes by relative entropy policy search. In Advances in Neural Information Processing Systems , volume 26, pages 1583–1591. Curran Associates, Inc., 2013. Julian Zimmert and Yevgeny Seldin. Tsallis-INF: An optimal algorithm for stochastic and adversar-ial bandits. Journal of Machine Learning Research , 22(28):1–49, 2021. Martin Zinkevich. Online convex programming and generalized infinitesimal gradient ascent. In the Twentieth International Conference on Machine Learning , pages 928–935, 2003. 13 Contents 
+
+1 Introduction 12 Preliminaries 3
+
+2.1 Confidence sets of the transition . . . . . . . . . . . . . . . . . . . . . . . . . . . 42.2 Regime of environments . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42.3 Complexity measures in online MDPs . . . . . . . . . . . . . . . . . . . . . . . . 5
+
+3 Algorithm and technical components 5
+
+3.1 Common policy optimization template . . . . . . . . . . . . . . . . . . . . . . . . 53.2 Feedback-dependent Q-function estimator . . . . . . . . . . . . . . . . . . . . . . 6
+
+4 Main results 85 Proof overview 96 Conclusion 10 A Summary of notation 15 B Additional related work and discussion 16 
+
+B.1 Additional related work . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 B.2 Discussion of the transition-dependent complexity . . . . . . . . . . . . . . . . . . 17 
+
+C High probability event 18 D Auxiliary lemmas 19 
+
+D.1 Technical lemmas . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 D.2 Data-dependent and self-bounding lemmas . . . . . . . . . . . . . . . . . . . . . . 28 
+
+E General lemma of optimistic follow-the-regularized-leader 34 F Regret analysis for the full-information setting (Theorem 4.1) 35 
+
+F.1 Auxiliary lemmas . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35 F.2 Common regret analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36 F.3 Proof for the adversarial regime . . . . . . . . . . . . . . . . . . . . . . . . . . . 44 F.4 Proof for the stochastic regime with adversarial corruption . . . . . . . . . . . . . 46 
+
+G Regret analysis for the bandit setting (Theorem 4.2) 47 
+
+G.1 Auxiliary lemmas . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 47 G.2 Common regret analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53 G.3 Proof for the adversarial regime . . . . . . . . . . . . . . . . . . . . . . . . . . . 67 G.4 Proof for the stochastic regime with adversarial corruption . . . . . . . . . . . . . 69 14 A Summary of notation 
+
+For the reader’s convenience, Table 2 collects the main notation used throughout the paper. Table 2: Summary of notation. 
+
+Symbol Meaning Tabular MDPs 
+
+M = ( S, A, P, H, s 0) Episodic tabular MDP 
+
+S, S State space and its size S = |S| A, A Action space and its size A = |A| 
+
+P Transition kernel 
+
+H Horizon length 
+
+T Number of episodes 
+
+h(s) Layer index of state sst,h , a t,h State / action at step h in episode tℓt(s, a ) Loss assigned to (s, a ) in episode tπt Policy in episode t
+
+Reg T (π) Regret over T episodes with comparator π
+
+It(s, a ) Visitation indicator of (s, a ) in episode tnt(s, a ) Number of visits to (s, a ) up to episode t − 1
+
+V π (s; ℓ) Value function under policy π from state s with loss ℓQπ (s, a ; ℓ) Q-function under policy π from (s, a ) with loss ℓqπ (s), q π (s, a ) Occupancy measure under policy πqπ (s′, a ′ | s, a ) Conditional occupancy from (s, a ) to (s′, a ′) under π
+
+˚π Optimal policy for the regret 
+
+ℓ′
+
+> t
+
+(s, a ) Uncorrupted i.i.d. loss 
+
+C Corruption budget 
+
+μ(s, a ) Mean of ℓ′
+
+> t
+
+(s, a )
+
+π⋆ Optimal deterministic policy under μ
+
+∆( s, a ), ∆min Suboptimality gap at (s, a ), and minimum positive gap 
+
+Data-dependent complexity measures 
+
+L(π) First-order complexity 
+
+Q∞ Second-order complexity 
+
+V1 Path-length complexity 
+
+Qπ1: T
+
+> trans
+
+(ℓ) Transition-dependent complexity in (2) 
+
+Notation for Algorithm 1 
+
+ψt Regularizer in episode tηt(s, a ) Learning rate for (s, a ) in episode tmt(s, a ) Loss prediction for (s, a )
+
+ζt(s, a ) Data-dependent term for updating ηt(s, a )
+
+bQt(s, a ) Q-function estimator 
+
+bt(s), B t(s, a ) Exploaration bonus and its recursive Q-function version 
+
+ct(s, a ), C t(s, a ) Transition bonus and its recursive Q-function version 
+
+Yt ∈ { 0, 1} Episode indicator ( Yt = 1 real, Yt = 0 virtual) 
+
+Tr , Tv Sets of real and virtual episodes 
+
+qπt (s), q πt (s) Upper and lower occupancy measures 
+
+γt, q t(s) := qπt 
+
+> t
+
+(s) + γt Exploration rate and smoothed state occupancy 
+
+ρt(s) := ( qt(s) − qπt 
+
+> t
+
+(s)) /q t(s) relative occupancy width 
+
+Lt,h (s), M t,h (s) Realized / predicted suffix loss from layer h(s)
+
+Dt,h (s) Suffix prediction error from layer h(s)
+
+Pt Confidence set at episode tP ℓt Transition in Pt minimizing Q(s, a ; ℓt) for all (s, a )
+
+P mt Transition in Pt minimizing Q(s, a ; mt) for all (s, a )
+
+P Bt Transition in Pt maximizing Bt(s, a ) for all (s, a )
+
+P Ct Transition in Pt maximizing Ct(s, a ) for all (s, a )
+
+15 We formalize the conditional occupancy measure qπt (s′, a ′ | s, a ) as follows: 
+
+
+
+0 if h(s′) < h (s),
+
+0 if h(s′) = h(s) and (s′, a ′)̸ = ( s, a ),
+
+1 if (s′, a ′) = ( s, a ),
+
+Pr (st,h (s′), a t,h (s′)) = ( s′, a ′) | (st,h (s), a t,h (s)) = ( s, a ) , if h(s′) > h (s).
+
+For P ℓt , P mt , P Bt , and P Ct , we choose kernels in Pt that attain the required state-action-wise min-imum or maximum for all (s, a ) simultaneously. This is possible since Pt is rectangular, and these kernels are efficiently computable by backward dynamic programming with a state-action-wise greedy procedure over the confidence set, as in Jin et al. (2020, Algorithm 3) and Luo et al. (2021, Algorithms 4–6). 
+
+## B Additional related work and discussion 
+
+B.1 Additional related work Tabular MDPs. Adversarial MDPs have been studied since the works of Even-Dar et al. (2009); Yu et al. (2008), and the episodic formulation was later introduced by Zimin and Neu (2013). Algo-rithms for online tabular MDPs can be broadly divided into two approaches: occupancy-measure based global optimization and policy optimization . Global optimization solves an optimization problem over the set of occupancy measures, and has led to strong regret guarantees in several set-tings (Zimin and Neu, 2013; Jin et al., 2020). However, global optimization can be computationally demanding because it optimizes over the occupancy measure space of the MDP. Policy optimiza-tion takes a more local approach by optimizing an action distribution at each state, which is often practical and computationally efficient (Shani et al., 2020; Luo et al., 2021). Under known transitions and bandit feedback, global optimization achieves the minimax-optimal regret rate eO(√HSAT ) (Zimin and Neu, 2013). In contrast, the best known bound for policy optimization is eO(√H3SAT ), achieved via dilated exploration (Luo et al., 2021). Compared with the global optimization rate, this bound incurs an extra factor of H, often attributed to Q-function estimation. Unknown transitions introduce an additional difficulty, since the learner must also estimate the tran-sition kernel. Among global optimization, the best known regret bounds were obtained by Rosenberg and Mansour (2019) for full-information feedback and Jin et al. (2020) for bandit feedback, both of order eO(√H2S2AT ). For policy optimization under bandit feedback, the best known guarantee was established by Luo et al. (2021), with regret eO(√H4S2AT ). On the other hand, minimax lower bounds of order Ω( √H2SAT ) were established by Jin et al. (2018); Domingues et al. (2021), leaving gaps in the dependence on the horizon and the number of states. A line of work has sought to close these gaps, and Tiapkin et al. (2025) proposed a policy-optimization algorithm under full-information feedback with regret eO(√H6SAT ). More recent work has studied policy optimization under more challenging feedback models, including aggregate feedback (Lancewicki and Mansour, 2025; Ito et al., 2025). In the stochastic setting, near-optimal regret guarantees have been established by both model-based and value-based methods (Jaksch et al., 2010; Azar et al., 2017; Jin et al., 2018; Zanette and Brun-skill, 2019). Beyond such gap-independent guarantees, a line of work has studied gap-dependent 
+
+polylog( T ) regret bounds for episodic tabular MDPs (Simchowitz and Jamieson, 2019; Dann et al., 2021; Xu et al., 2021). 
+
+Best-of-both-worlds algorithms. The best-of-both-worlds guarantee aims to obtain near-optimal regret in both adversarial and stochastic regimes using a single algorithm. This idea was first studied for multi-armed bandits by Bubeck and Slivkins (2012), and was later developed in several di-rections (Seldin and Slivkins, 2014; Auer and Chiang, 2016; Seldin and Lugosi, 2017). A common approach is to use follow-the-regularized-leader with carefully chosen regularizers, which allows the algorithm to remain robust in the adversarial regime while improving automatically in the stochastic regime (Wei and Luo, 2018; Zimmert and Seldin, 2021; Ito, 2021). The stochastic-regime analysis is 16 often based on a self-bounding technique (Zimmert and Seldin, 2021; Masoudian and Seldin, 2021), and the same idea is useful for handling stochastic losses with adversarial corruption. Best-of-both-worlds guarantees have also been studied in tabular MDPs. For global optimization, Jin and Luo (2020); Jin et al. (2021) first developed best-of-both-worlds algorithms, with subse-quent extensions to adversarial transitions and aggregate feedback (Jin et al., 2023; Ito et al., 2025). In policy optimization, Dann et al. (2023) established best-of-both-worlds guarantees under bandit feedback for several regularizers, including Tsallis entropy, Shannon entropy, and log-barrier regu-larization, while Li et al. (2026) later obtained refined data-dependent guarantees using the OFTRL framework under known transitions. 
+
+Data-dependent bounds. Data-dependent regret bounds adapt to the realized loss sequence in-stead of depending only on worst-case parameters. They have been widely studied in online learning, including learning with expert advice (Littlestone and Warmuth, 1994), multi-armed bandits (Auer et al., 2002), and online convex optimization (Zinkevich, 2003). Typical examples in adversarial regimes include first-order bounds based on the comparator’s cumulative loss (Cesa-Bianchi et al., 1996; Allenberg et al., 2006; Neu, 2015), second-order bounds based on loss fluctuations (Hazan and Kale, 2011; Wei and Luo, 2018; Ito, 2021), and path-length bounds based on temporal variation (Wei and Luo, 2018; Bubeck et al., 2019; Ito, 2021). In tabular MDPs, it is also important to obtain regret bounds that adapt to data-dependent complexity measures. The first such result was obtained by Lee et al. (2020), who derived a first-order bound for MDPs with unknown transitions via global optimization. For policy optimization, Dann et al. (2023) established best-of-both-worlds guarantees under unknown transitions and first-order data-dependent guarantees under known transitions, leaving open whether data-dependent guarantees are possible under unknown transitions. More recently, Li et al. (2026) showed that, under known transitions, OFTRL-based policy optimization can adapt to multiple complexity measures, including first-order, second-order, and path-length measures. A related line of work has studied gap-dependent bounds in stochastic regimes. For multi-armed bandits, Audibert et al. (2007) introduced variance-aware gap-dependent bounds, and related ideas have been incorporated into best-of-both-worlds analyses ( e.g., Ito et al. 2022). For tabular MDPs, recent works have also studied variance-aware gap-dependent polylog( T ) regret bounds (Sim-chowitz and Jamieson, 2019; Dann et al., 2021; Chen et al., 2025; Li et al., 2026). These studies left open the case of data-dependent policy optimization under unknown transitions, especially when combined with best-of-both-worlds guarantees. Our work addresses these gaps by showing that policy optimization can achieve refined data-dependent and best-of-both-worlds guarantees under unknown transitions, up to an additional transition-dependent complexity term. 
+
+B.2 Discussion of the transition-dependent complexity 
+
+In this part, we discuss the role of the transition-dependent complexity Qπ1: T
+
+> trans
+
+(ℓ), which captures the difficulty caused by unknown transitions. By Lemma D.6, we have 
+
+Qπ1: T
+
+> trans
+
+(ℓ) ≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )ℓt(s, a )2. (17) Since ℓt(s, a ) ∈ [0 , 1] , taking expectations gives 
+
+E[Qπ1: T
+
+> trans
+
+(ℓ)] ≤ HE
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )ℓt(s, a )
+
+#
+
+= H(LT (π) + Reg T (π)) (18) for each policy π. From this inequality, we can show that the transition-dependent bound recovers a regret bound depending on the first-order complexity. Suppose that for the any comparator policy 
+
+π, there exists an absolute constant c > 0 such that Reg T (π) ≤ c
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + J
+
+17 for some J > 0, as the regret bounds in Theorems 4.1 and 4.2. Then, using the inequality (18), the regret is upper bounded as Reg T (π) ≤ c
+
+q
+
+HS 2A log 2(T )( L(π) + Reg T (π)) + J
+
+≤ c
+
+q
+
+HS 2A log 2(T )L(π) + c
+
+q
+
+HS 2A log 2(T )Reg T (π) + J
+
+≤ c
+
+q
+
+HS 2A log 2(T )L(π) + 12 Reg T (π) + 12 c2HS 2A log 2(T ) + J
+
+where the last inequality follows from the AM–GM inequality. Thus, we obtain Reg T (π) ≲
+
+q
+
+HS 2A log 2(T )L(π) + HS 2A log 2(T ) + J. 
+
+This implies that Qπ1: T
+
+> trans
+
+(ℓ) is at least as adaptive as the first-order complexity. However, the com-parison in (17) can be loose. Transition uncertainty contributes to Qπ1: T
+
+> trans
+
+(ℓ) only when it creates variation in the future cumulative loss. The following example shows that Qπ1: T
+
+> trans
+
+(ℓ) can be small even when the cumulative loss is large. Consider an H = 3 layered MDP with layers S0 = {s0}, S1 = {x1, x 2}, and S2 = {y}, followed by the terminal state. For each action a, the transition P (· | s0, a ) may be stochastic and unknown over {x1, x 2}. For every action, the transitions from x1 and x2 go deterministically to y, and the transition from y goes deterministically to the terminal state. Let the losses at s0, x1 and x2 be zero, and let the loss at y be one: 
+
+ℓt(s0, a ) = 0 , ℓt(xi, a ) = 0 (i ∈ { 1, 2}), ℓt(y, a ) = 1 , ∀a ∈ A , ∀t ∈ [T ].
+
+Since every trajectory passes through y and the loss at y is one, the cumulative loss is linear in T ,and in particular 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )ℓt(s, a )2 = T. 
+
+However, for any sequence {ϕt}Tt=1 satisfying |ϕt(s, a )| = ℓt(s, a ), we have 
+
+V πt (x1; ϕt) = V πt (x2; ϕt).
+
+Hence, for every action a,
+
+Var s′∼P (·| s0,a ) [V πt (s′; ϕt)] = 0 .
+
+The other transitions are deterministic, so no transition contributes to Qπ1: T
+
+> trans
+
+(ℓ), and thus 
+
+Qπ1: T
+
+> trans
+
+(ℓ) = 0 .In this example, the right-hand side of (17) is of order HT , whereas Qπ1: T
+
+> trans
+
+(ℓ) = 0 . By adding deterministic layers after y, the same construction gives an O(H2T ) term on the right-hand side while keeping Qπ1: T
+
+> trans
+
+(ℓ) = 0 . This shows that Qπ1: T
+
+> trans
+
+(ℓ) can be much smaller than the upper bound in (17) and (18). 
+
+## C High probability event 
+
+We define the following good event E = E1 ∩ E 2, which holds with high probability as shown in Definition C.4. 
+
+E1 = {P ∈ P t, ∀t = 1 , . . . , T },
+
+E2 =
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )
+
+nt(s, a ) ≲ |S h|A log T + log( H/δ ), ∀h = 0 , . . . , H − 1
+
+.
+
+18 Lemma C.1 (Event E1, Jin et al. 2020, Lemma 2) . With probability at least 1 − 4δ, we have P ∈ P t
+
+for all t = 1 , . . . , T .
+
+Lemma C.2 (Jin et al. 2021, Corollary D.3.4) . If P ∈ P t, then for all eP ∈ P t
+
+eP (s′ | s, a ) − P (s′ | s, a ) ≤ min 
+
+(
+
+4
+
+s
+
+P (s′ | s, a )ιnt(s, a ) + 40 ι
+
+3nt(s, a ) , 1
+
+)
+
+Lemma C.3 (Event E2, Jin et al. 2020, Lemma 10) . We have with probability at least 1 − δ
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )
+
+nt(s, a ) ≲ |S h|A log T + log( H/δ )
+
+for all layers h.
+
+Definition C.4. Define E to be the event that P ∈ P t for all t and the bound in Lemma C.3 holds. In this case, Pr( E) ≥ 1 − 5δ.
+
+## D Auxiliary lemmas 
+
+D.1 Technical lemmas Lemma D.1 (Performance difference lemma) . For any policies π1 and π2, and any loss function 
+
+ℓ : S × A → R,
+
+V π1 (s0; ℓ) − V π2 (s0; ℓ) = X
+
+> s
+
+qπ2 (s) X
+
+> a
+
+(π1(a | s) − π2(a | s)) Qπ1 (s, a ; ℓ).
+
+Lemma D.2 (Dann et al. 2023, Lemma C.2) . For any policies π1 and π2, and any function L :
+
+S × A → R, define 
+
+ℓ(s, a ) = L(s, a ) − Es′∼P (·| s,a ), a ′∼π1(·| s′)[L(s′, a ′)] .
+
+Then, for all (s, a ), Qπ1 (s, a ; ℓ) = L(s, a ). Consequently, 
+
+X
+
+> s
+
+qπ2 (s) X
+
+> a
+
+(π1(a | s) − π2(a | s)) L(s, a ) = V π1 (s0; ℓ) − V π2 (s0; ℓ).
+
+Lemma D.3 (Occupancy measure difference, Jin et al., 2021, Lemma D.3.1) . For any transition functions P1, P 2 and any policy π,
+
+qP1,π (s) − qP2,π (s) = 
+
+> h(s)−1
+
+X
+
+> h=0
+
+X
+
+> u∈S h
+
+X
+
+> v∈A
+
+X
+
+> w∈S h+1
+
+qP1,π (u, v )( P1(w | u, v ) − P2(w | u, v )) qP2,π (s | w)=
+
+> h(s)−1
+
+X
+
+> h=0
+
+X
+
+> u∈S h
+
+X
+
+> v∈A
+
+X
+
+> w∈S h+1
+
+qP2,π (u, v )( P1(w | u, v ) − P2(w | u, v )) qP1,π (s | w).
+
+Lemma D.4. Suppose that the event E holds. Let F : Sh+1 → [−F , F ]. Then, 
+
+X
+
+> s′∈Sh+1
+
+ ePt(s′ | s, a ) − P (s′ | s, a )
+
+
+
+F (s′) ≲
+
+s
+
+|S h+1 |Var s′∼P (·| s,a )[F (s′)] ιnt(s, a ) + |S h+1 |F ι nt(s, a )
+
+for all state-action pairs (s, a ) ∈ S h × A .Proof. Since P
+
+> s′∈Sh+1
+
+ ePt(s′ | s, a ) − P (s′ | s, a )
+
+
+
+= 0 , we may subtract any constant from F .Let 
+
+c = Es′∼P (·| s,a )[F (s′)] .
+
+19 Then, 
+
+X
+
+> s′∈Sh+1
+
+ ePt(s′ | s, a ) − P (s′ | s, a )
+
+
+
+F (s′) = X
+
+> s′∈Sh+1
+
+ ePt(s′ | s, a ) − P (s′ | s, a )
+
+
+
+(F (s′) − c)
+
+Therefore, 
+
+X
+
+> s′∈Sh+1
+
+ ePt(s′ | s, a ) − P (s′ | s, a )
+
+
+
+F (s′)
+
+≤ X
+
+> s′∈Sh+1
+
+ePt(s′ | s, a ) − P (s′ | s, a ) |F (s′) − c|
+
+≲ X
+
+> s′∈Sh+1
+
+s
+
+P (s′ | s, a )ιnt(s, a ) |F (s′) − c| + X
+
+> s′∈Sh+1
+
+ιnt(s, a ) |F (s′) − c|
+
+(by Lemma C.2 and the assumption that E holds) 
+
+≤
+
+s
+
+|S h+1 | P 
+
+> s′∈Sh+1
+
+P (s′ | s, a )( F (s′) − c)2ιnt(s, a ) + 2|S h+1 |F ι nt(s, a )
+
+(by the Cauchy–Schwarz inequality and |F (s′) − c| ≤ 2F )
+
+≤
+
+s
+
+|S h+1 |Var s′∼P (·| s,a )[F (s′)] ιnt(s, a ) + 2|S h+1 |F ι nt(s, a ) .
+
+Lemma D.5. Suppose that the event E holds. Let ePt be a transition kernel in Pt, and let gt(s, a ) ∈
+
+[0 , G ]. Then, it holds that 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s) − q ePt,π t (s) πt(a | s)gt(s, a ) ≲ pS2Aι 2Qπ1: T
+
+> trans
+
+(g) + HS 3AGι 2,
+
+where 
+
+Qπ1: T
+
+> trans
+
+(g) := sup  
+
+> ∀t, ∀s,a |ϕt(s,a )|=gt(s,a )
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )[V πt (s′; ϕt)] .
+
+Proof. For each layer h ∈ {0, . . . , H − 1}, let Wh := Sh × A × S h+1 . Throughout the proof, whenever summation indices are omitted, expressions such as P 
+
+> u,v,w
+
+or P 
+
+> x,y,z
+
+stand for 
+
+PH−1
+
+> h=0
+
+P 
+
+> (s,a,s ′)∈Wh
+
+.Let ϕt(s, a ) = sgn 
+
+
+
+qπt (s) − q ePt,π t (s)
+
+
+
+gt(s, a ). According to Lemma D.3, we have 
+
+X
+
+> s,a
+
+qπt (s) − q ePt,π t (s) πt(a | s)gt(s, a )= X
+
+> s,a
+
+
+
+qπt (s) − q ePt,π t (s)
+
+
+
+πt(a | s)ϕt(s, a )= X
+
+> s,a
+
+X
+
+> u,v,w
+
+qπt (u, v )
+
+
+
+P (w | u, v ) − ePt(w | u, v )
+
+
+
+q ePt,π t (s | w)πt(a | s)ϕt(s, a )= X
+
+> s,a
+
+X
+
+> u,v,w
+
+qπt (u, v )
+
+
+
+P (w | u, v ) − ePt(w | u, v )
+
+
+
+qπt (s | w)πt(a | s)ϕt(s, a )
+
+| {z }
+
+> term 1
+
++ X
+
+> s
+
+X
+
+> a
+
+X
+
+> u,v,w
+
+qπt (u, v )
+
+
+
+P (w | u, v ) − ePt(w | u, v )
+
+ 
+
+q ePt,π t (s | w) − qπt (s | w)
+
+
+
+πt(a | s)ϕt(s, a )
+
+| {z }
+
+> term 2
+
+.
+
+20 We first bound term 1.
+
+term 1 ≤ X
+
+> u,v,w
+
+qπt (u, v )
+
+
+
+P (w | u, v ) − ePt(w | u, v )
+
+ X 
+
+> s,a
+
+qπt (s, a | w)ϕt(s, a )= X
+
+> u,v,w
+
+qπt (u, v )
+
+
+
+P (w | u, v ) − ePt(w | u, v )
+
+
+
+V πt (w; ϕt)
+
+≤ X
+
+> u,v
+
+qπt (u, v ) X
+
+> w
+
+
+
+P (w | u, v ) − ePt(w | u, v )
+
+
+
+V πt (w; ϕt)
+
+≤
+
+> H−1
+
+X
+
+> h=0
+
+X
+
+> (u,v )∈S h×A
+
+qπt (u, v )
+
+s
+
+|S h+1 |Var w∼P (·| u,v )[V πt (w; ϕt)] ιnt(u, v ) + |S h+1 |HGι nt(u, v )
+
+!
+
+(by Lemma D.4) 
+
+=
+
+> H−1
+
+X
+
+> h=0
+
+X
+
+> (u,v )∈S h×A
+
+qπt (u, v )
+
+s
+
+|S h+1 |Var w∼P (·| u,v )[V πt (w; ϕt)] ιnt(u, v )
+
+!| {z }
+
+> term 1a
+
++
+
+> H−1
+
+X
+
+> h=0
+
+|S h+1 |HGι X
+
+> (u,v )∈S h×A
+
+qπt (u, v )
+
+nt(u, v )
+
+| {z }
+
+> term 1b
+
+For term 1a,
+
+> T
+
+X
+
+> t=1
+
+term 1a ≤
+
+> T
+
+X
+
+> t=1
+> H−1
+
+X
+
+> h=0
+
+X
+
+> (u,v )∈S h×A
+
+qπt (u, v )
+
+s
+
+|S h+1 |Var w∼P (·| u,v )[V πt (w; ϕt)] ιnt(u, v )
+
+!
+
+≤
+
+vuut
+
+> T
+
+X
+
+> t=1
+> H−1
+
+X
+
+> h=0
+
+X
+
+> (u,v )∈S h×A
+
+|S h+1 | qπt (u, v )ιnt(u, v )
+
+×
+
+vuut
+
+> T
+
+X
+
+> t=1
+> H−1
+
+X
+
+> h=0
+
+X
+
+> (u,v )∈S h×A
+
+qπt (u, v )Var w∼P (·| u,v )[V πt (w; ϕt)] 
+
+(by the Cauchy–Schwarz inequality) 
+
+≲
+
+vuut H−1X
+
+> h=0
+
+|S h+1 ||S h|Aι 2
+
+! TX
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )Var w∼P (·| u,v )[V πt (w; ϕt)] 
+
+!
+
+(by Lemma C.3 and the assumption that E holds) 
+
+≤
+
+vuutS2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )Var w∼P (·| u,v )[V πt (w; ϕt)] 
+
+!
+
+, (19) where the last inequality uses PH−1 
+
+> h=0
+
+|S h+1 ||S h| ≤ S2.For term 1b,
+
+> T
+
+X
+
+> t=1
+
+term 1b ≤
+
+> T
+
+X
+
+> t=1
+> H−1
+
+X
+
+> h=0
+
+|S h+1 |HGι X
+
+> (u,v )∈S h×A
+
+qπt (u, v )
+
+nt(u, v )
+
+≲
+
+> T
+
+X
+
+> t=1
+> H−1
+
+X
+
+> h=0
+
+|S h||S h+1 |HAGι 2 (by Lemma C.3 and the assumption that E holds) 
+
+≤ HS 2AGι 2. (20) 21 Thus, combining (19) and (20), we obtain 
+
+> T
+
+X
+
+> t=1
+
+term 1 ≲
+
+vuutS2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )Var w∼P (·| u,v )[V πt (w; ϕt)] 
+
+!
+
++ HS 2AGι 2.
+
+We next bound term 2.
+
+term 2
+
+≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qπt (u, v ) P (w | u, v ) − ePt(w | u, v ) q ePt,π t (s | w) − qπt (s | w) X
+
+> a
+
+πt(a | s)|ϕt(s, a )|≤ G X
+
+> s
+
+X
+
+> u,v,w
+
+qπt (u, v ) P (w | u, v ) − ePt(w | u, v ) X
+
+> x,y,z
+
+qπt (x, y | w) P (z | x, y ) − ePt(z | x, y ) q ePt,π t (s | z)
+
+(by Lemma D.3) 
+
+≤ HG X
+
+> s
+
+X
+
+> u,v,w
+
+qπt (u, v ) P (w | u, v ) − ePt(w | u, v ) X
+
+> x,y,z
+
+qπt (x, y | w) P (z | x, y ) − ePt(z | x, y )
+
+≲ HG X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )
+
+s
+
+P (w | u, v )ιnt(u, v ) + ιnt(u, v )
+
+!
+
+qπt (x, y | w) min 
+
+(s 
+
+P (z | x, y )ιnt(x, y ) + ιnt(x, y ) , 1
+
+)
+
+(by Lemma C.2 and the assumption that E holds) 
+
+≤ HG X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )
+
+s
+
+P (w | u, v )ιnt(u, v ) qπt (x, y | w)
+
+s
+
+P (z | x, y )ιnt(x, y )
+
+| {z }
+
+> term 2a
+
++ HG X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )
+
+s
+
+P (w | u, v )ιnt(u, v ) qπt (x, y | w) min 
+
+ ιnt(x, y ) , 1
+
+| {z }
+
+> term 2b
+
++ HG X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v ) ιnt(u, v ) qπt (x, y | w)
+
+| {z }
+
+> term 2c
+
+.
+
+For term 2a,
+
+term 2a
+
+= X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+s
+
+qπt (u, v )P (z | x, y )qπt (x, y | w)ιnt(u, v )
+
+s
+
+qπt (u, v )P (w | u, v )qπt (x, y | w)ιnt(x, y )
+
+≤
+
+vuut X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )P (z | x, y )qπt (x, y | w)ιnt(u, v )
+
+vuut X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )P (w | u, v )qπt (x, y | w)ιnt(x, y )
+
+(by the Cauchy–Schwarz inequality) 
+
+≤
+
+vuutH X
+
+> u,v,w
+
+qπt (u, v )ιnt(u, v )
+
+vuutH X
+
+> x,y,z
+
+qπt (x, y )ιnt(x, y )
+
+≤ HS X
+
+> u,v
+
+qπt (u, v )ιnt(u, v ) , (21) where the third line follows from the facts that P 
+
+> (x,y,z )∈Wh
+
+qπt (x, y | w)P (z | x, y ) ≤ 1 and 
+
+P 
+
+> (u,v,w )∈Wh
+
+qπt (u, v )P (w | u, v )qπt (x, y | w) ≤ qP,π t (x, y ) for any layer h ∈ { 0, . . . , H − 1}.For term 2b,
+
+term 2b
+
+≤ X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )
+
+
+
+P (w | u, v ) + ιnt(u, v )
+
+
+
+qP,π t (x, y | w) min 
+
+ ιnt(x, y ) , 1
+
+
+
+22 ≤ X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v )P (w | u, v )qπt (x, y | w) ιnt(x, y ) + X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπt (u, v ) ιnt(u, v ) qπt (x, y | w)
+
+≤ H X
+
+> x,y,z
+
+qπt (x, y ) ιnt(x, y ) + S X
+
+> u,v,w
+
+qπt (u, v ) ιnt(u, v )
+
+≲ S2 X
+
+> u,v
+
+qπt (u, v )ιnt(u, v ) , (22) where the third line follows from P 
+
+> (u,v,w )∈Wh
+
+qπt (u, v )P (w | u, v )qπt (x, y | w) ≤ qπt (x, y ) and 
+
+P 
+
+> (x,y,z )∈Wh
+
+qπt (x, y | w) ≤ |S h+1 |.Similarly, 
+
+term 2c ≤ S X
+
+> u,v,w
+
+qπt (u, v ) ιnt(u, v ) ≤ S2 X
+
+> u,v
+
+qπt (u, v )ιnt(u, v ) . (23) Combining (21)–(23), we obtain 
+
+term 2 ≲ HS 2G X
+
+> u,v
+
+qπt (u, v )ιnt(u, v ) .
+
+Therefore, by Lemma C.3, 
+
+> T
+
+X
+
+> t=1
+
+term 2 ≲
+
+> H−1
+
+X
+
+> h=0
+
+HS 2G|S h|Aι 2 ≤ HS 3AGι 2.
+
+Combining the bounds on term 1 and term 2, we conclude that 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s) − q ePt,π t (s) πt(a | s)gt(s, a )
+
+≲
+
+vuutS2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )Var w∼P (·| u,v )[V πt (w; ϕt)] 
+
+!
+
++ HS 3AGι 2.
+
+Here, we define 
+
+Qπ1: T
+
+> trans
+
+(g) := sup  
+
+> ∀t, ∀s,a |ϕt(s,a )|=gt(s,a )
+> T
+
+X
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )Var w∼P (·| u,v )[V πt (w; ϕt)] ,
+
+which completes the proof. 
+
+Lemma D.6. For any nonnegative functions gt : S × A → R≥0,
+
+Qπ1: T
+
+> trans
+
+(g) := sup  
+
+> ∀t, ∀s,a |ϕt(s,a )|=gt(s,a )
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )[V πt (s′; ϕt)] 
+
+satisfies 
+
+Qπ1: T
+
+> trans
+
+(g) ≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )gt(s, a )2.
+
+Proof. Since |ϕt(s, a )| = gt(s, a ) for all s, a , it suffices to prove that for each t and each such function ϕt,
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )[V πt (s′; ϕt)] ≤ H X
+
+> s,a
+
+qπt (s, a )ϕt(s, a )2.
+
+23 Let (Xt, 0, A t, 0, X t, 1, A t, 1, . . . , X t,H ) be the random trajectory generated by (P, π t). For h =0, 1, . . . , H and x ∈ S h, define Vt,H = 0 and Mt,H = 0 and 
+
+Gt,h := 
+
+> H−1
+
+X
+
+> h′=h
+
+ϕt(Xt,h ′ , A t,h ′ ), Vt,h (x) := Eπt [Gt,h | Xt,h = x], Mt,h (x) := Eπt [G2 
+
+> t,h
+
+| Xt,h = x].
+
+Since Gt,h = ϕt(Xt,h , A t,h ) + Gt,h +1 , we have for any state x
+
+Vt,h (x) = X
+
+> a
+
+πt(a | x) ϕt(x, a ) + X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!
+
+,
+
+and 
+
+Mt,h (x) = X
+
+> a
+
+πt(a | x) ϕt(x, a )2 + 2 ϕt(x, a ) X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!
+
++ X
+
+> a
+
+πt(a | x) X
+
+> x′
+
+P (x′ | x, a )Mt,h +1 (x′).
+
+Then, we have 
+
+Mt,h (x) − V t,h (x)2
+
+= X
+
+> a
+
+πt(a | x) ϕt(x, a )2 + 2 ϕt(x, a ) X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′) + X
+
+> x′
+
+P (x′ | x, a )Mt,h +1 (x′)
+
+!
+
+− X
+
+> a
+
+πt(a | x) ϕt(x, a ) + X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!! 2
+
+= X
+
+> a
+
+πt(a | x) X
+
+> x′
+
+P (x′ | x, a ) Mt,h +1 (x′) − V t,h +1 (x′)2
+
++ X
+
+> a
+
+πt(a | x)
+
+X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)2 − X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!2
+
++ X
+
+> a
+
+πt(a | x) ϕt(x, a ) + X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!2
+
+− X
+
+> a
+
+πt(a | x) ϕt(x, a ) + X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!! 2
+
+≥ X
+
+> a
+
+πt(a | x) X
+
+> x′
+
+P (x′ | x, a ) Mt,h +1 (x′) − V t,h +1 (x′)2
+
++ X
+
+> a
+
+πt(a | x)Var x′∼P (·| x,a )[Vt,h +1 (x′)] ,
+
+where the last inequality follows from Jensen’s inequality 
+
+X
+
+> a
+
+πt(a | x) ϕt(x, a ) + X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!! 2
+
+≤ X
+
+> a
+
+πt(a | x) ϕt(x, a ) + X
+
+> x′
+
+P (x′ | x, a )Vt,h +1 (x′)
+
+!2
+
+.
+
+Thus, we have 
+
+X
+
+> a
+
+πt(a | x)Var x′∼P (·| x,a )[Vt,h +1 (x′)] ≤  Mt,h (x) − V t,h (x)2
+
+− X
+
+> a
+
+πt(a | x) X
+
+> x′
+
+P (x′ | x, a ) Mt,h +1 (x′) − V t,h +1 (x′)2.
+
+24 By multiplying qπt (x) and sum over x ∈ S h, we obtain 
+
+X
+
+> (x,a )∈S h×A
+
+qπt (x, a )Var x′∼P (·| x,a )[Vt,h +1 (x′)] ≤ X
+
+> x∈S h
+
+qπt (x) Mt,h (x) − V t,h (x)2
+
+− X
+
+> x′∈S h+1
+
+qπt (x′) Mt,h +1 (x′) − V t,h +1 (x′)2.
+
+Summing over h = 0 , 1, . . . , H − 1 and Vt,h +1 (x′) = V πt (x′; ϕt), we obtain 
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )[V πt (s′; ϕt)] ≤ M t, 0(s0) − V t, 0(s0)2 ≤ M t, 0(s0). (24) Finally, 
+
+Mt, 0(s0) = Eπt
+
+
+
+> H−1
+
+X
+
+> h=0
+
+ϕt(Xt,h , A t,h )
+
+!2
+
+≤ HEπt
+
+"H−1X
+
+> h=0
+
+ϕt(Xt,h , A t,h )2
+
+#
+
+= H X
+
+> s,a
+
+qπt (s, a )ϕt(s, a )2, (25) where the inequality follows from the Cauchy–Schwarz inequality. Combining (24) and (25) com-pletes the proof. By following the same argument as for term 2 in the proof of Lemma D.5, we obtain the following bound, whose lower-order term improves that of Dann et al. (2023) by a factor of S.
+
+Lemma D.7. Suppose that the event E holds. Let eP st be a transition kernel in Pt which may depend on s, and let gt(s) ∈ [0 , G ]. Then 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s) − q eP st ,π t (s) gt(s) ≲
+
+vuutHS 2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s)gt(s)2 + HS 3AGι 2.
+
+Lemma D.8. Suppose that the event E holds. Let eP s, est be a transition kernel in Pt which may depend on s, es, and let gt(s) ∈ [0 , G ]. Then 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> es
+
+qπt (es) X
+
+> s
+
+qπt (s | es) − q eP s, est ,π t (s | es) gt(s)
+
+≲
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s)gt(s)2 + HS 3AGι 2.
+
+Proof. For each layer h ∈ {0, . . . , H − 1}, let Wh := Sh × A × S h+1 . Throughout the proof, whenever summation indices are omitted, expressions such as P 
+
+> u,v,w
+
+or P 
+
+> x,y,z
+
+stand for 
+
+PH−1
+
+> h=0
+
+P 
+
+> (s,a,s ′)∈Wh
+
+.First, we prove that for any es, and policy π,
+
+X
+
+> s
+
+qπ (s | es) − q eP s, est ,π (s | es) ≲ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) qπ (s | w) + HS 2 X
+
+> u,v
+
+qπ (u, v | es)ιnt(u, v ) .
+
+25 By Lemma D.3, we have 
+
+X
+
+> s
+
+qπ (s | es) − q eP s, est ,π (s | es)
+
+≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es) P (w | u, v ) − eP s, est (w | u, v ) q eP s, est ,π (s | w) (by Lemma D.3) 
+
+≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qP,π (u, v | es) P (w | u, v ) − eP s, est (w | u, v ) qπ (s | w)+ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es) P (w | u, v ) − eP s, est (w | u, v )
+
+
+
+q eP s, est ,π (s | w) − qπ (s | w)
+
+
+
+≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es) P (w | u, v ) − eP s, est (w | u, v ) qπ (s | w)+ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es) P (w | u, v ) − eP s, est (w | u, v ) X
+
+> x,y,z
+
+qπ (x, y | w) P (z | x, y ) − eP s, est (z | x, y ) q eP s, est ,π (s | z)
+
+(by Lemma D.3) 
+
+≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es) P (w | u, v ) − eP s, est (w | u, v ) qπ (s | w)+ H X
+
+> u,v,w
+
+qπ (u, v | es) P (w | u, v ) − eP s, est (w | u, v ) X
+
+> x,y,z
+
+qπ (x, y | w) P (z | x, y ) − eP s, est (z | x, y )
+
+≲ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) + ιnt(u, v )
+
+!
+
+qπ (s | w)+ H X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) + ιnt(u, v )
+
+!
+
+qπ (x, y | w) min 
+
+(s 
+
+P (z | x, y )ιnt(x, y ) + ιnt(x, y ) , 1
+
+)
+
+(by Lemma C.2 and the assumption that E holds) 
+
+≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) qπ (s | w)+ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es) ιnt(u, v ) qπ (s | w)
+
+| {z }
+
+> term 1
+
++ H X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) qπ (x, y | w)
+
+s
+
+P (z | x, y )ιnt(x, y )
+
+| {z }
+
+> term 2
+
++ H X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) qπ (x, y | w) min 
+
+ ιnt(x, y ) , 1
+
+| {z }
+
+> term 3
+
++ H X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es) ιnt(u, v ) qπ (x, y | w)
+
+| {z }
+
+> term 4
+
+.
+
+We bound term 1 to term 4 separately. 
+
+term 1 ≤ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es)ιnt(u, v ) ≤ S2 X
+
+> u,v
+
+qπ (u, v | es)ιnt(u, v ) . (26) For term 2, we have 
+
+term 2
+
+= X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+s
+
+qπ (u, v | es)P (z | x, y )qπ (x, y | w)ιnt(u, v )
+
+s
+
+qπ (u, v | es)P (w | u, v )qπ (x, y | w)ιnt(x, y )
+
+26 ≤
+
+vuut X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)P (z | x, y )qπ (x, y | w)ιnt(u, v )
+
+vuut X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)P (w | u, v )qπ (x, y | w)ιnt(x, y )
+
+(by the Cauchy–Schwarz inequality) 
+
+≤
+
+vuutH X
+
+> u,v,w
+
+qπ (u, v | es)ιnt(u, v )
+
+vuutH X
+
+> x,y,z
+
+qπ (x, y | es)ιnt(x, y )
+
+≤ HS X
+
+> u,v
+
+qπ (u, v | es)ιnt(u, v ) , (27) where the third line follows from the facts that P 
+
+> (x,y,z )∈Wh
+
+qπ (x, y | w)P (z | x, y ) ≤ 1 and 
+
+P 
+
+> (u,v,w )∈Wh
+
+qπ (u, v | es)P (w | u, v )qπ (x, y | w) ≤ qπ (x, y | es) for any layer h ∈ { 0, . . . , H − 1}.For term 3, we obtain 
+
+term 3 ≤ X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)
+
+
+
+P (w | u, v ) + ιnt(u, v )
+
+
+
+qπ (x, y | w) min 
+
+ ιnt(x, y ) , 1
+
+
+
+≤ X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es)P (w | u, v )qπ (x, y | w) ιnt(x, y )+ X
+
+> u,v,w
+
+X
+
+> x,y,z
+
+qπ (u, v | es) ιnt(u, v ) qπ (x, y | w)
+
+≤ H X
+
+> x,y,z
+
+qπ (x, y | es) ιnt(x, y ) + S X
+
+> u,v,w
+
+qπ (u, v | es) ιnt(u, v )
+
+≲ S2 X
+
+> u,v
+
+qπ (u, v | es)ιnt(u, v ) , (28) where the third line follows from P 
+
+> (u,v,w )∈Wh
+
+qπ (u, v | es)P (w | u, v )qπ (x, y | w) ≤ qπ (x, y | es)
+
+and P 
+
+> (x,y,z )∈Wh
+
+qπ (x, y | w) ≤ |S h+1 |, and the last line uses P 
+
+> (u,v,w )∈Wh
+
+qP,π (u, v | es) ≤|S h+1 | P 
+
+> (u,v )∈S h×A
+
+qπ (u, v | es).Similarly, we have 
+
+term 4 ≤ S X
+
+> u,v,w
+
+qπ (u, v | es) ιnt(u, v ) ≤ S2 X
+
+> u,v
+
+qπ (u, v | es)ιnt(u, v ) . (29) Combining with (26)–(29), we obtain 
+
+X
+
+> s
+
+qπ (s | es) − q eP s, est ,π (s | es) ≲ X
+
+> s
+
+X
+
+> u,v,w
+
+qπ (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) qπ (s | w) + S2 X
+
+> u,v
+
+qπ (u, v | es)ιnt(u, v ) .
+
+(30) We now apply (30). Then 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> es
+
+qπt (es) X
+
+> s
+
+qπt (s | es) − q eP s, est ,π t (s | es) gt(s)
+
+≲
+
+> T
+
+X
+
+> t=1
+
+X
+
+> es
+
+qπt (es) X
+
+> s
+
+X
+
+> u,v,w
+
+qπt (u, v | es)
+
+s
+
+P (w | u, v )ιnt(u, v ) qπt (s | w) + S2 X
+
+> u,v
+
+qπt (u, v | es)ιnt(u, v )
+
+!
+
+gt(s)
+
+≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> u,v,w
+
+qπt (u, v )
+
+s
+
+P (w | u, v )ιnt(u, v ) qπt (s | w) + S2 X
+
+> u,v
+
+qπt (u, v )ιnt(u, v )
+
+!
+
+gt(s)
+
+≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> u,v,w
+
+qπt (u, v )
+
+s
+
+P (w | u, v )ιnt(u, v ) qπt (s | w)
+
+!
+
+gt(s) + HS 2G
+
+> T
+
+X
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )ιnt(u, v ) .
+
+(31) 27 We first bound the first term in (31). Fix h. Then 
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+ X
+
+> (u,v,w )∈Wh
+
+qπt (u, v )
+
+s
+
+P (w | u, v )ιnt(u, v ) qπt (s | w)
+
+gt(s)
+
+≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+ X
+
+> (u,v,w )∈S h×A×S h+1
+
+qπt (u, v )
+
+
+
+αP (w | u, v )gt(s)2 + ιαn t(u, v )
+
+
+
+qπt (s | w)
+
+
+
+(holds for any α > 0 by the AM-GM inequality) 
+
+= αH 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> (u,v,w )∈S h×A×S h+1
+
+qπt (u, v )P (w | u, v )qπt (s | w)gt(s)2
+
++ Hα
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> (u,v,w )∈S h×A×S h+1
+
+qπt (u, v )ιnt(u, v ) qπt (s | w)
+
+≤ αH 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s)gt(s)2 + H2|S h+1 |
+
+α
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (u,v )∈S h×A
+
+qπt (u, v )ιnt(u, v )
+
+≲ αH 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s)gt(s)2 + H2|S h+1 ||S h|Aι 2
+
+α
+
+(by Lemma C.3 and the assumption that E holds) 
+
+≲
+
+vuutH3|S h||S h+1 |Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qP,π t (s)gt(s)2 (by picking the optimal α)
+
+≤ (|S h| + |S h+1 |)
+
+vuutH3Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qP,π t (s)gt(s)2. (by the AM–GM inequality) Summing over h gives 
+
+> H−1
+
+X
+
+> h=0
+
+(|S h| + |S h+1 |)
+
+vuutH3Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s)gt(s)2 ≲
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s)gt(s)2. (32) It remains to bound the second term in (31). By Lemma C.3 and the event E,
+
+HS 2G
+
+> T
+
+X
+
+> t=1
+
+X
+
+> u,v
+
+qπt (u, v )ιnt(u, v ) ≲ HS 3AGι 2. (33) Combining (32) and (33), we complete the proof. 
+
+D.2 Data-dependent and self-bounding lemmas Lemma D.9. It holds that 
+
+E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+#
+
+≲ HE
+
+" TX
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2)
+
+#
+
++ HS 3Aι 2.
+
+Proof. On the event ¯E, PTt=1 
+
+P 
+
+> s,a
+
+qπt (s, a ) max eP ∈P t Q eP ,π t (s, a ; ( ℓt − mt)2) = O(H2T ) gives a contribution O(H2T δ ), which is absorbed by taking δ = O(1 /T 2).Hence, it suffices to prove the bound on E. For each t, let P Qt ∈ P t be such that 
+
+QP Qt ,π t (s, a ; ( ℓt − mt)2) = max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+28 for all (s, a ). Then, 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )QP Qt ,π t (s, a ; ( ℓt − mt)2)
+
+≤
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Qπt (s, a ; ( ℓt − mt)2
+
++
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )
+
+
+
+QP Qt ,π t (s, a ; ( ℓt − mt)2) − Qπt (s, a ; ( ℓt − mt)2)
+
+
+
+. (34) For the first term, we have 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Qπt (s, a ; ( ℓt − mt)2)=
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) X
+
+> s′,a ′
+
+qπt (s′, a ′ | s, a )( ℓt(s′, a ′) − mt(s′, a ′)) 2
+
+≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s′,a ′
+
+qπt (s′, a ′)( ℓt(s′, a ′) − mt(s′, a ′)) 2
+
+= H
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2) (35) For the second term, we obtain 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )
+
+
+
+QP Qt ,π t (s, a ; ( ℓt − mt)2) − Qπt (s, a ; ( ℓt − mt)2)
+
+
+
+=
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) X
+
+> s′
+
+
+
+qP Qt ,π t (s′ | s, a ) − qπt (s′ | s, a )
+
+ X 
+
+> a′
+
+πt(a′ | s′)( ℓt(s′, a ′) − mt(s′, a ′)) 2
+
+=
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπt (s) X
+
+> s′
+
+
+
+qP Qt ,π t (s′ | s) − qπt (s′ | s)
+
+ X 
+
+> a′
+
+πt(a′ | s′)( ℓt(s′, a ′) − mt(s′, a ′)) 2
+
+≤
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s′,a ′
+
+qπt (s′, a ′)( ℓt(s′, a ′) − mt(s′, a ′)) 2 + HS 3Aι 2 (by Lemma D.8) 
+
+=
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2) + HS 3Aι 2. (36) Combining (34)–(36), we obtain 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )QP Qt ,π t (s, a ; ( ℓt − mt)2)
+
+≤ H
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2) + 
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2) + HS 3Aι 2
+
+≲ H
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2) + HS 3Aι 2,
+
+where the last line follows from the AM–GM inequality since ax + √bx ≤ ax + ax + b 
+
+> 2a
+
+for 
+
+a, b, x ≥ 0. Taking expectations completes the proof. 29 Lemma D.10 (Li et al. 2026, Lemma E.9) . It holds that 
+
+E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+It(s, a )( Lt,h (s) − Mt,h (s))2
+
+#
+
+≤ H2E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+It(s, a )( ℓt(s, a ) − mt(s, a )) 2
+
+#
+
+.
+
+Lemma D.11 (Li et al. 2026, Lemma F.12) . Suppose mt is defined in (4) with some constant ξ ∈
+
+(0 , 12 ). Then, for any comparator policy π, it holds that 
+
+E
+
+" TX
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2)
+
+#
+
+= E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+It(s, a )( ℓt(s, a ) − mt(s, a )) 2
+
+#
+
+≲ min {L(π) + Reg T (π), HT − L(π) − Reg T (π), Q ∞, V 1} + SA. 
+
+Lemma D.12. For any sequence of policies {πt}Tt=1 and any prediction sequence {mt}Tt=1 , it holds that 
+
+Qπ1: T
+
+> trans
+
+(m) ≤ 2Qπ1: T
+
+> trans
+
+(ℓ) + 2 H
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2).
+
+Proof. Fix any sequence ϕt such that |ϕt(s, a )| = mt(s, a ) for all t, s, a . Define 
+
+ϕℓt (s, a ) := sgn( ϕt(s, a )) ℓt(s, a ), ϕ∆ 
+
+> t
+
+(s, a ) := ϕt(s, a ) − ϕℓt (s, a ).
+
+Then 
+
+ϕℓt (s, a ) = ℓt(s, a ), ϕ∆ 
+
+> t
+
+(s, a ) = |ℓt(s, a ) − mt(s, a )|.
+
+Moreover, for any state s,
+
+V πt (s; ϕt) = V πt (s; ϕℓt ) + V πt (s; ϕ∆ 
+
+> t
+
+).
+
+By using Var (X + Y ) ≤ 2Var (X) + 2 Var (Y ), we have 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )[V πt (s′; ϕt)] 
+
+≤ 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )
+
+V πt (s′; ϕℓt ) + 2 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a )Var s′∼P (·| s,a )
+
+V πt (s′; ϕ∆ 
+
+> t
+
+)
+
+≤ 2Qπ1: T
+
+> trans
+
+(ℓ) + 2 Qπ1: T
+
+> trans
+
+(|ℓ − m|).
+
+Since this holds for any sequence ϕt with |ϕt(s, a )| = mt(s, a ), taking the supremum yields 
+
+Qπ1: T
+
+> trans
+
+(m) ≤ 2Qπ1: T
+
+> trans
+
+(ℓ) + 2 Qπ1: T
+
+> trans
+
+(|ℓ − m|).
+
+Finally, Lemma D.6 with gt = |ℓt − mt| gives 
+
+Qπ1: T
+
+> trans
+
+(|ℓ − m|) ≤ H
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2).
+
+Therefore, 
+
+Qπ1: T
+
+> trans
+
+(m) ≤ 2Qπ1: T
+
+> trans
+
+(ℓ) + 2 H
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2).
+
+Lemma D.13 (Dann et al. (2023, Lemma C.5)) . For any two policies π1 and π2, it holds that 
+
+X
+
+> s,a
+
+|qπ1 (s, a ) − qπ2 (s, a )| ≤ H X
+
+> s,a
+
+qπ1 (s)|π1(a | s) − π2(a | s)|.
+
+30 Lemma D.14. For any policy π and layer h, it holds that 
+
+X
+
+> (s,a )∈S h×A
+
+qπ (s, a ) − qπ⋆
+
+(s, a ) ≤ 2
+
+> h
+
+X
+
+> h′=0
+
+X
+
+> s∈S h′
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a ).
+
+Proof. Since π⋆ is deterministic, we have 
+
+X
+
+> (s,a )∈S h×A
+
+qπ (s, a ) − qπ⋆
+
+(s, a )
+
+= X
+
+> (s,a )∈S h×A
+
+qπ (s)π(a | s) − qπ⋆
+
+(s)1[a = π⋆(s)] 
+
+≤ X
+
+> (s,a )∈S h×A
+
+|qπ (s)π(a | s) − qπ (s)1[a = π⋆(s)] | + X
+
+> s∈S h
+
+qπ (s) − qπ⋆
+
+(s)
+
+(by the triangle inequality) 
+
+= X
+
+> s∈S h
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a ) + X
+
+> s∈S h
+
+qπ (s)(1 − π(π⋆(s) | s)) + X
+
+> s∈S h
+
+qπ (s) − qπ⋆
+
+(s)
+
+= 2 X
+
+> s∈S h
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a ) + X
+
+> s∈S h
+
+qπ (s) − qπ⋆
+
+(s) . (37) Next, by the triangle inequality, 
+
+X
+
+> s′∈S h+1
+
+qπ (s′) − qπ⋆
+
+(s′)
+
+= X
+
+> s′∈S h+1
+
+X
+
+> s∈S h
+
+X
+
+> a
+
+
+
+qπ (s)π(a | s)P (s′ | s, a ) − qπ⋆
+
+(s)1[a = π⋆(s)] P (s′ | s, π ⋆(s)) 
+
+
+
+≤ X
+
+> s′∈S h+1
+
+X
+
+> s∈S h
+
+
+
+qπ (s)P (s′ | s, π ⋆(s)) − qπ⋆
+
+(s)P (s′ | s, π ⋆(s)) 
+
+
+
++ X
+
+> s′∈S h+1
+
+X
+
+> s∈S h
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s)π(a | s)P (s′ | s, a ) + X
+
+> s∈S h
+
+qπ (s)( π(π⋆(s) | s) − 1) P (s′ | s, π ⋆(s)) 
+
+≤ X
+
+> s′∈S h+1
+
+X
+
+> s∈S h
+
+qπ (s) − qπ⋆
+
+(s) P (s′ | s, π ⋆(s)) + X
+
+> s′∈S h+1
+
+X
+
+> s∈S h
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a )|P (s′ | s, a ) − P (s′ | s, π ⋆(s)) |≤ X
+
+> s∈S h
+
+qπ (s) − qπ⋆
+
+(s) + 2 X
+
+> s∈S h
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a ), (38) where the last inequality follows from P 
+
+> s′∈S h+1
+
+|P (s′ | s, a ) − P (s′ | s, π ⋆(s)) | ≤ 2 for all state-action pairs (s, a ).Applying (38) recursively and using qπ (s0) = qπ⋆
+
+(s0), we obtain 
+
+X
+
+> s∈S h
+
+qπ (s) − qπ⋆
+
+(s) ≤ 2
+
+> h−1
+
+X
+
+> h′=0
+
+X
+
+> s∈S h′
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a ). (39) Combining (37) and (39) yields 
+
+X
+
+> (s,a )∈S h×A
+
+qπ (s, a ) − qπ⋆
+
+(s, a ) ≤ 2
+
+> h
+
+X
+
+> h′=0
+
+X
+
+> s∈S h′
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s, a ).
+
+This completes the proof. 31 Lemma D.15 (Jin et al. 2020, Section 2.1) . Under the stochastic regime with adversarial corruption, for any sequence of policies {πt}Tt=1 , the regret satisfies the following (∆ , 2C, T ) self-bounding constraint: 
+
+Reg T (˚ π) ≥ E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+qπt (s, a )∆( s, a )
+
+ − 2C.
+
+Lemma D.16. Let G : S × A → R≥0 be any nonnegative function. Under the stochastic regime with adversarial corruption, for any α > 0, it holds that 
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+G(s, a )
+
+vuutE
+
+" TX
+
+> t=1
+
+qπt (s, a )
+
+#
+
+≤ α(Reg T (˚ π) + 2 C) + X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+G(s, a )2
+
+4α∆( s, a ) .
+
+Proof. For each (s, a ) with a̸ = π⋆(s), the AM–GM inequality and Lemma D.15 imply 
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+G(s, a )
+
+vuutE
+
+" TX
+
+> t=1
+
+qπt (s, a )
+
+#
+
+≤ αE
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+qπt (s, a )∆( s, a )
+
+ + X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+G(s, a )2
+
+4α∆( s, a )
+
+(by the AM–GM inequality with α > 0)
+
+≤ α(Reg T (˚ π) + 2 C) + X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+G(s, a )2
+
+4α∆( s, a ) . (by Lemma D.15) 
+
+Lemma D.17. Let G(h) be any nonnegative function defined on layer h. Under the stochastic regime with adversarial corruption, for any α > 0, it holds that 
+
+> H−1
+
+X
+
+> h=0
+
+vuuutG(h)E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+
+
+≤ α(Reg T (˚ π) + 4 C) + 
+
+PH−1
+
+> h=0
+
+pG(h)
+
+2
+
+4α∆min 
+
+.
+
+Proof. Applying Lemma D.14, we obtain 
+
+E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a ) − q˚π (s, a )
+
+> +
+
+
+
+= E
+
+ 12
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a ) − q˚π (s, a )
+
+
+
+≤ E
+
+ 12
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+
+
+qπt (s, a ) − qπ⋆
+
+(s, a ) + q˚π (s, a ) − qπ⋆
+
+(s, a )
+
+
+
+≤ E
+
+
+
+> T
+
+X
+
+> t=1
+> h
+
+X
+
+> h′=0
+
+X
+
+> s∈S h′
+
+X
+
+> a̸=π⋆(s)
+
+ qπt (s, a ) + q˚π (s, a ).
+
+32 We next bound the comparator contribution. Using the uncorrupted mean loss function μ, we have 
+
+E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+q˚π (s, a )∆( s, a )
+
+
+
+= E
+
+" TX
+
+> t=1
+
+
+
+V ˚π (s0; μ) − V π⋆
+
+(s0; μ)
+
+#
+
+= E
+
+" TX
+
+> t=1
+
+ V ˚π (s0; μ) − V ˚π (s0; ℓt)#
+
++ E
+
+" TX
+
+> t=1
+
+
+
+V ˚π (s0; ℓt) − V π⋆
+
+(s0; ℓt)
+
+#
+
++ E
+
+" TX
+
+> t=1
+
+
+
+V π⋆
+
+(s0; ℓt) − V π⋆
+
+(s0; μ)
+
+#
+
+.
+
+The middle term is nonpositive by the definition of ˚π. Moreover, since E[ℓ′
+
+> t
+
+] = μ, for any policy π,
+
+E
+
+" TX
+
+> t=1
+
+|V π (s0; ℓt) − V π (s0; μ)|
+
+#
+
+≤ E
+
+" TX
+
+> t=1
+
+|V π (s0; ℓt) − V π (s0; ℓ′
+
+> t
+
+)|
+
+#
+
+(by Jensen’s inequality) 
+
+≤ E
+
+" TX
+
+> t=1
+> H−1
+
+X
+
+> h=0
+
+∥ℓt(h) − ℓ′
+
+> t
+
+(h)∥∞
+
+#
+
+= C.
+
+Therefore, 
+
+E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+q˚π (s, a )∆( s, a )
+
+ ≤ 2C. (40) Combining (40) with Lemma D.15, we get 
+
+E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+ qπt (s, a ) + q˚π (s, a )∆( s, a )
+
+ ≤ Reg T (˚ π) + 4 C.
+
+Then, for any α > 0, we have 
+
+> H−1
+
+X
+
+> h=0
+
+vuuutG(h)E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+
+
+≤
+
+> H−1
+
+X
+
+> h=0
+
+vuuutG(h)E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+(qπt (s, a ) + q˚π (s, a )) 
+
+
+
+≤
+
+> H−1
+
+X
+
+> h=0
+
+pG(h)
+
+vuuut 1∆min 
+
+E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+(qπt (s, a ) + q˚π (s, a ))∆( s, a )
+
+
+
+≤
+
+> H−1
+
+X
+
+> h=0
+
+pG(h)
+
+s
+
+Reg T (˚ π) + 4 C
+
+∆min 
+
+≤ α(Reg T (˚ π) + 4 C) + 
+
+PH−1
+
+> h=0
+
+pG(h)
+
+2
+
+4α∆min 
+
+,
+
+where we use the AM–GM inequality. 
+
+Lemma D.18. Let G > 0. Under the stochastic regime with adversarial corruption, for any α > 0,it holds that vuutGE
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+#
+
+≤ α(Reg T (˚ π) + 4 C) + HG 
+
+2α∆min 
+
+.
+
+33 Proof. Applying Lemma D.13 to compare any policy π with π⋆, we get 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπ (s, a ) − qπ⋆
+
+(s, a ) ≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπ (s)|π(a | s) − π⋆(a | s)|≤ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s)π(a | s)+ H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπ (s)(1 − π(π⋆(s) | s)) 
+
+≤ 2H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+qπ (s)π(a | s).
+
+Using this bound with π = πt and π = ˚ π, for any α > 0 we obtain 
+
+vuutGE
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+#
+
+≤
+
+vuutGE
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+|qπt (s, a ) − q˚π (s, a )|
+
+#
+
+≤
+
+vuutGE
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+(|qπt (s, a ) − qπ⋆ (s, a )| + |q˚π (s, a ) − qπ⋆ (s, a )|)
+
+#
+
+≤
+
+vuuut2HG E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+(qπt (s, a ) + q˚π (s, a )
+
+
+
+≤
+
+vuuut2HG 1∆min 
+
+E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+(qπt (s, a ) + q˚π (s, a ))∆( s, a )
+
+
+
+≤
+
+s
+
+2HG Reg T (˚ π) + 4 C
+
+∆min 
+
+(by Lemma D.15 and (40)) 
+
+≤ α(Reg T (˚ π) + 4 C) + HG 
+
+2α∆min 
+
+,
+
+where the last inequality follows from the AM–GM inequality. 
+
+## E General lemma of optimistic follow-the-regularized-leader 
+
+In this section, we provide a regret analysis of optimistic follow-the-regularized-leader (OFTRL) for the MDP setting. 
+
+Lemma E.1 (OFTRL with policy optimization, Li et al. 2026, Lemma C.4) . Suppose that a se-quence of probability vectors p1, . . . , p T ∈ △ (A) is given by OFTRL in 
+
+pt = arg min 
+
+> ∆( A)
+
+(* 
+
+p, 
+
+> t−1
+
+X 
+
+> τ=1
+
+ℓτ + mt
+
++
+
++ ψt(p)
+
+)
+
+, ψt(p) = X
+
+> a
+
+1
+
+ηt(a) log 
+
+ 1
+
+p(a)
+
+
+
+with η1(a) = η1 for all a, and let losses {ℓt}Tt=1 , loss predictions {mt}T +1  
+
+> t=1
+
+and {xt}Tt=1 be such that 
+
+ηt(a)pt(a)( ℓt(a) − mt(a) + xt) ≥ − 12
+
+34 for all t, a . Then for any u ∈ △ (A), the OFTRL algorithm achieves 
+
+> T
+
+X
+
+> t=1
+
+⟨pt − u, ℓ t⟩ ≤ A log  AT 2
+
+η1
+
++
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (a) − 1
+
+ηt(a)
+
+
+
+log  AT 2
+
++
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(a)pt(a)2(ℓt(a) − mt(a) + xt)2
+
++ 1
+
+T 2
+
+> T
+
+X
+
+> t=1
+
+
+
+−u + 1
+
+A 1, ℓ t
+
+
+
++ 2 ∥mT +1 ∥∞.
+
+## F Regret analysis for the full-information setting (Theorem 4.1) 
+
+In this section, we prove the best-of-both-worlds results for the full-information setting. We present the bound for the adversarial regime in Theorem F.10 and the bound for the stochastic regime with adversarial corruption in Theorem F.11. Together, these results establish Theorem 4.1. 
+
+F.1 Auxiliary lemmas 
+
+Building on the policy optimization framework of Luo et al. (2021); Dann et al. (2023), we use the following key lemma to derive our regret bounds. 
+
+Lemma F.1 (Restatement of Lemma 3.1) . Suppose that bt(s) is a nonnegative loss function. Sup-pose also that, for a comparator policy π, there exists Jπ ≥ 0 such that 
+
+E
+
+"X
+
+> s
+
+qπ (s)
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+(πt(a | s) − π(a | s))( Qπt (s, a ; ℓt) − Bt(s, a )) 
+
+#
+
+≤ Jπ + E
+
+" TX
+
+> t=1
+
+X
+
+> s
+
+qπ (s)bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+X
+
+> a
+
+qπ (s)πt(a | s)Bt(s, a )
+
+#
+
+. (41) 
+
+Then, it holds that 
+
+Reg T (π) ≤ Jπ + 3 E
+
+" TX
+
+> t=1
+
+V P Bt ,π t (s0; bt)
+
+#
+
++ E[HT 1[P / ∈ P t, ∃t ∈ [T ]]] ,
+
+where P Bt ∈ P t simultaneously attains the maxima in (5) for all (s, a ).
+
+To show (41), we choose bt in (9) and decompose the LHS of (41) as 
+
+X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s))( Qπt (s, a ; ℓt) − Bt(s, a )) = X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s)) 
+
+ bQt(s, a ) − Bt(s, a )
+
+| {z } 
+
+> reg π(s)
+
++ X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; ℓt) − bQt(s, a )
+
+| {z } 
+
+> bias π(s)
+
+. (42) 
+
+Lemma F.2 (full-information setting) . The variables bt(s) in (9) and Bt(s, a ) in (5) satisfy 
+
+Bt(s, a ) ≤ 2
+
+for all episodes t and state-action pairs (s, a ).Proof. We first upper bound the dilated bonus-to-go Bt(s, a ) by unrolling the dilated recursion. Since (1 + 1 /H )H ≤ 3, we obtain 
+
+Bt(s, a ) ≤ 3 X
+
+> s′
+
+qP Bt ,π t (s′ | s, a ) bt(s′). (43) 35 By the definition of bt in (9) and the learning-rate update (8), 
+
+bt(s) = 7 X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+≤ 7 X
+
+> a
+
+ηt(s, a )ζt(s, a )
+
+≤ 7η1H2,
+
+where we used P 
+
+> a
+
+ζt(s, a ) ≤ H2 and ηt(s, a ) ≤ η1.Using η1 = 112 H3 and (43), we get 
+
+Bt(s, a ) ≤ 3 X
+
+> s′
+
+qP Bt ,π t (s′ | s, a )bt(s′) ≤ 21 η1H3 ≤ 2.
+
+Lemma F.3 (Dann et al. 2023, Lemma G.3) . Let η1 > 0, η 2, η 3, . . . be updated by 
+
+1
+
+ηt+1 
+
+= 1
+
+ηt
+
++ ηtϕt ∀t ≥ 1
+
+with 0 ≤ ϕt ≤ η−2 
+
+> t
+
+. Then, 
+
+1
+
+ηt+1 
+
+≥ 12
+
+vuutt+1 X 
+
+> τ=1
+
+ϕτ .
+
+Lemma F.4 (full-information setting) . Suppose that the learning rates are updated according to (8) .Then, it holds 
+
+ηt(s, a ) ≤ 2plog( T )
+
+qPtτ =1 ζτ (s, a )
+
+for all episodes t and state-action pairs (s, a ).Proof. Fix (s, a ) and define ϕt(s, a ) = ζt(s,a )log( T ) . Then the update rule of learning rates can be written as 
+
+1
+
+ηt+1 (s, a ) = 1
+
+ηt(s, a ) + ηt(s, a )ϕt(s, a ).
+
+To apply Lemma F.3, we verify that ϕt(s, a ) ≤ 1 
+
+> ηt(s,a )2
+
+. Indeed, 
+
+ϕt(s, a )ηt(s, a )2 = ηt(s, a )2ζt(s, a )log( T ) ≤ η21 H2
+
+log( T ) ≤ H2
+
+log( T ) · 1144 H6 ≤ 1,
+
+which follows from η1 = 112 H3 .Then, by Lemma F.3, we have 
+
+ηt(s, a ) ≤ 2
+
+qPtτ =1 ϕτ
+
+≤ 2plog( T )
+
+qPtτ =1 ζτ (s, a )
+
+.
+
+F.2 Common regret analysis 
+
+In this part, we upper bound the right-hand side of (41). 36 Lemma F.5 (full-information setting) . For each state s ∈ S and any comparator policy π, it holds that 
+
+reg π (s) ≤ O H3A log( T ) +
+
+> T
+
+X
+
+> t=1
+
+bt(s) + 1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a ).
+
+Proof. We will apply Lemma E.1 with pt = πt(· | s) and ℓt = bQt(s, a ) − Bt(s, a ) for each s ∈ S .To do so, in what follows, we will check the conditions of Lemma E.1. Let 
+
+xt =
+
+D
+
+−πt(· | s), bQt(s, ·) − QP mt ,π t (s, ·; mt)
+
+E
+
+= − X
+
+> a
+
+πt(a | s)
+
+
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt)
+
+
+
+and verify that for all (s, a ), ηt(s, a )πt(a | s)
+
+ bQt(s, a ) − Bt(s, a ) − QP mt ,π t (s, a ; mt) + xt
+
+
+
+≥−1/2. Indeed, 
+
+ηt(s, a )πt(a | s)
+
+ bQt(s, a ) − Bt(s, a ) − QP mt ,π t (s, a ; mt) + xt
+
+
+
+≥ ηt(s, a )πt(a | s)( −H − Bt(s, a ) − H)
+
+≥ − 4η1H ≥ − 12 ,
+
+where the bounds in the second lines use −H ≤ bQt(s, a ) − QP mt ,π t (s, a ; mt) ≤ H, Bt(s, a ) ≤ 2 ≤
+
+2H from Lemma F.2. Thus, Lemma E.1 implies that, for any comparator policy π,
+
+reg π (s)
+
+≤ A log  AT 2
+
+η1
+
++
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log  AT 2
+
++
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt) − Bt(s, a ) + xt
+
+2
+
++ 1
+
+T 2
+
+> T
+
+X
+
+> t=1
+
+
+
+−π(· | s) + 1
+
+A 1, bQt(s, ·) − Bt(s, ·)
+
+
+
++ 2 QP mt ,π t (s, ·; mT +1 ) ∞
+
+≤ 3A log( T )
+
+η1
+
++ 6HT + 2 H + 3 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+( QP mt ,π t (s, ·; mT +1 ) ∞ ≤ H)
+
++ 2 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt) + xt
+
+2
+
++ 2 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2Bt(s, a )2
+
+≤ O (H3A log( T )) + 3 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )+ 2 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt) + xt
+
+2
+
+| {z }
+
+> stability-term
+
++ 1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a ). (44) 37 Here, the second inequality follows from 
+
+1
+
+T 2
+
+> T
+
+X
+
+> t=1
+
+
+
+−π(· | s) + 1
+
+A 1, bQt(s, ·) − Bt(s, ·)
+
+
+
+≤ 1
+
+T 2 −π(· | s) + 1
+
+A 1
+
+> 1
+> T
+
+X
+
+> t=1
+
+ bQt(s, ·) − Bt(s, ·)
+
+
+
+> ∞
+
+≤ 2T · 3HT 2 = 6HT ,
+
+where we used −π(· | s) + 1 
+
+> A
+
+1 1 ≤ 2, bQt(s, a ) ≤ H and Bt(s, a ) ≤ 2 from Lemma F.2. It remains to bound the stability-term. Define 
+
+Q(s, a ) := QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt).
+
+Since 
+
+xt = − X
+
+> b
+
+πt(b | s)Q(s, b ),
+
+we have 
+
+Q(s, a ) − X
+
+> b
+
+πt(b | s)Q(s, b )
+
+!2
+
+=
+
+(1 − πt(a | s)) Q(s, a ) − X
+
+> b̸=a
+
+πt(b | s)Q(s, b )
+
+
+
+> 2
+
+≤ 2(1 − πt(a | s)) 2Q(s, a )2 + 2 
+
+X
+
+> b̸=a
+
+πt(b | s)Q(s, b )
+
+
+
+> 2
+
+≤ 2(1 − πt(a | s)) 2Q(s, a )2
+
++ 2(1 − πt(a | s)) X
+
+> b̸=a
+
+πt(b | s)Q(s, b )2,
+
+where the last inequality uses the Cauchy–Schwarz inequality. Thus, we obtain 
+
+πt(a | s)2 Q(s, a ) − X
+
+> b
+
+π(b | s)Q(s, b )
+
+!2
+
+≤ 2πt(a | s)(1 − πt(a | s)) X
+
+> b
+
+πt(b | s)Q(s, b )2
+
+Therefore, 
+
+ηt(s, a )πt(a | s)2
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt) + xt
+
+2
+
+≤ 2ηt(s, a )πt(a | s)(1 − πt(a | s)) X
+
+> b
+
+πt(b | s)
+
+
+
+QP ℓt ,π t (s, b ; ℓt) − QP mt ,π t (s, b ; mt)
+
+2
+
+≤ 2ηt(s, a )ζt(s, a ),
+
+where the last equality follows from the definition of ζt(s, a ) = πt(a | s)(1 − πt(a | s)) P 
+
+> b
+
+πt(b |
+
+s)
+
+
+
+QP ℓt ,π t (s, b ; ℓt) − QP mt ,π t (s, b ; mt)
+
+2
+
+.Then, stability-term is evaluated as stability-term =
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt) + xt
+
+2
+
+≤ 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )ζt(s, a )
+
+≤ 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T ),
+
+38 where the last inequality follows from (8). Combining the above bound on the stability-term with (44), we obtain, for any policy π,
+
+reg π (s) ≤ O  H3A log( T ) + 7 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )+ 1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a )= O H3A log( T ) +
+
+> T
+
+X
+
+> t=1
+
+bt(s) + 1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a ).
+
+Lemma F.6 (full-information setting) . Suppose that the event E holds. Then, for any comparator policy π, it holds that 
+
+X
+
+> s
+
+qπ (s)bias π (s) ≲ pS2Aι 2Qπ1: T
+
+> trans
+
+(ℓ) + HS 3Aι 2. (45) 
+
+Also, 
+
+X
+
+> s
+
+qπ (s)bias π (s) ≲
+
+> H−1
+
+X
+
+> h=0
+
+vuutH2|Sh|| Sh+1 |Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
++ HS 2Aι 2. (46) 
+
+Proof. 
+
+X
+
+> s
+
+qπ (s)bias π (s) = X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; ℓt) − QP ℓt ,π t (s, a ; ℓt)
+
+
+
+=
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ),
+
+where, for each t, Lemma D.2 is applied with 
+
+L(s, a ) = Qπt (s, a ; ℓt) − QP ℓt ,π t (s, a ; ℓt).
+
+Thus, 
+
+zt(s, a ) = Qπt (s, a ; ℓt) − QP ℓt ,π t (s, a ; ℓt)
+
+− Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+h
+
+Qπt (s′, a ′; ℓt) − QP ℓt ,π t (s′, a ′; ℓt)
+
+i
+
+.
+
+Expanding the definition of zt(s, a ), we obtain 
+
+zt(s, a ) = Es′∼P (·| s,a ),a ′∼πt(·| s′)[Qπt (s′, a ′; ℓt)] − Es′∼P ℓt (·| s,a ),a ′∼πt(·| s′)
+
+h
+
+QP ℓt ,π t (s′, a ′; ℓt)
+
+i
+
+− Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+h
+
+Qπt (s′, a ′; ℓt) − QP ℓt ,π t (s′, a ′; ℓt)
+
+i
+
+= Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+h
+
+QP ℓt ,π t (s′, a ′; ℓt)
+
+i
+
+− Es′∼P ℓt (·| s,a ),a ′∼πt(·| s′)
+
+h
+
+QP ℓt ,π t (s′, a ′; ℓt)
+
+i
+
+= Es′∼P (·| s,a )
+
+h
+
+V P ℓt ,π t (s′; ℓt)
+
+i
+
+− Es′∼P ℓt (·| s,a )
+
+h
+
+V P ℓt ,π t (s′; ℓt)
+
+i
+
+.
+
+By the definition of P ℓt , which minimizes Q(s, a ; ℓt) for all (s, a ), we have zt(s, a ) ≥ 0.39 First, we show (45). By the fact that zt(s, a ) ≥ 0,
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ) ≤
+
+> T
+
+X
+
+> t=1
+
+V πt (s0; zt)
+
+≤
+
+> T
+
+X
+
+> t=1
+
+
+
+V πt (s0; ℓt) − V P ℓt ,π t (s0; ℓt)
+
+
+
+(by Lemma D.2) 
+
+=
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+
+
+qπt (s) − qP ℓt ,π t (s)
+
+ X 
+
+> a
+
+πt(a | s)ℓt(s, a ). (47) Applying Lemma D.5 to (47), we obtain 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ) ≲ pS2Aι 2Qπ1: T
+
+> trans
+
+(ℓ) + HS 3Aι 2.
+
+This proves (45). Next, we show (46). By Lemma D.4, 
+
+zt(s, a ) = X
+
+> s′
+
+
+
+P (s′ | s, a ) − P ℓt (s′ | s, a )
+
+
+
+V P ℓt ,π t (s′; ℓt)
+
+≲
+
+s
+
+Sh(s)+1 Var s′∼P (·| s,a )
+
+V P ℓt ,π t (s′; ℓt)ιnt(s, a ) + |Sh(s)+1 |Hι nt(s, a ) .
+
+Using zt(s, a ) ≥ 0, we further have 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a )
+
+≤
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +zt(s, a )
+
+≲
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+s
+
+Sh(s)+1 Var s′∼P (·| s,a )
+
+V P ℓt ,π t (s′; ℓt)ιnt(s, a ) + |Sh(s)+1 |Hι nt(s, a )
+
+
+
+≤
+
+> H−1
+
+X
+
+> h=0
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+s
+
+|Sh+1 |Var s′∼P (·| s,a )
+
+V P ℓt ,π t (s′; ℓt)ιnt(s, a )+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) |Sh(s)+1 |Hι nt(s, a ) . (48) Here, by the Cauchy–Schwarz inequality, the first term in (48) is bounded as 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+s
+
+|Sh+1 |Var s′∼P (·| s,a )
+
+V P ℓt ,π t (s′; ℓt)ιnt(s, a )
+
+≤
+
+vuut
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+×
+
+vuut
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+|Sh+1 |Var s′∼P (·| s,a )
+
+V P ℓt ,π t (s′; ℓt)ιnt(s, a ) .
+
+40 The term inside the second square root is further bounded as 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+|Sh+1 |Var s′∼P (·| s,a )
+
+h
+
+V P ℓt ,π t (s′; ℓt)
+
+i
+
+ιnt(s, a )
+
+≤ H2|Sh+1 |
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )ιnt(s, a )
+
+≲ H2|Sh|| Sh+1 |Aι 2. (by Lemma C.3) The second term in (48) is bounded as 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) |Sh(s)+1 |Hι nt(s, a ) ≤
+
+> H−1
+
+X
+
+> h=0
+
+|Sh+1 |
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a ) Hι nt(s, a )
+
+≲ H
+
+> H−1
+
+X
+
+> h=0
+
+|Sh+1 || Sh|Aι 2
+
+≤ HS 2Aι 2.
+
+Therefore, 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a )
+
+≲
+
+> H−1
+
+X
+
+> h=0
+
+vuutH2|Sh|| Sh+1 |Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] + + HS 2Aι 2
+
+This proves (46), and hence completes the proof. 
+
+Lemma F.7 (full-information setting) . Suppose that the event E holds. Then, it holds that 
+
+> T
+
+X
+
+> t=1
+
+V P Bt ,π t (s0; bt) ≲ log( T ) X
+
+> s,a
+
+vuut TX
+
+> t=1
+
+qπt (s)ζt(s, a ) + H 32 S 52 A 32 log( T )ι. 
+
+Proof. By the definition of bt and the ηt, we have 
+
+> T
+
+X
+
+> t=1
+
+V P Bt ,π t (s0; bt)=
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qP Bt ,π t (s)bt(s)
+
+≲
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qP Bt ,π t (s)
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+≲
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qP Bt ,π t (s)ηt(s, a )ζt(s, a )
+
+≲ plog( T )
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s,a
+
+qP Bt ,π t (s)pζt(s, a ) × pζt(s, a )
+
+qPtτ =1 ζτ (s, a )
+
+(by Lemma F.4) 
+
+≤ plog( T ) X
+
+> s,a
+
+vuut TX
+
+> t=1
+
+ζt(s, a )
+
+Ptτ =1 ζτ (s, a )
+
+vuut TX
+
+> t=1
+
+qP Bt ,π t (s)2ζt(s, a )
+
+(by the Cauchy–Schwarz inequality) 41 ≲ log( T ) X
+
+> s,a
+
+vuut TX
+
+> t=1
+
+qP Bt ,π t (s)ζt(s, a ), (49) where the last inequality uses 
+
+vuut TX
+
+> t=1
+
+ζt(s, a )
+
+Ptτ =1 ζτ (s, a ) ≤
+
+vuut1 + log 
+
+> T
+
+X
+
+> t=1
+
+ζt(s, a )
+
+!
+
+≲ plog( T )
+
+together with qP Bt ,π t (s)2 ≤ qP Bt ,π t (s).We further bound PTt=1 qP Bt ,π t (s)ζt(s, a ) for each fixed (s, a ). We decompose it as 
+
+> T
+
+X
+
+> t=1
+
+qP Bt ,π t (s)ζt(s, a ) = 
+
+> T
+
+X
+
+> t=1
+
+qπt (s)ζt(s, a ) + 
+
+> T
+
+X
+
+> t=1
+
+
+
+qP Bt ,π t (s) − qπt (s)
+
+
+
+ζt(s, a ). (50) To bound the second term, define 
+
+gs,a t (s′) := 1[s′ = s]ζt(s, a ) ≤ H2.
+
+Applying Lemma D.7 with this choice of gs,a t yields 
+
+> T
+
+X
+
+> t=1
+
+
+
+qP Bt ,π t (s) − qπt (s)
+
+
+
+ζt(s, a ) = 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s′
+
+
+
+qP Bt ,π t (s′) − qπt (s′)
+
+
+
+gs,a t (s′)
+
+≲
+
+vuutHS 2Aι 2
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s′
+
+qπt (s′)( gs,a t (s′)) 2 + H3S3Aι 2
+
+=
+
+vuutHS 2Aι 2
+
+> T
+
+X
+
+> t=1
+
+qπt (s)ζt(s, a )2 + H3S3Aι 2
+
+≤
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+qπt (s)ζt(s, a ) + H3S3Aι 2.
+
+Combining this with (50), we obtain 
+
+> T
+
+X
+
+> t=1
+
+qP Bt ,π t (s)ζt(s, a ) ≲
+
+> T
+
+X
+
+> t=1
+
+qπt (s)ζt(s, a ) + 
+
+vuutH3S2Aι 2
+
+> T
+
+X
+
+> t=1
+
+qπt (s)ζt(s, a ) + H3S3Aι 2
+
+≲
+
+> T
+
+X
+
+> t=1
+
+qπt (s)ζt(s, a ) + H3S3Aι 2, (51) where the second line follows from the AM–GM inequality since ax + √bx ≤ ax + ax + b 
+
+> 2a
+
+for 
+
+a, b, x ≥ 0.By (49) and (51), we obtain 
+
+> T
+
+X
+
+> t=1
+
+V P Bt ,π t (s0; bt) ≲ log( T ) X
+
+> s,a
+
+vuut TX
+
+> t=1
+
+qπt (s)ζt(s, a ) + H3S3Aι 2
+
+≤ log( T ) X
+
+> s,a
+
+vuut TX
+
+> t=1
+
+qπt (s)ζt(s, a ) + H 32 S 52 A 32 log( T )ι. 
+
+This completes the proof. 42 Lemma F.8 (full-information setting) . For any comparator policy π, Algorithm 1 guarantees 
+
+Reg T (π) ≲ HS 3A 32 ι2 + X
+
+> s,a
+
+vuutlog 2(T )E
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
++ min 
+
+(pS2Aι 2E[Qπ1: T
+
+> trans
+
+(ℓ)] ,
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |Aι 2E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+)
+
+.
+
+Proof. By the definition of the regret decomposition in (42), 
+
+E
+
+"X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s))( Qπt (s, a ; ℓt) − Bt(s, a )) 
+
+#
+
+= E
+
+"X
+
+> s
+
+qπ (s) · reg π (s)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
+= O H4A log( T ) + E
+
+" TX
+
+> t=1
+
+X
+
+> s
+
+qπ (s)bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> s
+
+qπ (s) X
+
+> a
+
+πt(a | s)Bt(s, a )
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
+,
+
+where we used Lemma F.5. Combining this with Lemma F.1 and δ = O(1 /T 2), for any comparator policy π, we obtain Reg T (π) ≤ O  H4A log( T ) + 3 E
+
+" TX
+
+> t=1
+
+V P Bt ,π t (s0; bt)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
+.
+
+Here, by Lemma F.7 and Jensen’s inequality, with δ = 1 /T 2, we obtain 
+
+E
+
+" TX
+
+> t=1
+
+V P Bt ,π t (s0; bt)
+
+#
+
+≲ log( T ) X
+
+> s,a
+
+vuutE
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
++ H 32 S 52 A 32 log( T )ι
+
++ O(δ) × O (HT ),
+
+where we used the trivial bound PTt=1 V P Bt ,π t (s0; bt) ≤ O (HT ) on ¯E from Lemma F.2. Then, using δ = 1  
+
+> T2
+
+, we have Reg T (π) ≲ H 32 S 52 A 32 log( T )ι + log( T ) X
+
+> s,a
+
+vuutE
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
+,
+
+(52) By (52) and Lemma F.6 and Jensen’s inequality, together with the trivial bound O(H2T ) on ¯E and the choice δ = O(1 /T 2), we obtain, for any policy π,Reg T (π) ≲ H 32 S 52 A 32 log( T )ι + log( T ) X
+
+> s,a
+
+vuutE
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
++ min 
+
+(pS2Aι 2E[Qπ1: T
+
+> trans
+
+(ℓ)] ,
+
+43 H−1X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |Aι 2E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+)
+
++ HS 3Aι 2 + O(δ) × O (H2T )
+
+≲ HS 3A 32 ι2 + X
+
+> s,a
+
+vuutlog 2(T )E
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
++ min 
+
+(pS2Aι 2E[Qπ1: T
+
+> trans
+
+(ℓ)] ,
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |Aι 2E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+)
+
+.
+
+This completes the proof. 
+
+F.3 Proof for the adversarial regime Lemma F.9 (full-information setting) . It holds that 
+
+X
+
+> s,a
+
+vuutlog 2(T )E
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
+≲
+
+vuutHSA log 2(T )E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+#
+
+.
+
+Proof. By the definition of ζt(s, a ), we have 
+
+X
+
+> s,a
+
+vuutlog 2(T )E
+
+" TX
+
+> t=1
+
+qπt (s)ζt(s, a )
+
+#
+
+= X
+
+> s,a
+
+vuutlog 2(T )E
+
+" TX
+
+> t=1
+
+qπt (s, a )(1 − πt(a | s)) X
+
+> b
+
+πt(b | s) QP ℓt ,π t (s, b ; ℓt) − QP mt ,π t (s, b ; mt)2
+
+#
+
+≤
+
+vuutSA log 2(T )E
+
+" TX
+
+> t=1
+
+X
+
+> s
+
+qπt (s) X
+
+> b
+
+πt(b | s) QP ℓt ,π t (s, b ; ℓt) − QP mt ,π t (s, b ; mt)2
+
+#
+
+, (53) where the inequality follows from the Cauchy–Schwarz inequality. We next bound QP ℓt ,π t (s, b ; ℓt) − QP mt ,π t (s, b ; mt).
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt)=
+
+
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; ℓt)
+
+
+
++
+
+
+
+QP mt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt)
+
+
+
+≤ 0 + QP mt ,π t (s, a ; ℓt − mt)
+
+≤ max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|).
+
+Similarly, 
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt) ≥ − max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+44 Here, for any transition kernel eP , we have 
+
+Q eP ,π t (s, a ; |ℓt − mt|) = X
+
+> s′,a ′
+
+q eP ,π t (s′, a ′ | s, a )|ℓt(s′, a ′) − mt(s′, a ′)|≤
+
+sX
+
+> s′,a ′
+
+q eP ,π t (s′, a ′ | s, a )
+
+sX
+
+> s′,a ′
+
+q eP ,π t (s′, a ′ | s, a )( ℓt(s′, a ′) − mt(s′, a ′)) 2
+
+≤
+
+q
+
+HQ eP ,π t (s, a ; ( ℓt − mt)2).
+
+Therefore, 
+
+
+
+QP ℓt ,π t (s, a ; ℓt) − QP mt ,π t (s, a ; mt)
+
+2
+
+≤
+
+
+
+max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+2
+
+≤ H max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2) (54) Combining this with (53) completes the proof. 
+
+Theorem F.10 (full-information setting) . For any comparator policy π, Algorithm 1 guarantees 
+
+Reg T (π) ≲
+
+q
+
+H2SA log 2(T ) min {L(π), HT − L(π), Q ∞, V 1}
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + HS 3A 32 log 2(T ).
+
+Proof. By Lemmas D.9, F.8 and F.9 and the choice δ = 1 /T 2, which implies ι ≲ log( T ), we have, for any policy π,Reg T (π) ≲ HS 3A 32 log 2(T ) + 
+
+vuutHSA log 2(T )E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+#
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] 
+
+≲ HS 3A 32 log 2(T ) + 
+
+vuutH2SA log 2(T )E
+
+" TX
+
+> t=1
+
+V πt (s0; ( ℓt − mt)2)
+
+#
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] .
+
+Combining this with Lemma D.11, we obtain Reg T (π) ≲
+
+q
+
+H2SA log 2(T ) min {L(π) + Reg T (π), HT − L(π) − Reg T (π), Q ∞, V 1}
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + HS 3A 32 log 2(T ). (55) Now, we derive the first-order bound. By (55), there exists an absolute constant c > 0 such that Reg T (π) ≤ cHS 3A 32 log 2(T ) + c
+
+q
+
+H2SA log 2(T )L(π) + c
+
+q
+
+H2SA log 2(T )Reg T (π)+ c
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] 
+
+≤ cHS 3A 32 log 2(T ) + c
+
+q
+
+H2SA log 2(T )L(π) + c2
+
+2 H2SA log 2(T ) + 12 Reg T (π)+ c
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] ,
+
+where the last inequality follows from the AM–GM inequality. Thus, we obtain Reg T (π) ≲ HS 3A 32 log 2(T ) + 
+
+q
+
+H2SA log 2(T )L(π) + 
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] . (56) 45 Furthermore, we derive the bound in terms of HT −L(π). If Reg T (π) < 0, the desired upper bound is trivial. Otherwise, Reg T (π) ≥ 0 and (55) gives Reg T (π) ≲ HS 3A 32 log 2(T ) + 
+
+q
+
+H2SA log 2(T )( HT − L(π) − Reg T (π)) + 
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] 
+
+≤ HS 3A 32 log 2(T ) + 
+
+q
+
+H2SA log 2(T )( HT − L(π)) + 
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] .
+
+(57) Combining (55)–(57) completes the proof. 
+
+F.4 Proof for the stochastic regime with adversarial corruption Theorem F.11 (full-information setting) . Under the stochastic regime with adversarial corruption, Algorithm 1 guarantees that, for any policy π,
+
+Reg T (π) ≲ U + √U C + HS 3A 32 log 2(T ),
+
+where U = H2S2A log 2(T )∆min .Proof. Since Reg T (π) ≤ Reg T (˚ π) for all π, it suffices to bound Reg T (˚ π). From Lemma F.8 and the choice δ = 1 /T 2, which implies ι ≲ log( T ), we have Reg T (˚ π) ≲ HS 3A 32 log 2(T ) + 2 H log( T ) X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+vuutE
+
+" TX
+
+> t=1
+
+qπt (s, a )
+
+#
+
++
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |A log 2(T )E
+
+
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+.
+
+Applying Lemmas D.16 and D.17, for any α > 0, we get Reg T (˚ π) ≤ α(2 Reg T (˚ π) + 6 C) + O
+
+X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+H2 log 2(T )
+
+α∆( s, a ) + HS 3A 32 log 2(T )
+
+
+
++ O
+
+PH−1
+
+> h=0
+
+q
+
+H2|Sh|| Sh+1 |A log 2(T )
+
+2
+
+4α∆min 
+
+.
+
+Here, 
+
+> H−1
+
+X
+
+> h=0
+
+q
+
+H2|Sh|| Sh+1 |A log 2(T )
+
+!2
+
+≤
+
+> H−1
+
+X
+
+> h=0
+
+12 (|Sh| + |Sh+1 |)
+
+q
+
+H2A log 2(T )
+
+!2
+
+(by the AM–GM inequality) 
+
+=
+
+
+
+S
+
+q
+
+H2A log 2(T )
+
+2
+
+= H2S2A log 2(T ). (58) Then, using (58) and choosing α = min 
+
+n 14 ,
+
+q U
+
+> C
+
+o
+
+with U = H2S2A log 2(T )∆min , we get Reg T (˚ π) ≲ U + √U C + HS 3A 32 log 2(T ).
+
+Therefore, since Reg T (π) ≤ Reg T (˚ π) for all π by the definition of ˚π, the desired bound follows. 46 G Regret analysis for the bandit setting (Theorem 4.2) 
+
+In this section, we prove the best-of-both-worlds results for the bandit setting. We present the bound for the adversarial regime in Theorem G.12 and the bound for the stochastic regime with adversarial corruption in Theorem G.13. Together, these results establish Theorem 4.2. Throughout this section, virtual episodes are inserted into the episode sequence, shifting the indices of subsequent real episodes. All algorithmic sums over t = 1 , . . . , T include virtual episodes, while the data-dependent complexity measures in the main statements are defined only over real episodes. We denote by Tr = {t ∈ [T ] : Yt = 1 } and Tv = {t ∈ [T ] : Yt = 0 } the sets of real and virtual episodes, with sizes |T r | and |T v |, respectively. 
+
+G.1 Auxiliary lemmas 
+
+Following the full-information setting, Lemma F.1 reduces the regret analysis to proving (41). With the choice of bt in (15), we decompose the left-hand side of (41) as 
+
+X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s))( Qπt (s, a ; ℓt) − Bt(s, a )) = X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s)) 
+
+ bQt(s, a ) − Bt(s, a )
+
+| {z } 
+
+> reg π(s)
+
++ X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; ℓt) − bQt(s, a ) + QP mt ,π t (s, a ; mt) − Qπt (s, a ; mt)
+
+| {z } 
+
+> bias π(s)
+
++ X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; mt) − QP mt ,π t (s, a ; mt)
+
+| {z } 
+
+> error π(s)
+
+. (59) 
+
+Lemma G.1 (bandit setting) . It holds that 
+
+qt(s)πt(a | s)Ct(s, a ) ≤ 6HS, Et[Ct(s, a )] ≤ 4HS (60) 
+
+for any episode t and state-action pair (s, a ).Proof. We first prove a conditional occupancy property. For any eP ∈ P t, any states s, s ′ with 
+
+h(s′) > h (s), and any actions a, a ′, we have 
+
+qt(s)πt(a | s)q eP ,π t (s′, a ′ | s, a ) ≤ qt(s′)πt(a′ | s′). (61) Hence, 
+
+qπt 
+
+> t
+
+(s′) ≥ qπt 
+
+> t
+
+(s)πt(a | s)q eP ,π t (s′ | s, a ).
+
+Using qt(x) = qπt 
+
+> t
+
+(x) + γt and πt(a | s)q eP ,π t (s′ | s, a ) ≤ 1, we obtain 
+
+qt(s′)πt(a′ | s′) = ( qπt 
+
+> t
+
+(s′) + γt)πt(a′ | s′)
+
+≥ (qπt 
+
+> t
+
+(s) + γt)πt(a | s)q eP ,π t (s′ | s, a )πt(a′ | s′)= qt(s)πt(a | s)q eP ,π t (s′, a ′ | s, a ),
+
+which proves (61). 47 Now, by the definition of Ct and (61) with eP = P Ct ,
+
+qt(s)πt(a | s)Ct(s, a )
+
+≤ 2qt(s)πt(a | s) X
+
+> s′,a ′
+
+qP Ct ,π t (s′, a ′ | s, a )ρt(s′) It(s′, a ′)|Lt,h (s′) − Mt,h (s′)|
+
+qt(s′)πt(a′ | s′)+ 2 Hq t(s)πt(a | s) X
+
+> s′,a ′
+
+qP Ct ,π t (s′, a ′ | s, a )ρt(s′)2
+
+≤ 2 X
+
+> s′,a ′
+
+ρt(s′)It(s′, a ′)Dt,h (s′) + 2 H X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2. (62) Since ρt(s′) ≤ 1, Dt,h (s′) ≤ H,
+
+2 X
+
+> s′,a ′
+
+ρt(s′)It(s′, a ′)Dt,h (s′) ≤ 2H2.
+
+Moreover, using ρt(s′) ≤ 1 and P 
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′) ≤ S + Sγ t ≤ 2S,
+
+2H X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2 ≤ 4HS. 
+
+Combining the last three displays gives 
+
+qt(s)πt(a | s)Ct(s, a ) ≤ 6HS. 
+
+This proves the first inequality in (60). We next prove the second inequality. Let P Ct be a measurable transition kernel that attains the maximum in (13). Then, it holds that 
+
+Ct(s, a ) ≤ 2 X
+
+> s′,a ′
+
+qP Ct ,π t (s′, a ′ | s, a )ct(s′, a ′).
+
+By using qP Ct ,π t (s′, a ′ | s, a ) ≤ πt(a′ | s′), we get 
+
+Et[Ct(s, a )] ≤ 2 X
+
+> s′,a ′
+
+πt(a′ | s′)Et[ct(s′, a ′)] .
+
+Therefore, using Et[ct(s′, a ′)] ≤ 2H,
+
+Et[Ct(s, a )] ≤ 2 X
+
+> s′,a ′
+
+πt(a′ | s′) · 2H = 4 HS, 
+
+which proves the second inequality. 
+
+Lemma G.2 (bandit setting) . The variables bt(s) in (15) and Bt(s, a ) in (5) satisfy 
+
+ηt(s, a )πt(a | s)Bt(s, a ) ≤ 16H , Bt(s, a ) ≤ 7√HS 3Aγt
+
+for any episode t and state-action pair (s, a ).Proof. Let Rt = max s,a ηt(s,a ) 
+
+> qt(s)
+
+.We first consider the case when t is a real episode. In real episodes, by the definition of bt,
+
+bt(s) = 6 X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T ) + 3 X
+
+> a
+
+ηt(s, a )πt(a | s)2Ct(s, a )2
+
+48 For the first term, the learning-rate update gives 
+
+6 X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )= 6
+
+qt(s)2
+
+X
+
+> a
+
+ηt(s, a )ζt(s, a )= 6
+
+qt(s)2
+
+X
+
+> a
+
+ηt(s, a )( It(s, a ) − πt(a | s)It(s)) 2 Lt,h (s) − Mt,h (s)
+
+2
+
+≤ 6H2
+
+qt(s)2 max  
+
+> a
+
+ηt(s, a ) X
+
+> a
+
+(It(s, a ) − πt(a | s)It(s)) 2
+
+≤ 12 H2
+
+qt(s)2 max  
+
+> a
+
+ηt(s, a )
+
+≤ 12 H2
+
+qt(s) max 
+
+> a
+
+ηt(s, a )
+
+qt(s) . (63) For the second term, by Lemma G.1, 
+
+3 X
+
+> a
+
+ηt(s, a )πt(a | s)2Ct(s, a )2 = 3 X
+
+> a
+
+ηt(s, a )qt(s)2πt(a | s)2Ct(s, a )2
+
+qt(s)2
+
+≤ 108 H2S2 P 
+
+> a
+
+ηt(s, a )
+
+qt(s)2 (by Lemma G.1) 
+
+≤ 108 H2S2Aqt(s) max 
+
+> a
+
+ηt(s, a )
+
+qt(s) . (64) Combining (63) and (64), we obtain 
+
+bt(s) ≤ 12 H2 + 108 H2S2Aqt(s) max 
+
+> a
+
+ηt(s, a )
+
+qt(s) ≤ 120 H2S2Aqt(s) max 
+
+> a
+
+ηt(s, a )
+
+qt(s) (65) Using (43) and (65), we have 
+
+Bt(s, a ) ≤ 3
+
+> H−1
+
+X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+qP Bt ,π t (s′ | s, a )bt(s′)
+
+≤ 360 H2S2AR t
+
+
+
+> H−1
+
+X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+qP Bt ,π t (s′ | s, a ) 1
+
+qt(s′)
+
+
+
+≤ 360 H2S2AR t
+
+
+
+> H−1
+
+X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+qP Bt ,π t (s′ | s, a ) 1
+
+qπt 
+
+> t
+
+(s)πt(a | s)qP Bt ,π t (s′ | s, a ) + γt
+
+
+
+≤ 360 H2S2AR t
+
+
+
+> H−1
+
+X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+1
+
+qπt 
+
+> t
+
+(s)πt(a | s) + γt
+
+
+
+≤ 360 H2S3AR t · 1
+
+qπt 
+
+> t
+
+(s)πt(a | s) + γt
+
+(66) 
+
+≤ 7√HS 3Aγt
+
+,
+
+where in the last line we used Rt ≤ 150 √H3S3A that holds in real episodes. By using (66), we also have 
+
+ηt(s, a )πt(a | s)Bt(s, a ) ≤ 360 H2S3AR t · ηt(s, a )πt(a | s)
+
+qπt 
+
+> t
+
+(s)πt(a | s) + γt
+
+49 ≤ 360 H2S3AR t · ηt(s, a )
+
+qt(s)
+
+≤ 360 H2S3AR 2
+
+> t
+
+≤ 16H ,
+
+where we used qπt 
+
+> t
+
+(s)πt(a | s) + γt ≥ qt(s)πt(a | s), ηt(s,a ) 
+
+> qt(s)
+
+≤ Rt.We next consider the case when t is a virtual episode. In a virtual episode, only the single pair 
+
+(s† 
+
+> t
+
+, a † 
+
+> t
+
+) is updated, and thus 
+
+bt(s) = 6 X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+≤ X
+
+> a
+
+1{(s† 
+
+> t
+
+, a † 
+
+> t
+
+) = ( s, a )}
+
+54 ηt(s, a )H
+
+= X
+
+> a
+
+1{(s† 
+
+> t
+
+, a † 
+
+> t
+
+) = ( s, a )}
+
+54 Hq t(s) · 1max s′,a ′ ηt(s′,a ′)
+
+> qt(s′)
+
+(since (s† 
+
+> t
+
+, a † 
+
+> t
+
+) ∈ arg max s,a ηt(s,a ) 
+
+> qt(s)
+
+)
+
+= 1{s† 
+
+> t
+
+= s}
+
+qt(s) · 154 H max s′,a ′ ηt(s′,a ′)
+
+> qt(s′)
+
+. (67) Using (43) and (67), we have 
+
+Bt(s, a ) ≤ 3
+
+> H−1
+
+X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+qP Bt ,π t (s′ | s, a )bt(s′)
+
+≤ 118 HR tH−1X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+qP Bt ,π t (s′ | s, a ) 1{s† 
+
+> t
+
+= s′}
+
+qt(s′)
+
+≤ 118 HR tH−1X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+qP Bt ,π t (s′ | s, a ) 1{s† 
+
+> t
+
+= s′}
+
+qπt 
+
+> t
+
+(s)πt(a | s)qP Bt ,π t (s′ | s, a ) + γt
+
+≤ 118 HR tH−1X
+
+> h=h(s)
+
+X
+
+> s′∈S h
+
+1{s† 
+
+> t
+
+= s′}
+
+qπt 
+
+> t
+
+(s)πt(a | s) + γt
+
+≤ 118 HR t
+
+1
+
+qπt 
+
+> t
+
+(s)πt(a | s) + γt
+
+(68) 
+
+≤ 3√HS 3Aγt
+
+,
+
+where in the last inequality we used Rt > 150 √H3S3A in a virtual episode. By using (68), we also have 
+
+ηt(s, a )πt(a | s)Bt(s, a ) ≤ 118 HR t
+
+ηt(s, a )πt(a | s)
+
+qπt 
+
+> t
+
+(s)πt(a | s) + γt
+
+≤ 118 HR t
+
+ηt(s, a )
+
+qt(s)
+
+≤ 118 H ≤ 16H ,
+
+where we used qπt 
+
+> t
+
+(s)πt(a | s) + γt ≥ qt(s)πt(a | s), ηt(s,a ) 
+
+> qt(s)
+
+≤ Rt. This completes the proof. The following two lemmas are based on the Li et al. (2026, Lemmas E.5 and E.6). We adapt the proof to our choice of γt and our virtual-episode rule, and include the details for completeness. 50 Lemma G.3 (bandit setting) . Suppose that the learning rates are updated according to (14) . Then, it holds 
+
+ηt(s, a ) ≤ 2plog( T )
+
+qP    
+
+> τ≤t:τ∈T r
+> ζτ(s,a )
+> qτ(s)2
+
+for any episode t and state-action pair (s, a ).Proof. Let ϕt(s, a ) = ζt(s,a )   
+
+> qt(s)2log( T)
+
+in real episodes and ϕt(s, a ) = I{(s†     
+
+> t,a †
+> t)=( s,a )}
+> 324 ηt(s,a )2Hlog( T)
+
+in virtual episodes. Then the update rule of learning rates can be written as 
+
+1
+
+ηt+1 (s, a ) = 1
+
+ηt(s, a ) + ηt(s, a )ϕt(s, a ).
+
+To apply Lemma F.3, it suffices to show that ϕt(s, a ) ≤ 1 
+
+> ηt(s,a )2
+
+. This is clear for virtual episodes. For real episodes, 
+
+ϕt(s, a )ηt(s, a )2 = ηt(s, a )2ζt(s, a )
+
+qt(s)2 log( T ) ≤ H2
+
+log( T )
+
+ ηt(s, a )
+
+qt(s)
+
+2
+
+≤ H2
+
+log( T ) · 150 2H3S3A ≤ 1,
+
+which follows from ζt(s, a ) ≤ H2 and ηt(s,a ) 
+
+> qt(s)
+
+≤ 150 √H3S3A in real episodes. Then, by Lemma F.3, we have 
+
+ηt(s, a ) ≤ 2
+
+qP  
+
+> τ≤t
+
+ϕτ
+
+≤ 2plog( T )
+
+qP    
+
+> τ≤t:τ∈T r
+> ζτ(s,a )
+> qτ(s)2
+
+.
+
+In the following lemma only, we use T to denote the number of real episodes rather than the total number of episodes. 
+
+Lemma G.4 (bandit setting) . When the number of real episodes is T , the number of virtual episodes 
+
+|T v | is upper bounded by 
+
+|T v | ≲ HSA log 2(T ).
+
+Proof. By the definition of virtual episodes, whenever t ∈ T v , there exists a pair (s, a ) such that  
+
+> ηt(s,a )
+> qt(s)
+
+> 150 √H3S3A . Moreover, in virtual episodes, the corresponding learning rate will shrink by a factor of 
+
+
+
+1 + 1324 H log( |T r |+|T v |)
+
+
+
+for a state-action pair (s† 
+
+> t
+
+, a † 
+
+> t
+
+).Therefore, for each fixed (s, a ), a virtual update on this pair can occur only while 
+
+ηt(s, a ) > 150 √H3S3A(|T r | + |T v |)
+
+Thus, the number of virtual updates on this pair is at most the number of multiplicative shrink steps needed to reduce ηt(s, a ) from η1 to 1/(50 √H3S3A(|T r | + |T v |)) . Hence, 
+
+|T v | ≲ SA 
+
+log 
+
+
+
+η1
+
+√H3S3A(|T r | + |T v |)
+
+
+
+log 
+
+
+
+1 + 1324 H log( |T r |+|T v |)
+
+
+
+≲ HSA log 2(|T r | + |T v |),
+
+where we used log(1 + x) ≥ x/ 2 for x ∈ (0 , 1] , η1 = 1 /(12 H3), and H, S, A ≤ |T r |. This implies 
+
+|T v | ≲ HSA log 2(|T r |).
+
+Since |T r | = T , the desired bound follows. 51 Lemma G.5 (bandit setting) . Suppose that the event E holds. Then, it holds that 
+
+X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s)ρt(s)2 ≲ HS 3Aι 2.
+
+Proof. Recall that ρt(s) = qt(s) − qπt 
+
+> t
+
+(s)
+
+qt(s) and qt(s) = qπt 
+
+> t
+
+(s) + γt. Then, we have 
+
+X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a )ρt(s, a )2 ≤ X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s) qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s) + γt
+
+qt(s)
+
+!2
+
+≤ X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s)
+
+2 qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s)
+
+!2
+
++ 2 
+
+ γt
+
+qt(s)
+
+2
+
+
+
+≤ 2 X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s) qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s)
+
+!2
+
++ 2 X
+
+> t∈T r
+
+X
+
+> s
+
+γt
+
+We bound the first term. By Lemma D.7, we obtain 
+
+X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s) qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s)
+
+!2
+
+≤ X
+
+> t∈T r
+
+X
+
+> s
+
+
+
+qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+ qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s)
+
+≤ c
+
+vuutHS 2Aι 2 X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s) qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s)
+
+!2
+
++ cHS 3Aι 2.
+
+(for some absolute constant c)Now use the fact that if x ≤ a√x + b with x, a, b ≥ 0, then x ≤ 2a2 + 2 b, we obtain 
+
+X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s) qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s)
+
+!2
+
+≲ HS 2Aι 2 + HS 3Aι 2 ≲ HS 3Aι 2.
+
+We also have 
+
+2 X
+
+> t∈T r
+
+X
+
+> s
+
+γt ≤ 2S log( T )
+
+Combining the above bounds gives 
+
+X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s)ρt(s)2 ≲ HS 3Aι 2.
+
+Lemma G.6 (bandit setting) . Suppose that the event E holds. Then, it holds that 
+
+X
+
+> t∈T r
+
+X
+
+> s
+
+qt(s)ρt(s)2 ≲ HS 3Aι 2.
+
+Proof. We decompose 
+
+X
+
+> t∈T r
+
+X
+
+> s′
+
+qt(s′)ρt(s′)2
+
+= X
+
+> t∈T r
+
+X
+
+> s′
+
+qπt (s′)ρt(s′)2
+
+| {z }
+
+> term a
+
++ X
+
+> t∈T r
+
+X
+
+> s′
+
+(qπt 
+
+> t
+
+(s′) − qπt (s′)) ρt(s′)2
+
+| {z }
+
+> term b
+
++ X
+
+> t∈T r
+
+X
+
+> s′
+
+γtρt(s′)2
+
+| {z }
+
+> term c
+
+.
+
+52 For term a, by Lemma G.5, 
+
+term a ≲ HS 3Aι 2.
+
+For term b, applying Lemma D.7 with gt(s) = ρt(s)2 and Lemma G.5, we obtain 
+
+term b ≲
+
+s
+
+HS 2Aι 2 X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s)ρt(s)4 + HS 3Aι 2
+
+≲ pHS 2Aι 2 · S4A log( T )ι + HS 3Aι 2
+
+≲ HS 3Aι 2,
+
+For term c, since ρt(s′) ≤ 1,
+
+term c ≤ X
+
+> t∈T r
+
+X
+
+> s′
+
+γt ≲ S log( T ).
+
+Thus, we have X
+
+> t∈T r
+
+X
+
+> s
+
+qt(s)ρt(s)2 ≲ HS 3Aι 2.
+
+G.2 Common regret analysis 
+
+Now we upper bound the right-hand side of (59). 
+
+Lemma G.7 (bandit setting) . For each state s ∈ S and any comparator π, it holds that 
+
+E[reg π (s)] ≤ O  HS 2A log( T ) + E
+
+" TX
+
+> t=1
+
+bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a )
+
+#
+
+.
+
+Proof. We will apply Lemma E.1 with pt = πt(· | s) and ℓt = bQt(s, a ) − Bt(s, a ) for each s ∈ S .To do so, in what follows, we will check the conditions of Lemma E.1. Let 
+
+xt =
+
+D
+
+−πt(· | s), bQt(s, ·) − QP mt ,π t (s, ·; mt) + Ct(s, ·)Yt
+
+E
+
+= − It(s)( Lt,h (s) − Mt,h (s))
+
+qt(s) Yt
+
+and verify that for all (s, a ), ηt(s, a )πt(a | s)
+
+ bQt(s, a ) − Bt(s, a ) − QP mt ,π t (s, a ; mt) + xt
+
+
+
+≥−1/2. Recall that in a virtual episode we have Yt = 0 and ℓt(s, a ) = 0 for all state-action pairs 
+
+(s, a ).Then, we have 
+
+ηt(s, a )πt(a | s)
+
+ bQt(s, a ) − Bt(s, a ) − QP mt ,π t (s, a ; mt) + xt
+
+
+
+= ηt(s, a )πt(a | s)
+
+ It(s, a )( Lt,h (s) − Mt,h (s))
+
+qt(s)πt(a | s) Yt − It(s)( Lt,h (s) − Mt,h (s))
+
+qt(s) Yt
+
+− Bt(s, a ) − Ct(s, a )Yt
+
+
+
+≥ − 2ηt(s, a )Hqt(s) Yt − ηt(s, a )πt(a | s)Bt(s, a ) − ηt(s, a )πt(a | s)Ct(s, a )Yt
+
+≥ − 13 − 16H ≥ − 12 .
+
+where we used 0 ≤ Lt,h (s), M t,h (s) ≤ H and Ct ≥ 0. The last inequality uses ηt(s, a )/q t(s) ≤
+
+1/(50 √H3S3A) in real episodes, Lemmas G.1 and G.2. Indeed, 
+
+2ηt(s, a )Hqt(s) + ηt(s, a )πt(a | s)Ct(s, a ) = ηt(s, a )
+
+qt(s) (2 H + qt(s)πt(a | s)Ct(s, a )) 
+
+≤ 2H + 6 HS 
+
+50 √H3S3A ≤ 13 ,
+
+53 and 
+
+ηt(s, a )πt(a | s)Bt(s, a ) ≤ 16H .
+
+Hence, by Lemma E.1, we obtain 
+
+E[reg π (s)] 
+
+≤ A log  AT 2
+
+η1
+
++ E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log  AT 2#
+
++ E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2 bQt(s, a ) − QP mt ,π t (s, a ; mt)
+
+
+
+− Bt(s, a ) + xt
+
+2
+
+#
+
++ E
+
+"
+
+1
+
+T 2
+
+> T
+
+X
+
+> t=1
+
+
+
+−π(· | s) + 1
+
+A 1, bQt(s, ·) − Bt(s, ·)
+
+#
+
++ 2 E
+
+h
+
+QP mt ,π t (s, ·; mT +1 ) ∞
+
+i
+
+≤ O  HS 2A log( T ) + 3 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+#
+
+(by QP mt ,π t (s, ·; mT +1 ) ∞ ≤ H)
+
++ 3 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2
+
+ It(s, a )( Lt,h (s) − Mt,h (s))
+
+qt(s)πt(a | s) Yt − It(s)( Lt,h (s) − Mt,h (s))
+
+qt(s) Yt
+
+2
+
+| {z }
+
+> stability-term
+
+#
+
++ 3 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2(Ct(s, a )Yt)2
+
+#
+
++ 3 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2Bt(s, a )2
+
+#
+
+.
+
+(69) Here, the second inequality follows from 
+
+E
+
+"
+
+1
+
+T 2
+
+> T
+
+X
+
+> t=1
+
+
+
+−π(· | s) + 1
+
+A 1, bQt(s, ·) − Bt(s, ·)
+
+#
+
+= 1
+
+T 2
+
+*
+
+−π(· | s) + 1
+
+A 1, E
+
+" TX
+
+> t=1
+
+Et
+
+h bQt(s, ·) − Bt(s, ·)
+
+i#+ 
+
+≤ 1
+
+T 2 −π(· | s) + 1
+
+A 1
+
+> 1
+
+E
+
+" TX
+
+> t=1
+
+Et
+
+h bQt(s, ·) − Bt(s, ·)
+
+i#
+
+> ∞
+
+≤ 2T (6 HS + 7 √HS 3AT )
+
+T 2 = 12 HS T + 14 √HS 3A ≤ O  HS 2A log( T ),
+
+where we used −π(· | s) + 1 
+
+> A
+
+1 1 ≤ 2, Et[ bQt(s, a )] ≤ 6HS and Bt(s, a ) ≤ 7√HS 3Aγt from Lemmas G.1 and G.2, which together imply E
+
+hPTt=1 Et
+
+h bQt(s, ·) − Bt(s, ·)
+
+ii 
+
+> ∞
+
+≤ T (6 HS +7√HS 3AT ).We further evaluate the stability-term in the last inequality as 
+
+ηt(s, a )πt(a | s)2
+
+ It(s, a )( Lt,h (s) − Mt,h (s))
+
+qt(s)πt(a | s) Yt − It(s)( Lt,h (s) − Mt,h (s))
+
+qt(s) Yt
+
+2
+
+= ηt(s, a )
+
+ It(s, a )( Lt,h (s) − Mt,h (s))
+
+qt(s) − πt(a | s)It(s)( Lt,h (s) − Mt,h (s))
+
+qt(s)
+
+2
+
+Yt
+
+= ηt(s, a )
+
+qt(s)2 (It(s, a ) − πt(a | s)It(s)) 2(Lt,h (s) − Mt,h (s))2Yt
+
+= ηt(s, a )ζt(s, a )
+
+qt(s)2 Yt,
+
+54 where the last equality follows from the definition of ζt(s, a ) = ( It(s, a )−πt(a | s)It(s)) 2(Lt,h (s) −
+
+Mt,h (s))2. Thus, we have stability-term =
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )( ζt(s, a )) 
+
+qt(s)2 Yt
+
+≤
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T ),
+
+where the last inequality follows from (14). Then, together with (69) and Lemma G.2, we obtain 
+
+E[reg π (s)] ≤ O  HS 2A log( T ) + 6 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+#
+
++ 3 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2Ct(s, a )2Yt
+
+#
+
++ 3 E
+
+" TX
+
+> t=1
+
+X
+
+> a
+
+ηt(s, a )πt(a | s)2Bt(s, a )2
+
+#
+
+= O HS 2A log( T ) + E
+
+" TX
+
+> t=1
+
+bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+πt(a | s)Bt(s, a )
+
+#
+
+.
+
+Lemma G.8 (bandit setting) . For any comparator policy π, the following two bounds hold: 
+
+E
+
+"X
+
+> s
+
+qπ (s)bias π (s)
+
+#
+
+≲
+
+vuutH2S2Aι 2E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+#
+
++ H2S3Aι 2
+
+and 
+
+E
+
+"X
+
+> s
+
+qπ (s)bias π (s)
+
+#
+
+≲
+
+vuutH3S2Aι 2E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+#
+
++
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2S2|S h||S h+1 |Aι 2E
+
+ X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+ + H2S3Aι 2.
+
+Proof. By the definition of ct(s, a ) (12), 
+
+Et[ct(s, a )] = ρt(s) qπt (s)
+
+qt(s) Qπt (s, a ; |ℓt − mt|) + ρt(s)2H. 
+
+Then, we obtain 
+
+Et[ct(s, a )] ≥ ρt(s) qπt (s)
+
+qt(s) |Qπt (s, a ; ℓt − mt)| + ρt(s)
+
+
+
+1 − qπt (s)
+
+qt(s)
+
+
+
+|Qπt (s, a ; ℓt − mt)|
+
+= ρt(s)|Qπt (s, a ; ℓt − mt)| (70) 
+
+≥ qt(s) − qπt (s)
+
+qt(s) |Qπt (s, a ; ℓt − mt)|. (71) 55 Thus, by the definition of bQt, we have 
+
+Et
+
+h
+
+Qπt (s, a ; ℓt) − bQt(s, a ) + QP mt ,π t (s, a ; mt) − Qπt (s, a ; mt)
+
+i
+
+= Qπt (s, a ; ℓt) −
+
+
+
+QP mt ,π t (s, a ; mt) + qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt)Yt − Et[Ct(s, a )] Yt
+
+
+
++ QP mt ,π t (s, a ; mt) − Qπt (s, a ; mt)= qt(s) − qπt (s)Yt
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[Ct(s, a )] Yt
+
+=
+
+
+
+−Qπt (s, a ; mt) if Yt = 0 ,qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[Ct(s, a )] if Yt = 1 .
+
+When Yt = 1 , by (71) and Ct(s, a ) ≥ ct(s, a ) pathwise, 
+
+qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[Ct(s, a )] 
+
+≥ − qt(s) − qπt (s)
+
+qt(s) |Qπt (s, a ; ℓt − mt)| + Et[ct(s, a )] ≥ 0.
+
+When Yt = 0 , using Qπt (s, a ; mt) ≤ H and the fact that the virtual episode has zero loss, we obtain 
+
+−H ≤ Et
+
+h
+
+Qπt (s, a ; ℓt) − bQt(s, a ) + QP mt ,π t (s, a ; mt) − Qπt (s, a ; mt)
+
+i
+
+≤ 0.
+
+Therefore, 
+
+E
+
+"X
+
+> s
+
+qπ (s)bias π (s)
+
+#
+
+= E
+
+" TX
+
+> t=1
+
+X
+
+> s,a
+
+qπ (s)( πt(a | s) − π(a | s)) Et
+
+h
+
+Qπt (s, a ; ℓt) − bQt(s, a ) + QP mt ,π t (s, a ; mt) − Qπt (s, a ; mt)
+
+i#
+
+≤ E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπ (s)( πt(a | s) − π(a | s)) 
+
+ qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[Ct(s, a )] 
+
+#
+
++ E
+
+" X
+
+> t∈T v
+
+X
+
+> s,a
+
+qπ (s)π(a | s)H
+
+#
+
+= E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a )
+
+#
+
++ H|T v |.
+
+The additive term H|T v | ≲ H3SA log 2(T ) by Lemma G.4 is lower order and will be absorbed into the final lower-order term. The last equality follows by applying Lemma D.2, for each real episode 
+
+t ∈ T r , with 
+
+L(s, a ) = qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[Ct(s, a )] .
+
+Thus, 
+
+zt(s, a ) = qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[Ct(s, a )] 
+
+− Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+ qt(s′) − qπt (s′)
+
+qt(s′) Qπt (s′, a ′; ℓt − mt) + Et[Ct(s′, a ′)] 
+
+
+
+.
+
+(72) 56 We first reduce the bound to the high-probability event E. By Et[Ct(s, a )] ≤ O(HS ) from Lemma G.1, Et[zt(s, a )] ≤ O (HS ) holds. Therefore, we have 
+
+E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a )
+
+#
+
+≤ E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ) E
+
+#
+
++ Pr   ¯EE
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ) ¯E
+
+#
+
+≤ E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ) E
+
+#
+
++ O(δ) × O (HT ) × O (HS )
+
+≤ E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a ) E
+
+#
+
++ O
+
+ H2ST
+
+
+
+. (73) In the following, we work on the event E and bound the first term on the right-hand side of (73). On E, since P ∈ P t, we can upper bound Et[ct(s, a )] as 
+
+Et[ct(s, a )] ≤ ρt(s)Qπt (s, a ; |ℓt − mt|) + ρt(s)2H
+
+≤ ρt(s) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|) + ρt(s)2H
+
+≤ qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+qt(s) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|) + γtHqt(s) + ρt(s)2H. (74) We next derive lower and upper bounds on zt(s, a ). Since P ∈ Pt on E, the definition of 
+
+Ct(s, a ) (13) implies 
+
+Et[Ct(s, a )] ≥ Et[ct(s, a )] + Es′∼P (·| s,a ),a ′∼πt(·| s′)[Et[ct(s′, a ′) + Ct(s′, a ′)]] . (75) Combining (71), (72) and (75), we have for any real episode t ∈ T r
+
+zt(s, a ) ≥ qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[ct(s, a )] + Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+
+
+Et[ct(s′, a ′)] − qt(s′) − qπt (s′)
+
+qt(s′) Qπt (s′, a ′; ℓt − mt)
+
+
+
+≥ 0. (76) On the other hand, let P Ct be the measurable transition kernel that attains the maximum in (13) for the realized table ct. Then, for any real episode t ∈ T r
+
+zt(s, a ) = qt(s) − qπt (s)
+
+qt(s) Qπt (s, a ; ℓt − mt) + Et[ct(s, a )] + Et
+
+h
+
+Es′∼P Ct (·| s,a ),a ′∼πt(·| s′)[ct(s′, a ′) + Ct(s′, a ′)] 
+
+i
+
+− Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+ qt(s′) − qπt (s′)
+
+qt(s′) Qπt (s′, a ′; ℓt − mt) + Et[Ct(s′, a ′)] 
+
+
+
+≤ 2Et[ct(s, a )] + Et
+
+h
+
+Es′∼P Ct (·| s,a ),a ′∼πt(·| s′)[ct(s′, a ′) + Ct(s′, a ′)] 
+
+i
+
+− Es′∼P (·| s,a ),a ′∼πt(·| s′)[−Et[ct(s′, a ′)] + Ct(s′, a ′)] (by (70)) 
+
+≤ 2Et[ct(s, a )] + 2 Es′∼P (·| s,a ),a ′∼πt(·| s′)[Et[ct(s′, a ′)]] + Et
+
+X
+
+> s′,a ′
+
+P Ct (s′ | s, a ) − P (s′ | s, a ) πt(a′ | s′)( ct(s′, a ′) + Ct(s′, a ′)) 
+
+. (77) 57 By the definition of Ct(s, a ) (13), we have 
+
+X
+
+> a
+
+πt(a | s)( ct(s, a ) + Ct(s, a )) = 2 X
+
+> s′,a ′
+
+qP Ct ,π t (s′, a ′ | s)ct(s′, a ′). (78) Combining (77) and (78), we obtain for any real episode t ∈ T r
+
+zt(s, a ) ≤ 2Et[ct(s, a )] + 2 Es′∼P (·| s,a ),a ′∼πt(·| s′)[Et[ct(s′, a ′)]] + 2 Et
+
+X
+
+> s′
+
+P Ct (s′ | s, a ) − P (s′ | s, a ) X
+
+> s′′ ,a ′′
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+. (79) Therefore, by (76) and (79), 
+
+X
+
+> t∈T r
+
+X
+
+> s,a
+
+(qπt (s, a ) − qπ (s, a )) zt(s, a )
+
+≤ X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +zt(s, a ) (by (76)) 
+
+≤ 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Et[ct(s, a )] 
+
+| {z }
+
+> term 1
+
++ 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Es′∼P (·| s,a ),a ′∼πt(·| s′)[Et[ct(s′, a ′)]] 
+
+| {z }
+
+> term 2
+
++ 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Et
+
+X
+
+> s′
+
+P Ct (s′ | s, a ) − P (s′ | s, a ) X
+
+> s′′ ,a ′′
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+| {z }
+
+> term 3
+
+.
+
+Let 
+
+Gπt := min 
+
+(X
+
+> s,a
+
+qπt (s, a )
+
+
+
+max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+2
+
+, H X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+)
+
+.
+
+(80) We first bound term 1. By (74), 
+
+term 1 = X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Et[ct(s, a )] 
+
+≤ X
+
+> t∈T r
+
+X
+
+> s,a
+
+
+
+qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+ [qπt (s, a ) − qπ (s, a )] +
+
+qt(s) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+| {z }
+
+> term 1a
+
++ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+γt
+
+qt(s) [qπt (s, a ) − qπ (s, a )] +
+
+| {z }
+
+> term 1b
+
++ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +ρt(s)2
+
+| {z }
+
+> term 1c
+
+.
+
+We first control term 1a. Define 
+
+g(1)  
+
+> t
+
+(s) := X
+
+> a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+qt(s) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|) ≤ H. 
+
+58 Thus, by Lemma D.7, 
+
+term 1a = X
+
+> t∈T r
+
+X
+
+> s
+
+
+
+qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+
+
+g(1)  
+
+> t
+
+(s)
+
+≲
+
+s
+
+HS 2Aι 2 X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s)
+
+
+
+g(1)  
+
+> t
+
+(s)
+
+2
+
++ H2S3Aι 2.
+
+Here, by the Cauchy–Schwarz inequality, 
+
+X
+
+> s
+
+qπt (s)
+
+
+
+g(1)  
+
+> t
+
+(s)
+
+2
+
+≤ X
+
+> s
+
+qπt (s) X
+
+> a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+qt(s)
+
+! X
+
+> a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+qt(s)
+
+
+
+max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+2!
+
+≤ X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+
+
+max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+2
+
+≤ H X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] + max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2) (by (54)) 
+
+≤ HG πt ,
+
+Therefore, 
+
+term 1a ≲
+
+s
+
+H2S2Aι 2 X
+
+> t∈T r
+
+Gπt + H2S3Aι 2. (81) Next, term 1b can be bounded by 
+
+term 1b ≤ H X
+
+> t∈T r
+
+X
+
+> s
+
+γt
+
+qπt (s)
+
+qt(s) ≤ HS X
+
+> t∈T r
+
+γt ≲ HS log( T ). (82) Finally, term 1c can be bounded by using Lemma G.5, 
+
+term 1c ≤ H X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s)ρt(s)2 ≲ H2S3Aι 2. (83) Combining (81)–(83), we obtain 
+
+term 1 ≲
+
+s
+
+H2S2Aι 2 X
+
+> t∈T r
+
+Gπt + H2S3Aι 2. (84) We next bound term 2. By (74), we have 
+
+term 2 = X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Es′∼P (·| s,a ),a ′∼πt(·| s′)[Et[ct(s′, a ′)]] 
+
+≤ X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Es′∼P (·| s,a ),a ′∼πt(·| s′)
+
+" qπt 
+
+> t
+
+(s′) − qπt 
+
+> t
+
+(s′)
+
+qt(s′) max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; |ℓt − mt|)
+
+#| {z }
+
+> term 2a
+
++ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Es′∼P (·| s,a )
+
+ γt
+
+qt(s′)
+
+| {z }
+
+> term 2b
+
++ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Es′∼P (·| s,a )
+
+ρt(s′)2| {z }
+
+> term 2c
+
+.
+
+59 We first bound term 2a. Define 
+
+g(2)  
+
+> t
+
+(s′) := 
+
+P
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +P (s′ | s, a )
+
+qt(s′)
+
+X
+
+> a′
+
+πt(a′ | s′) max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; |ℓt − mt|)
+
+≤ X
+
+> a′
+
+πt(a′ | s′) max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; |ℓt − mt|) ≤ H. 
+
+Therefore, by Lemma D.7, 
+
+term 2a = X
+
+> t∈T r
+
+X
+
+> s′
+
+
+
+qπt 
+
+> t
+
+(s′) − qπt 
+
+> t
+
+(s′)
+
+
+
+g(2)  
+
+> t
+
+(s′)
+
+≲
+
+s
+
+HS 2Aι 2 X
+
+> t∈T r
+
+X
+
+> s′
+
+qπt (s′)
+
+
+
+g(2)  
+
+> t
+
+(s′)
+
+2
+
++ H2S3Aι 2.
+
+Moreover, by using the Cauchy–Schwarz inequality, we obtain 
+
+X
+
+> s′
+
+qπt (s′)
+
+
+
+g(2)  
+
+> t
+
+(s′)
+
+2
+
+≤ X
+
+> s′
+
+qπt (s′) X
+
+> a′
+
+πt(a′ | s′) max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; |ℓt − mt|)
+
+!2
+
+≤ X
+
+> s′,a ′
+
+qπt (s′, a ′)
+
+
+
+max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; |ℓt − mt|)
+
+2
+
+≤ H X
+
+> s′,a ′
+
+qπt (s′, a ′) max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; ( ℓt − mt)2), (85) where the last inequality follows from (54). Simultaneously, it holds that 
+
+X
+
+> s′
+
+qπt (s′)
+
+
+
+g(2)  
+
+> t
+
+(s′)
+
+2
+
+≤ H X
+
+> s′
+
+qπt (s′) X
+
+> s,a,a ′
+
+P (s′ | s, a )πt(a′ | s′) [qπt (s, a ) − qπ (s, a )] +
+
+qt(s′) max  
+
+> eP∈P t
+
+Q eP ,π t (s′, a ′; |ℓt − mt|)
+
+≤ H2 X
+
+> s,a,s ′,a ′
+
+[qπt (s, a ) − qπ (s, a )] +P (s′ | s, a )πt(a′ | s′)
+
+≤ H2 X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +. (86) From (85) and (86), we have 
+
+X
+
+> s′
+
+qπt (s′)
+
+
+
+g(2)  
+
+> t
+
+(s′)
+
+2
+
+≤ HG πt .
+
+Hence, 
+
+term 2a ≲
+
+s
+
+H2S2Aι 2 X
+
+> t∈T r
+
+Gπt + H2S3Aι 2. (87) Next, term 2b can be bounded by 
+
+term 2b ≤ H X
+
+> t∈T r
+
+X
+
+> s′
+
+γt
+
+P
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +P (s′ | s, a )
+
+qt(s′) ≤ HS X
+
+> t∈T r
+
+γt ≲ HS log( T ).
+
+(88) 60 Finally, by the Lemma G.5, 
+
+term 2c ≤ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +P (s′ | s, a )ρt(s′)2
+
+≤ X
+
+> s′
+
+qπt (s′)ρt(s′)2 ≲ H2S3Aι 2. (89) Combining (87)–(89), we obtain 
+
+term 2 ≲
+
+s
+
+H2S2Aι 2 X
+
+> t∈T r
+
+Gπt + H2S3Aι 2. (90) We finally bound term 3. Here, for any transition ePt ∈ P t, we use 
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+X
+
+> s′
+
+P (s′ | s, a )q ePt,π t (s′′ , a ′′ | s′) ≤ Hq πt 
+
+> t
+
+(s′′ )πt(a′′ | s′′ ). (91) By the definition of the confidence set, we have 
+
+term 3
+
+≲ X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Et
+
+X
+
+> s′
+
+s
+
+P (s′ | s, a )ιnt(s, a ) + ιnt(s, a )
+
+! X
+
+> s′′ ,a ′′
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+
+
+(by Lemma C.2) 
+
+≲ X
+
+> t∈T r
+
+X
+
+> s,a,s ′
+
+[qπt (s, a ) − qπ (s, a )] +
+
+
+
+αP t(s′ | s, a ) + ιαn t(s, a )
+
+ X
+
+> s′′ ,a ′′
+
+Et
+
+h
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+i
+
+(for any α ∈ (0 , 1] )
+
+≲ α X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+X
+
+> s′
+
+P (s′ | s, a )Et
+
+ X
+
+> s′′ ,a ′′
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+| {z }
+
+> term 3a
+
++ 1
+
+α
+
+X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +
+
+ιnt(s, a ) Et
+
+X
+
+> s′
+
+X
+
+> s′′ ,a ′′
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+| {z }
+
+> term 3b
+
+.
+
+For term 3a, using (91) with ePt = P Ct ,
+
+term 3a ≤ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt 
+
+> t
+
+(s)πt(a | s)Et[ct(s, a )] 
+
+≤ H X
+
+> t∈T r
+
+X
+
+> s,a
+
+
+
+qπt 
+
+> t
+
+(s) − qπt 
+
+> t
+
+(s)
+
+
+
+πt(a | s) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+| {z }
+
+> term 3a, 1
+
++ H2 X
+
+> t∈T r
+
+X
+
+> s
+
+γt
+
+| {z }
+
+> term 3a, 2
+
++H2 X
+
+> t∈T r
+
+X
+
+> s
+
+qπt 
+
+> t
+
+(s)ρt(s)2
+
+| {z }
+
+> term 3a, 3
+
+. (by (74)) 61 By Lemma D.7 and the Cauchy–Schwarz inequality, 
+
+term 3a, 1 ≲
+
+vuutHS 2Aι 2 X
+
+> t∈T r
+
+X
+
+> s
+
+qπt (s) X
+
+> a
+
+πt(a | s) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+!2
+
++ H2S3Aι 2
+
+≤
+
+vuutHS 2Aι 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a )
+
+
+
+max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; |ℓt − mt|)
+
+2
+
++ H2S3Aι 2
+
+≤
+
+s
+
+H2S2Aι 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2) + H2S3Aι 2. (by (54)) Furthermore, by the definition of γt and Lemma G.6, 
+
+term 3a, 2 ≲ S log( T ),
+
+term 3a, 3 ≲ HS 3Aι 2.
+
+Therefore, 
+
+term 3a ≲
+
+s
+
+H4S2Aι 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2) + H3S3Aι 2. (92) For term 3b, since qP Ct ,π t (s′′ , a ′′ | s′) ≤ πt(a′′ | s′′ ), [qπt (s, a ) − qπ (s, a )] + ≤ qπt (s, a ), we have 
+
+term 3b ≤
+
+> H−1
+
+X
+
+> h=0
+
+X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )ιnt(s, a )
+
+X
+
+> s′∈S h+1
+
+X
+
+> s′′ ,a ′′
+
+πt(a′′ | s′′ )Et[ct(s′′ , a ′′ )] 
+
+≲ HS 
+
+> H−1
+
+X
+
+> h=0
+
+|S h+1 | X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )ιnt(s, a ) (by Et[ct(s′′ , a ′′ )] ≤ 2H)
+
+≲ HS 
+
+> H−1
+
+X
+
+> h=0
+
+|S h+1 ||S h|Aι 2 (by Lemma C.3) 
+
+≲ HS 3Aι 2. (93) Combining (92) and (93), we obtain, for any α ∈ (0 , 1] ,
+
+term 3 ≲ α
+
+s
+
+H4S2Aι 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)+ αH 3S3Aι 2 + HS 3Aι 2
+
+α .
+
+Choosing α = 1 /H gives 
+
+term 3 ≲
+
+s
+
+H2S2Aι 2 X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2) + H2S3Aι 2. (94) We also derive a bound in terms of the positive occupancy difference. Recall that term 3 can be upper-bounded by 
+
+X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − qπ (s, a )] +Et
+
+X
+
+> s′
+
+s
+
+P (s′ | s, a )ιnt(s, a ) + ιnt(s, a )
+
+! X
+
+> s′′ ,a ′′
+
+qP Ct ,π t (s′′ , a ′′ | s′)ct(s′′ , a ′′ )
+
+.
+
+Since qP Ct ,π t (s′′ , a ′′ | s′) ≤ πt(a′′ | s′′ ), P
+
+> s′∈S h+1
+
+pP (s′ | s, a ) ≤ p|S h+1 |, and P 
+
+> s′′ ,a ′′
+
+πt(a′′ |
+
+s′′ )Et[ct(s′′ , a ′′ )] ≲ HS , we have 
+
+term 3 ≲ HS 
+
+> H−1
+
+X
+
+> h=0
+
+X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+s
+
+|S h+1 |ιnt(s, a )
+
+| {z }
+
+> term 3c
+
+62 + HS 
+
+> H−1
+
+X
+
+> h=0
+
+X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+|S h+1 |ιnt(s, a )
+
+| {z }
+
+> term 3d
+
+.
+
+For term 3c, by the Cauchy–Schwarz inequality and Lemma C.3, 
+
+term 3c ≤
+
+> H−1
+
+X
+
+> h=0
+
+s X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+vuut|S h+1 | X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )ιnt(s, a )
+
+≲
+
+> H−1
+
+X
+
+> h=0
+
+s
+
+|S h||S h+1 |Aι 2 X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +.
+
+For term 3d, by Lemma C.3, 
+
+term 3d ≤
+
+> H−1
+
+X
+
+> h=0
+
+|S h+1 | X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+qπt (s, a )ιnt(s, a )
+
+≲
+
+> H−1
+
+X
+
+> h=0
+
+|S h+1 ||S h|Aι 2 ≲ S2Aι 2.
+
+Therefore, 
+
+term 3 ≲
+
+> H−1
+
+X
+
+> h=0
+
+s
+
+H2S2|S h||S h+1 |Aι 2 X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] + + HS 3Aι 2. (95) The desired bound follows by combining (73), the definition of Gπt in (80), and the bounds in (84), (90), (94) and (95), and then applying Jensen’s inequality. 
+
+Lemma G.9 (bandit setting) . For any comparator policy π, it holds that 
+
+E
+
+"X
+
+> s
+
+qπ (s)error π (s)
+
+#
+
+≲ pS2Aι 2E[Qπ1: T
+
+> trans
+
+(m)] + HS 3Aι 2. (96) 
+
+Also, 
+
+E
+
+"X
+
+> s
+
+qπ (s)error π (s)
+
+#
+
+≲
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |Aι 2E
+
+ X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+ + H2S2Aι 2. (97) 
+
+Proof. The proof is identical to that of Lemma F.6, with the loss sequence ℓt replaced by the pre-diction sequence mt. The only additional point is that we first separate the contribution of virtual episodes. 
+
+X
+
+> s
+
+qπ (s)error π (s)= X
+
+> s
+
+qπ (s)
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; mt) − QP mt ,π t (s, a ; mt)
+
+
+
+≤ X
+
+> s
+
+qπ (s) X
+
+> t∈T r
+
+X
+
+> a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; mt) − QP mt ,π t (s, a ; mt)
+
+
+
++ 2 H2|T v |
+
+≲ X
+
+> s
+
+qπ (s) X
+
+> t∈T r
+
+X
+
+> a
+
+(πt(a | s) − π(a | s)) 
+
+
+
+Qπt (s, a ; mt) − QP mt ,π t (s, a ; mt)
+
+
+
++ H3SA log 2(T ),
+
+63 where we used Lemma G.4. The resulting virtual-episode contribution is absorbed into the lower-order term. It remains to bound the first term in expectation, which follows from Lemma F.6. Applying the first bound of Lemma F.6 with ℓt replaced by mt gives, on E,
+
+X
+
+> s
+
+qπ (s)error π (s) ≲ pS2Aι 2Qπ1: T
+
+> trans
+
+(m) + HS 3Aι 2.
+
+Taking expectations, using Jensen’s inequality, and combining with the trivial bound O(H2T ) on ¯E
+
+with δ = O(1 /T 2), we obtain 
+
+E
+
+"X
+
+> s
+
+qπ (s)error π (s)
+
+#
+
+≲ pS2Aι 2E[Qπ1: T
+
+> trans
+
+(m)] + HS 3Aι 2 + δH 2T
+
+≲ pS2Aι 2E[Qπ1: T
+
+> trans
+
+(m)] + HS 3Aι 2,
+
+which proves (96). Similarly, applying the second bound of Lemma F.6 with ℓt replaced by mt gives, on E,
+
+X
+
+> s
+
+qπ (s)error π (s) ≲
+
+> H−1
+
+X
+
+> h=0
+
+s
+
+H2|Sh|| Sh+1 |Aι 2 X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
++ H2S2Aι 2.
+
+Taking expectations, applying Jensen’s inequality, and combining with the trivial bound O(H2T )
+
+on ¯E with δ = O(1 /T 2), we obtain 
+
+E
+
+"X
+
+> s
+
+qπ (s)error π (s)
+
+#
+
+≲
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |Aι 2E
+
+ X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+ + H2S2Aι 2 + δH 2T
+
+≲
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2|Sh|| Sh+1 |Aι 2E
+
+ X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − qπ (s, a )] +
+
+ + H2S2Aι 2.
+
+This proves (97). 
+
+Lemma G.10 (bandit setting) . It holds that 
+
+E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qP Bt ,π t (s)ηt(s, a )πt(a | s)2Ct(s, a )2
+
+#
+
+≲ H 32 S 72 A 32 ι2.
+
+Proof. By the decomposition of qt(s)πt(a | s)Ct(s, a ) in (62), we have 
+
+qt(s)πt(a | s)Ct(s, a )
+
+≤ 2 X
+
+> s′,a ′
+
+ρt(s′)It(s′, a ′)Dt,h (s′) + 2 H X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2.
+
+Thus, we obtain 
+
+Et
+
+"X
+
+> s,a
+
+qt(s)2πt(a | s)2Ct(s, a )2
+
+#
+
+≲ SA Et
+
+X
+
+> s′,a ′
+
+ρt(s′)It(s′, a ′)Dt,h (s′)
+
+
+
+> 2
+
+
+
++ H2SA 
+
+X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2
+
+
+
+> 2
+
+. (98) 64 For the first term of (98), the Cauchy–Schwarz inequality gives 
+
+Et
+
+X
+
+> s′,a ′
+
+ρt(s′)It(s′, a ′)Dt,h (s′)
+
+
+
+> 2
+
+ ≤ HEt
+
+X
+
+> s′,a ′
+
+ρt(s′)2It(s′, a ′)D2
+
+> t,h (s′)
+
+
+
+≤ H3Et
+
+X
+
+> s′,a ′
+
+ρt(s′)2It(s′, a ′)
+
+
+
+= H3 X
+
+> s′
+
+qπt (s′)ρt(s′)2
+
+≤ H3 X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2.
+
+For the second term of (98), since X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2 ≤ S, 
+
+we have X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2
+
+
+
+> 2
+
+≤ S X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2.
+
+Hence, 
+
+E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qt(s)2πt(a | s)2Ct(s, a )2
+
+#
+
+≲ H2S2AE
+
+ X
+
+> t∈T r
+
+X
+
+> s′,a ′
+
+qt(s′)πt(a′ | s′)ρt(s′)2
+
+
+
+= H2S2AE
+
+" X
+
+> t∈T r
+
+X
+
+> s′
+
+qt(s′)ρt(s′)2
+
+#
+
+. (99) Combining Lemma G.6 with the trivial bound 
+
+E
+
+" X
+
+> t∈T r
+
+X
+
+> s′
+
+qt(s′)ρt(s′)2
+
+#
+
+≲ HS 3Aι 2 + δ · O (HT ) ≲ HS 3Aι 2,
+
+and (99), we get 
+
+E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qt(s)2πt(a | s)2Ct(s, a )2
+
+#
+
+≲ H2S2A · HS 3Aι 2
+
+≲ H3S5A2ι2. (100) Therefore, 
+
+E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qP Bt ,π t (s)ηt(s, a )πt(a | s)2Ct(s, a )2
+
+#
+
+= E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qP Bt ,π t (s) ηt(s, a )qt(s)2πt(a | s)2Ct(s, a )2
+
+qt(s)2
+
+#
+
+≤ E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qt(s)2πt(a | s)2Ct(s, a )2 max 
+
+> s,a
+
+ηt(s, a )
+
+qt(s)
+
+#
+
+≤ E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qt(s)2πt(a | s)2Ct(s, a )2
+
+#
+
+· 150 √H3S3A (by t is a real episode) 
+
+≲ H3S5A2ι2 · 1
+
+√H3S3A . (by (100)) 
+
+= H 32 S 72 A 32 ι2.
+
+65 Lemma G.11 (bandit setting) . It holds that 
+
+E
+
+" TX
+
+t=1 
+
+V P Bt ,π t (s0; bt)
+
+#
+
+≲ log( T ) X
+
+s,a 
+
+vuutE
+
+" X
+
+t∈T r
+
+ζt(s, a )
+
+#
+
++ H 32 S 72 A 32 ι2.
+
+Proof. We have 
+
+E
+
+" TX
+
+t=1 
+
+V P Bt ,π t (s0; bt)
+
+#
+
+= E
+
+" TX
+
+t=1 
+
+X
+
+s
+
+qP Bt ,π t (s)bt(s)
+
+#
+
+≲ E
+
+" X
+
+t∈T r
+
+X
+
+s,a 
+
+qP Bt ,π t (s)
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+#
+
++ E
+
+" X
+
+t∈T v
+
+X
+
+s,a 
+
+qP Bt ,π t (s)
+
+ 1
+
+ηt+1 (s, a ) − 1
+
+ηt(s, a )
+
+
+
+log( T )
+
+#
+
++ E
+
+" X
+
+t∈T r
+
+X
+
+s,a 
+
+qP Bt ,π t (s)ηt(s, a )πt(a | s)2Ct(s, a )2
+
+#
+
+≲ E
+
+" X
+
+t∈T r
+
+X
+
+s,a 
+
+qP Bt ,π t (s) ηt(s, a )ζt(s, a )
+
+qt(s)2
+
+#
+
++ E
+
+" X
+
+t∈T v
+
+X
+
+s,a 
+
+qP Bt ,π t (s) 1{(s†
+
+t , a †
+
+t ) = ( s, a )}
+
+ηt(s, a )H
+
+#
+
++ H 32 S 72 A 32 ι2
+
+(by Lemma G.10) 
+
+≤ E
+
+" X
+
+t∈T r
+
+X
+
+s,a 
+
+ηt(s, a )ζt(s, a )
+
+qt(s)
+
+#
+
++ E
+
+" X
+
+t∈T v
+
+qP Bt ,π t (s†
+
+t )
+
+ηt(s†
+
+t , a †
+
+t )H
+
+#
+
++ H 32 S 72 A 32 ι2
+
+≲ E
+
+" X
+
+t∈T r
+
+X
+
+s,a 
+
+ηt(s, a )ζt(s, a )
+
+qt(s)
+
+#
+
++ X
+
+t∈T v
+
+√HS 3A + H 32 S 72 A 32 ι2
+
+(by ηt(s† 
+
+> t
+
+,a † 
+
+> t
+
+)
+
+qt(s) > 150 √H3S3A in virtual episodes) 
+
+≲ plog( T )E
+
+X
+
+t∈T r
+
+X
+
+s,a 
+
+√ζt(s,a )
+
+qt(s) × pζt(s, a )
+
+qP
+
+τ ≤t:τ ∈T r
+
+ζτ (s,a )
+
+qτ (s)2
+
+ + √HS 3A|T v | + H 32 S 72 A 32 ι2
+
+(by Lemma G.3) 
+
+≲ plog( T )E
+
+X
+
+s,a 
+
+vuut X
+
+t∈T r
+
+ζt(s,a )
+
+qt(s)2
+
+P
+
+τ ≤t:τ ∈T r
+
+ζτ (s,a )
+
+qτ (s)2
+
+s X
+
+t∈T r
+
+ζt(s, a )
+
+ + H 32 S 72 A 32 ι2
+
+(by the Cauchy–Schwarz inequality and Lemma G.4) 
+
+≲ log( T )E
+
+X
+
+s,a 
+
+s X
+
+t∈T r
+
+ζt(s, a )
+
+ + H 32 S 72 A 32 ι2,
+
+where the last inequality follows from 
+
+vuut X
+
+t∈T r
+
+ζt(s,a )
+
+qt(s)2
+
+P
+
+τ ≤t:τ ∈T r
+
+ζτ (s,a )
+
+qτ (s)2
+
+≤
+
+vuut1 + log X
+
+τ ∈T r
+
+ζτ (s, a )
+
+qτ (s)2
+
+!
+
+≲ plog( T ).
+
+Finally, the desired bound follows from Jensen’s inequality. 66 We now summarize the bounds in the bandit setting proved above and plug them into the regret decomposition. By the definition of the regret decomposition in (59), 
+
+E
+
+"X
+
+> s
+
+qπ (s) X
+
+> t,a
+
+(πt(a | s) − π(a | s))( Qπt (s, a ; ℓt) − Bt(s, a )) 
+
+#
+
+= E
+
+"X
+
+> s
+
+qπ (s) · reg π (s)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · error π (s)
+
+#
+
+≤ O  H2S2A log( T ) + E
+
+" TX
+
+> t=1
+
+qπ (s)bt(s)
+
+#
+
++ E
+
+"
+
+1
+
+H
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a
+
+qπ (s)πt(a | s)Bt(s, a )
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · error π (s)
+
+#
+
+where we used Lemma G.7. Combining this with Lemma F.1 and δ = 1  
+
+> T2
+
+, for any comparator policy π, Algorithm 1 guarantees Reg T (π) ≤ O  H2S2A log( T ) + 3 E
+
+" TX
+
+> t=1
+
+V P Bt ,π t (s0; bt)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · error π (s)
+
+#
+
+≲ H 32 S 72 A 32 ι2 + log( T ) X
+
+> s,a
+
+vuutE
+
+" X
+
+> t∈T r
+
+ζt(s, a )
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · bias π (s)
+
+#
+
++ E
+
+"X
+
+> s
+
+qπ (s) · error π (s)
+
+#
+
+, (101) where the second line follows from Lemma G.11. 
+
+G.3 Proof for the adversarial regime Theorem G.12 (bandit setting) . For any comparator policy π, Algorithm 1 guarantees 
+
+Reg T (π) ≲
+
+q
+
+H3S2A log 2(T ) min {L(π), HT − L(π), Q ∞, V 1}
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + H 32 S 72 A 32 log 2(T ).
+
+Proof. By (101) and Lemmas G.8 and G.9, for any comparator policy π, we have Reg T (π) ≲ H 32 S 72 A 32 ι2 + log( T ) X
+
+> s,a
+
+vuutE
+
+" X
+
+> t∈T r
+
+ζt(s, a )
+
+#
+
++
+
+vuutH2S2A log 2(T )E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+qπt (s, a ) max  
+
+> eP∈P t
+
+Q eP ,π t (s, a ; ( ℓt − mt)2)
+
+#
+
++ pS2Aι 2E[Qπ1: T
+
+> trans
+
+(m)] .
+
+67 Here, since δ = O(1 /T 2), we have ι ≲ log( T ). Hence, Reg T (π) ≲ H 32 S 72 A 32 log 2(T ) + log( T ) X
+
+> s,a
+
+vuutE
+
+" X
+
+> t∈T r
+
+ζt(s, a )
+
+#| {z }
+
+> term 1
+
++
+
+vuutH3S2A log 2(T )E
+
+" X
+
+> t∈T r
+
+V πt (s0; ( ℓt − mt)2)
+
+#| {z }
+
+> term 2
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(m)] 
+
+| {z }
+
+> term 3
+
+, (102) where the last inequality uses Lemma D.9 on E together with the trivial bound O(H2T ) on ¯E, whose contribution is absorbed since δ = O(1 /T 2).For term 1, by the definition of ζt(s, a ), we have 
+
+term 1 = X
+
+> s,a
+
+vuutlog 2(T )E
+
+" X
+
+> t∈T r
+
+(It(s, a ) − πt(a | s)It(s)) 2(Lt,h (s) − Mt,h (s))2
+
+#
+
+≤
+
+vuutSA log 2(T )E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+(It(s, a ) − πt(a | s)It(s)) 2(Lt,h (s) − Mt,h (s))2
+
+#
+
+(by the Cauchy–Schwarz inequality) 
+
+≤
+
+vuutSA log 2(T )E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+2It(s, a )( Lt,h (s) − Mt,h (s))2
+
+#
+
+≲
+
+vuutH2SA log 2(T )E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+It(s, a )( ℓt(s, a ) − mt(s, a )) 2
+
+#
+
+, (103) where the third line uses P
+
+> a
+
+(It(s, a ) − πt(a | s)It(s)) 2 ≤ 2It(s) for each fixed state s, and the last inequality follows from Lemma D.10. Applying Lemma D.11 to (103), we obtain, for any policy π,
+
+term 1 ≲
+
+q
+
+H2SA log 2(T ) min {L(π) + Reg T (π), HT − L(π) − Reg T (π), Q ∞, V 1}
+
++ HSA log( T ). (104) For term 2, Lemma D.11 similarly yields, for any policy π,
+
+term 2 ≲
+
+q
+
+H3S2A log 2(T ) min {L(π) + Reg T (π), HT − L(π) − Reg T (π), Q ∞, V 1}
+
++ √H3S3A log( T ). (105) For term 3, Lemma D.12 yields 
+
+term 3 ≲
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + 
+
+vuutHS 2A log 2(T )E
+
+" X
+
+> t∈T r
+
+V πt (s0; ( ℓt − mt)2)
+
+#
+
+.
+
+Applying Lemma D.11 to the second term, we obtain, for any policy π,
+
+term 3 ≲
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] +
+
+q
+
+HS 2A log 2(T ) min {L(π) + Reg T (π), HT − L(π) − Reg T (π), Q ∞, V 1}
+
++ √HS 3A log( T ). (106) 68 Combining (104)–(106) with (102), we obtain Reg T (π) ≲
+
+q
+
+H3S2A log 2(T ) min {L(π) + Reg T (π), HT − L(π) − Reg T (π), Q ∞, V 1}
+
++
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + H 32 S 72 A 32 log 2(T ). (107) Below, we derive the first-order bound. By (107), there exists an absolute constant c > 0 such that Reg T (π) ≤ c
+
+q
+
+H3S2A log 2(T )L(π) + c
+
+q
+
+H3S2A log 2(T )Reg T (π)+ c
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + cH 32 S 72 A 32 log 2(T )
+
+≤ c
+
+q
+
+H3S2A log 2(T )L(π) + c2
+
+2 H3S2A log 2(T ) + 12 Reg T (π)+ c
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + cH 32 S 72 A 32 log 2(T ),
+
+where the last inequality follows from the AM–GM inequality. Thus, we obtain Reg T (π) ≲
+
+q
+
+H3S2A log 2(T )L(π) + 
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + H 32 S 72 A 32 log 2(T ). (108) Furthermore, we derive the bound in terms of HT −L(π). If Reg T (π) < 0, the desired upper bound is trivial. Otherwise, Reg T (π) ≥ 0 and (107) gives Reg T (π) ≲
+
+q
+
+H3S2A log 2(T )( HT − L(π) − Reg T (π)) + 
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + H 32 S 72 A 32 log 2(T )
+
+≤
+
+q
+
+H3S2A log 2(T )( HT − L(π)) + 
+
+q
+
+S2A log 2(T )E[Qπ1: T
+
+> trans
+
+(ℓ)] + H 32 S 72 A 32 log 2(T ).
+
+(109) Combining (107)–(109) completes the proof. 
+
+G.4 Proof for the stochastic regime with adversarial corruption Theorem G.13 (bandit setting) . Under the stochastic regime with adversarial corruption, Algo-rithm 1 with δ = 1  
+
+> T2
+
+guarantees that, for any policy π,
+
+Reg T (π) ≲ U + √U C + H 32 S 72 A 32 log 2(T ),
+
+where U = H2S4A log 2(T )∆min .Proof. Since Reg T (π) ≤ Reg T (˚ π) for all π, it suffices to bound Reg T (˚ π). By (101) and Lem-mas G.8 and G.9 and δ = O(1 /T 2), we have ι ≲ log( T ). Hence, there exists an absolute constant 
+
+c > 0 such that Reg T (˚ π) ≤ cH 32 S 72 A 32 log 2(T ) + c log( T ) X
+
+> s,a
+
+vuutE
+
+" X
+
+> t∈T r
+
+ζt(s, a )
+
+#| {z }
+
+> term 1
+
++ c
+
+vuutH3S2A log 2(T )E
+
+" X
+
+> t∈T r
+
+X
+
+> s,a
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+#| {z }
+
+> term 2
+
++ c
+
+> H−1
+
+X
+
+> h=0
+
+vuuutH2S2|S h||S h+1 |A log 2(T )E
+
+ X
+
+> t∈T r
+
+X
+
+> (s,a )∈S h×A
+
+[qπt (s, a ) − q˚π (s, a )] +
+
+| {z }
+
+> term 3
+
+.
+
+(110) 69 For term 1, by the definition of ζt(s, a ), we have for any α > 0,
+
+term 1 = c X
+
+> s,a
+
+vuutlog 2(T )E
+
+" X
+
+> t∈T r
+
+(It(s, a ) − πt(a | s)It(s)) 2(Lt,h (s) − Mt,h (s))2
+
+#
+
+≤ cH X
+
+> s,a
+
+vuutlog 2(T )E
+
+" X
+
+> t∈T r
+
+qπt (s, a )(1 − πt(a | s)) 
+
+#
+
+≤ 2cH X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+vuutlog 2(T )E
+
+" X
+
+> t∈T r
+
+qπt (s, a )
+
+#
+
+≤ α(Reg T (˚ π) + 2 C) + X
+
+> s
+
+X
+
+> a̸=π⋆(s)
+
+c2H2 log 2(T )4α∆( s, a ) , (111) where the last line follows from Lemma D.16. For term 2, Lemma D.18 gives 
+
+term 2 ≤ α(Reg T (˚ π) + 4 C) + c2H4S2A log 2(T )4α∆min 
+
+. (112) For term 3, Lemma D.17 gives 
+
+term 3 ≤ α(Reg T (˚ π) + 4 C) + 
+
+c2
+
+PH−1
+
+> h=0
+
+q
+
+H2S2|S h||S h+1 |A log 2(T )
+
+2
+
+4α∆min 
+
+.
+
+Moreover, by the AM–GM inequality, 
+
+> H−1
+
+X
+
+> h=0
+
+q
+
+H2S2|S h||S h+1 |A log 2(T )
+
+!2
+
+≤
+
+> H−1
+
+X
+
+> h=0
+
+12 (|S h| + |S h+1 |)
+
+q
+
+H2S2A log 2(T )
+
+!2
+
+≤
+
+q 
+
+H2S4A log 2(T )
+
+2
+
+= H2S4A log 2(T ).
+
+Thus, we obtain 
+
+term 3 ≤ α(Reg T (˚ π) + 4 C) + c2H2S4A log 2(T )4α∆min 
+
+. (113) Combining (111)–(113) with (110), we obtain Reg T (˚ π) ≤ α(3 Reg T (˚ π) + 10 C) + O
+
+ H2S4A log 2(T )4α∆min 
+
++ H 32 S 72 A 32 log 2(T )
+
+
+
+.
+
+Finally, choosing α = min 
+
+n 16 ,
+
+q U
+
+> C
+
+o
+
+with U = H2S4A log 2(T )∆min , we get Reg T (˚ π) ≲ U + √U C + H 32 S 72 A 32 log 2(T ).
+
+Therefore, since Reg T (π) ≤ Reg T (˚ π) for all π by the definition of ˚π, the desired bound follows. 70
