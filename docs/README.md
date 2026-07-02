@@ -6,101 +6,80 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-01
-- 运行时间：2026-07-01 21:08:28 UTC
+- 最新运行日期：2026-07-02
+- 运行时间：2026-07-02 20:52:31 UTC
 - 运行状态：成功
-- 本次总论文数：26
-- 精读区：14
+- 本次总论文数：19
+- 精读区：7
 - 速读区：12
 
 ### 今日简报（AI）
-- 今日共生成 26 篇推荐（精读 14 篇，速读 12 篇）
-- 精读：《An AI agent for treatment reasoning over a biomedical tool universe》（9.0/10）, 《BV-Blend: Uncertainty-Weighted Historical Baselines for Stable Critic-Free RL with Verifiable Rewards》（9.0/10）
-- 速读：《Towards Scalable Multi-Task Reinforcement Learning with Large Decision Models》（8.0/10）, 《Solving Markov Decision Processes with Future Information via MPC》（8.0/10）, 《Reward-Conditioned Attention: How Reward Design Shapes What Autonomous Driving Agents See》（8.0/10）
+- 今日共生成 19 篇推荐（精读 7 篇，速读 12 篇）
+- 精读：《Kiko: Programming Agents to Enact Interaction Protocols》（8.0/10）, 《MPC-Injection: Biasing Off-Policy Locomotion RL Toward Controller-Induced Behavior Basins》（8.0/10）
+- 速读：《ATOD: Annealed Turn-aware On-policy Distillation for Multi-turn Autonomous Agents》（8.0/10）, 《Tandem Reinforcement Learning with Verifiable Rewards》（8.0/10）, 《Towards Value-Constrained Credit Assignment in Fully Delegated AI Cooperatives》（8.0/10）
 - 这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。
-- 详情：[/202607/01/README](/202607/01/README)
+- 详情：[/202607/02/README](/202607/02/README)
 
 ### 精读区论文标签
-1. [An AI agent for treatment reasoning over a biomedical tool universe](/202607/01/2606.28692v1-an-ai-agent-for-treatment-reasoning-over-a-biomedical-tool-universe)  
-   标签：评分：9.0/10、query:agent
-   evidence：用于真实医疗治疗推理的AI智能体
-2. [BV-Blend: Uncertainty-Weighted Historical Baselines for Stable Critic-Free RL with Verifiable Rewards](/202607/01/2606.28707v1-bv-blend-uncertainty-weighted-historical-baselines-for-stable-critic-free-rl-with-verifiable-rewards)  
-   标签：评分：9.0/10、query:agent
-   evidence：通过可验证奖励稳定无评论家强化学习以训练智能体
-3. [Modification-Considering Value Learning for Reward Hacking Mitigation in RL](/202607/01/2606.28955v1-modification-considering-value-learning-for-reward-hacking-mitigation-in-rl)  
-   标签：评分：9.0/10、query:rl-papers
-   evidence：通过考虑修改的价值学习缓解奖励黑客
-4. [HiComm: Hierarchical Communication for Multi-agent Reinforcement Learning](/202607/01/2606.29126v1-hicomm-hierarchical-communication-for-multi-agent-reinforcement-learning)  
-   标签：评分：9.0/10、query:agent
-   evidence：多智能体强化学习通信算法
-5. [STEMGym: Benchmarking Sequential Decision-Making under Dose Budgets in Autonomous Electron Microscopy](/202607/01/2606.29592v1-stemgym-benchmarking-sequential-decision-making-under-dose-budgets-in-autonomous-electron-microscopy)  
-   标签：评分：9.0/10、query:agent
-   evidence：自主电子显微镜中序贯决策的基准测试
-6. [PS-PPO: Prefix-Sampling PPO for Critic-Free RLHF](/202607/01/2606.29758v1-ps-ppo-prefix-sampling-ppo-for-critic-free-rlhf)  
-   标签：评分：9.0/10、query:agent
-   evidence：面向高效无评论者RLHF的前缀采样PPO
-7. [ACPO: Agent-Chained Policy Optimization for Multi-Agent Reinforcement Learning](/202607/01/2606.30072v1-acpo-agent-chained-policy-optimization-for-multi-agent-reinforcement-learning)  
-   标签：评分：9.0/10、query:agent
-   evidence：基于智能体链策略优化的多智能体强化学习
-8. [DAIN: Dynamic Agent-Based Interaction Network for Efficient and Collaborative Multimodal Reasoning](/202607/01/2606.30189v1-dain-dynamic-agent-based-interaction-network-for-efficient-and-collaborative-multimodal-reasoning)  
-   标签：评分：9.0/10、query:agent
-   evidence：用于多模态推理的动态多智能体交互网络
-9. [Sampling-Based Coordination-Informed Multi-Objective Multi-Robot Reinforcement Learning](/202607/01/2606.30893v1-sampling-based-coordination-informed-multi-objective-multi-robot-reinforcement-learning)  
-   标签：评分：9.0/10、query:agent
-   evidence：多目标多机器人强化学习与去中心化协调
-10. [HyPOLE: Hyperproperty-Guided Multi-Agent Reinforcement Learning under Partial Observation](/202607/01/2606.30966v1-hypole-hyperproperty-guided-multi-agent-reinforcement-learning-under-partial-observation)  
-   标签：评分：9.0/10、query:agent
-   evidence：基于超属性引导的部分可观测多智能体强化学习
-11. [FormIDEAble: Safe and Socially-aware Autonomous Systems](/202607/01/2606.31572v1-formideable-safe-and-socially-aware-autonomous-systems)  
-   标签：评分：9.0/10、query:agent
-   evidence：具有形式化保证的安全社交感知自主系统
-12. [Policy Optimization Achieves Data-Dependent Regret Bounds in MDPs with Unknown Transitions](/202607/01/2606.31769v1-policy-optimization-achieves-data-dependent-regret-bounds-in-mdps-with-unknown-transitions)  
-   标签：评分：9.0/10、query:rl-papers
-   evidence：具有理论遗憾界的策略优化算法
-13. [Adapting Generalist Robot Policies with Semantic Reinforcement Learning](/202607/01/2606.31958v1-adapting-generalist-robot-policies-with-semantic-reinforcement-learning)  
-   标签：评分：9.0/10、query:agent
-   evidence：通过语义语言提示对通用机器人策略进行强化学习适应
-14. [TRIAGE: Role-Typed Credit Assignment for Agentic Reinforcement Learning](/202607/01/2606.32017v1-triage-role-typed-credit-assignment-for-agentic-reinforcement-learning)  
-   标签：评分：9.0/10、query:agent
-   evidence：用于智能体强化学习的角色化信用分配
+1. [Kiko: Programming Agents to Enact Interaction Protocols](/202607/02/2606.26156v1-kiko-programming-agents-to-enact-interaction-protocols)  
+   标签：评分：8.0/10、query:agent
+   evidence：编程智能体以执行交互协议
+2. [MPC-Injection: Biasing Off-Policy Locomotion RL Toward Controller-Induced Behavior Basins](/202607/02/2606.26392v1-mpc-injection-biasing-off-policy-locomotion-rl-toward-controller-induced-behavior-basins)  
+   标签：评分：8.0/10、query:agent
+   evidence：MPC-Injection：通过重放缓冲注入将RL偏向控制器偏好的步态
+3. [GEOALIGN: Geometric Rollout Curation for Robust LLM Reinforcement Learning](/202607/02/2606.26917v1-geoalign-geometric-rollout-curation-for-robust-llm-reinforcement-learning)  
+   标签：评分：8.0/10、query:agent
+   evidence：为鲁棒LLM强化学习进行滚动筛选
+4. [Support-Constrained RL Enables Real-World Policy Improvement without Real-World Experience](/202607/02/2606.27475v1-support-constrained-rl-enables-real-world-policy-improvement-without-real-world-experience)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：提出一种带约束的强化学习算法，从仿真迁移到现实
+5. [Internalizing the Future: A Unified Agentic Training Paradigm for World Model Planning](/202607/02/2606.27483v1-internalizing-the-future-a-unified-agentic-training-paradigm-for-world-model-planning)  
+   标签：评分：8.0/10、query:agent
+   evidence：统一智能体训练范式，结合世界模型规划与文本Q值
+6. [RS-Diffuser: Risk-Sensitive Diffusion Planning with Distributional Value Guidance](/202607/02/2606.27766v1-rs-diffuser-risk-sensitive-diffusion-planning-with-distributional-value-guidance)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：离线强化学习，风险敏感扩散规划，分布值引导
+7. [Regularized Reward-Punishment Reinforcement Learning](/202607/02/2606.28152v1-regularized-reward-punishment-reinforcement-learning)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：提出KL耦合策略正则化框架用于奖惩强化学习的奖励设计
 
 ### 速读区论文标签
-1. [Towards Scalable Multi-Task Reinforcement Learning with Large Decision Models](/202607/01/2606.24962v1-towards-scalable-multi-task-reinforcement-learning-with-large-decision-models)  
+1. [ATOD: Annealed Turn-aware On-policy Distillation for Multi-turn Autonomous Agents](/202607/02/2606.27814v1-atod-annealed-turn-aware-on-policy-distillation-for-multi-turn-autonomous-agents)  
+   标签：评分：8.0/10、query:agent
+   evidence：结合蒸馏和奖励优化的自治语言智能体RL训练算法
+2. [Tandem Reinforcement Learning with Verifiable Rewards](/202607/02/2606.28166v1-tandem-reinforcement-learning-with-verifiable-rewards)  
    标签：评分：8.0/10、query:rl-papers
-   evidence：大型决策模型用于多任务强化学习
-2. [Solving Markov Decision Processes with Future Information via MPC](/202607/01/2606.24991v1-solving-markov-decision-processes-with-future-information-via-mpc)  
+   evidence：基于可验证奖励的强化学习用于LLM推理
+3. [Towards Value-Constrained Credit Assignment in Fully Delegated AI Cooperatives](/202607/02/2606.28217v1-towards-value-constrained-credit-assignment-in-fully-delegated-ai-cooperatives)  
    标签：评分：8.0/10、query:agent
-   evidence：结合MPC和RL处理未来信息的决策制定
-3. [Reward-Conditioned Attention: How Reward Design Shapes What Autonomous Driving Agents See](/202607/01/2606.25127v1-reward-conditioned-attention-how-reward-design-shapes-what-autonomous-driving-agents-see)  
+   evidence：多智能体信用分配与奖励分配
+4. [Entropy-Regularized Reinforcement Learning for Linear-Quadratic Stackelberg Differential Games in Regime-Switching Diffusion Models](/202607/02/2606.28671v1-entropy-regularized-reinforcement-learning-for-linear-quadratic-stackelberg-differential-games-in-regime-switching-diffusion-models)  
    标签：评分：8.0/10、query:rl-papers
-   evidence：奖励设计对自动驾驶智能体注意力模式的影响
-4. [Minimax PAC Bounds for Learning in Exogenous Contextual MDPs](/202607/01/2606.25170v1-minimax-pac-bounds-for-learning-in-exogenous-contextual-mdps)  
+   evidence：熵正则化强化学习在微分博弈中的应用
+5. [A3M: Adaptive, Adversarial and Multi-Objective Learning for Strategic Bidding in Repeated Auctions](/202607/02/2606.28943v1-a3m-adaptive-adversarial-and-multi-objective-learning-for-strategic-bidding-in-repeated-auctions)  
    标签：评分：8.0/10、query:agent
-   evidence：外生情境MDP中的PAC学习界限
-5. [Memory-Efficient Policy Libraries with Low-Rank Adaptation in Reinforcement Learning](/202607/01/2606.25700v1-memory-efficient-policy-libraries-with-low-rank-adaptation-in-reinforcement-learning)  
+   evidence：强化学习智能体训练结合对抗与多目标奖励设计
+6. [Hierarchical Experimentalist Agents](/202607/02/2606.29315v1-hierarchical-experimentalist-agents)  
    标签：评分：8.0/10、query:agent
-   evidence：使用LoRA进行内存高效的多任务强化学习策略库
-6. [Why Multi-Step Tool-Use Reinforcement Learning Collapses and How Supervisory Signals Fix It](/202607/01/2606.26027v1-why-multi-step-tool-use-reinforcement-learning-collapses-and-how-supervisory-signals-fix-it)  
+   evidence：分层实验性智能体框架用于LLM自我提升
+7. [CRAFT: Counterfactual Credit Assignment from Free Sibling Rollouts for Self-Distilled Agentic Reinforcement Learning](/202607/02/2606.29476v1-craft-counterfactual-credit-assignment-from-free-sibling-rollouts-for-self-distilled-agentic-reinforcement-learning)  
    标签：评分：8.0/10、query:agent
-   evidence：工具使用智能体的强化学习训练，研究崩溃与监督信号
-7. [Autoformalization of Agent Instructions into Policy-as-Code](/202607/01/2606.26649v1-autoformalization-of-agent-instructions-into-policy-as-code)  
-   标签：评分：7.0/10、query:agent
-   evidence：自动形式化智能体指令以保障高风险领域安全
-8. [R$^2$-Searcher: Calibrating Retrieval and Reasoning Boundaries for Agentic Search](/202607/01/2606.28566v1-r2-searcher-calibrating-retrieval-and-reasoning-boundaries-for-agentic-search)  
-   标签：评分：7.0/10、query:agent
-   evidence：智能体搜索中的检索-推理校准
-9. [Digitizing Coaching Intelligence: An Agentic Framework for Holistic Athlete Profiling using VLM and RAG](/202607/01/2606.28570v1-digitizing-coaching-intelligence-an-agentic-framework-for-holistic-athlete-profiling-using-vlm-and-rag)  
-   标签：评分：7.0/10、query:agent
-   evidence：基于LLM的智能体系统用于运动员评估的实际应用
-10. [Hierarchical Decision Making with Structured Policies: A Principled Design via Inverse Optimization](/202607/01/2606.28764v1-hierarchical-decision-making-with-structured-policies-a-principled-design-via-inverse-optimization)  
-   标签：评分：7.0/10、query:agent
-   evidence：基于逆优化的自主智能体分层决策
-11. [Linguistic Firewall: Geometry as Defense in Multi-Agent Systems Routing](/202607/01/2606.30555v1-linguistic-firewall-geometry-as-defense-in-multi-agent-systems-routing)  
-   标签：评分：6.0/10、query:agent
-   evidence：多智能体系统路由中的几何防御机制
-12. [On the Comparison of Reinforcement Learning and Adaptive Control for Linear Systems under Packet Loss and Uncertainty](/202607/01/2606.32003v1-on-the-comparison-of-reinforcement-learning-and-adaptive-control-for-linear-systems-under-packet-loss-and-uncertainty)  
-   标签：评分：6.0/10、query:rl-papers
-   evidence：不确定环境下线性系统的强化学习（DDPG）与自适应控制比较
+   evidence：适用于智能体强化学习训练的信用分配方法
+8. [To Reason or to Fabricate: Reasoning Without Shortcuts via Hint-Anchored Pairwise Aggregation](/202607/02/2606.29481v1-to-reason-or-to-fabricate-reasoning-without-shortcuts-via-hint-anchored-pairwise-aggregation)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：面向LLM推理的提示注入奖励模型新型RL框架
+9. [UCOB: Learning to Utilize and Evolve Agentic Skills via Credit-Aware On-Policy Bidirectional Self-Distillation](/202607/02/2606.29502v1-ucob-learning-to-utilize-and-evolve-agentic-skills-via-credit-aware-on-policy-bidirectional-self-distillation)  
+   标签：评分：8.0/10、query:agent
+   evidence：信用感知的双向自蒸馏方法用于智能体技能学习
+10. [Accelerating Q-learning through Efficient Value-Sharing across Actions](/202607/02/2606.29806v1-accelerating-q-learning-through-efficient-value-sharing-across-actions)  
+   标签：评分：8.0/10、query:rl-papers
+   evidence：通过跨动作价值共享加速Q学习
+11. [SWE-Together: Evaluating Coding Agents in Interactive User Sessions](/202607/02/2606.29957v1-swe-together-evaluating-coding-agents-in-interactive-user-sessions)  
+   标签：评分：8.0/10、query:agent
+   evidence：真实用户会话中交互式编码智能体的基准测试
+12. [Sparse Sensor Placement in Multi-Agent Reinforcement Learning Control of Rayleigh-Bénard Convection](/202607/02/2606.30238v1-sparse-sensor-placement-in-multi-agent-reinforcement-learning-control-of-rayleigh-bnard-convection)  
+   标签：评分：8.0/10、query:agent
+   evidence：多智能体强化学习控制中的稀疏传感器布置
 
 
 <div class="dpr-home-promo-card">
