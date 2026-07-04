@@ -1,0 +1,1766 @@
+Title: AETDICE: Unified Framework and Offline Optimization for Nonlinear Multi-Objective RL
+
+URL Source: https://arxiv.org/pdf/2606.31178v1
+
+Published Time: Wed, 01 Jul 2026 00:35:47 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# AETDICE: Unified Framework and Offline Optimization for Nonlinear Multi-Objective RL 
+
+Woosung Kim 1* Youngjun Suh 1* Jinho Lee 1* Jongmin Lee 2† Byung-Jun Lee 1,3† 
+
+> 1
+
+Korea University 2Yonsei University 3Gauss Labs Inc. 
+
+{wsk208,jinho0997,youngjunsuh, byungjunlee}@korea.ac.kr jongminlee@yonsei.ac.kr 
+
+> *
+
+Equal contribution †Corresponding authors 
+
+## Abstract 
+
+Optimizing nonlinear preferences in multi-objective reinforcement learning (MORL) is essential for capturing complex trade-offs like risk aversion or fair-ness. However, such non-linearity has historically bifurcated nonlinear MORL objectives into two distinct paradigms: Scalarized Expected Return (SER) and Ex-pected Scalarized Return (ESR). While SER requires global-level optimization and ESR requires non-Markovian policies, leading to fragmented optimization strate-gies, we bridge this divide through the Aggregation–Expectation–Transformation (AET) framework. By unifying both criteria through a tripartite decomposition of scalarization, AET provides a principled foundation for general nonlinear MORL. Building on this framework, we propose AETDICE, a tractable offline RL algo-rithm for AET objectives. By utilizing DICE-style density-ratio estimation in an augmented state space, AETDICE enables sample-based optimization from static datasets. Our framework resolves long-standing barriers and captures respective trade-offs induced by AET framework, which existing methods fail to address. 
+
+## 1 Introduction 
+
+Multi-objective reinforcement learning (MORL) optimizes sequential decisions under multiple, often competing objectives [ 1, 2, 3]. The trade-off among objectives is governed by a scalarization function that maps vector-valued returns to a scalar objective. Linear scalarization reduces to standard RL via a weighted sum, while nonlinear scalarization captures richer preferences such as diminishing returns, fairness and efficiency [4, 5]. In nonlinear MORL, two canonical criteria arise from the ordering of scalarization and expectation: the Scalarized Expected Return (SER), which applies nonlinearity to the expected return, and the Expected Scalarized Return (ESR), which applies nonlinearity to each trajectory’s return. SER and ESR represent different decision-making contexts with fundamentally different optimal policy structures, and existing methods have accordingly been developed separately for each [6, 7, 8]. We focus on the offline setting, where policies must be learned from a fixed dataset. Offline methods exist for linear scalarization [ 9, 10 ] and SER [ 11 ], but ESR remains unaddressed: trajectory-level nonlinearity makes the optimal action depend on previously accumulated rewards, and learning such reward-conditioned policies from fixed data has not been explored. Moreover, applying non-linear utility to each trajectory’s return vector yet aggregating the results linearly can neglect lower-performing utility dimensions—the same imbalance that nonlinear aggregation corrects in SER. While expectation-level nonlinearity can counteract this imbalance between nonlinear trajectory-level utilities, no existing method addresses this. 
+
+> Preprint.
+> arXiv:2606.31178v1 [cs.LG] 30 Jun 2026
+
+We address both gaps through the Aggregation–Expectation–Transformation (AET) framework, which decomposes nonlinear scalarization into a trajectory-level transformation ( F ), expectation, and an expectation-level aggregation ( G). AET subsumes SER and ESR as special cases while enabling a richer class of objectives that combines both levels of nonlinearity. To optimize AET objectives offline, we introduce AETDICE—offline AET optimization via DI stribution Correction Estimation. We propose a transformed reward that absorbs nonlinear F into per-step rewards, enabling the first offline ESR optimization, and develop a finite-horizon DICE formulation over the augmented state space to handle the global aggregation of concave G. Empirically, AETDICE optimizes ESR, SER, and novel AET objectives within a single framework, revealing distinct policy behaviors that arise from the interaction of both levels of nonlinearity. 
+
+## 2 Preliminaries 
+
+2.1 Finite-horizon MOMDPs and MORL objectives 
+
+We consider a finite-horizon multi-objective Markov Decision Process (MOMDP) M = ( S, A, P, H, p 0, r), where S and A denote the state and action spaces, P (s′ | s, a ) is a time-homogeneous transition kernel, H is the horizon, p0(s) is the initial-state distribution, and r(s, a ) ∈ Rm specifies an m-dimensional reward vector for m objectives. A time-dependent policy π(a|s, t ) induces a trajectory distribution over τ = ( s0, a 0, . . . , s H−1, a H−1), and the cumulative multi-objective return is given by R(τ ) = PH−1 
+
+> t=0
+
+r(st, a t).Multi-objective reinforcement learning (MORL) employs a scalarization function u : Rm → R to convert vector-valued returns into a scalar objective. The classical choice is linear scalarization, 
+
+u(x) = w⊤x, which yields 
+
+Jlin (π; w) = Eτ ∼π [w⊤R(τ )] , (1) where w ∈ Rm specifies linear trade-off between objectives. Since linear u commutes with the expectation, the problem reduces to single-objective RL with scalar reward rw = w⊤r. To capture more general preference structures, nonlinear MORL allows u to be nonlinear. In this setting, the expectation and scalarization no longer commute, giving rise to two canonical optimality criteria: the 
+
+scalarized expected return (SER) and the expected scalarized return (ESR), 
+
+JSER (π; u) = u (Eτ ∼π [R(τ )]) , JESR (π; u) = Eτ ∼π [u(R(τ ))] . (2) SER and ESR represent different decision-making contexts and place different roles on the scalariza-tion u. Under SER, uSER aggregates the expected return vector into a scalar objective and is typically concave, promoting balanced performance across objectives at the expectation level [ 11 , 12 ]. Under ESR, uESR encodes a trajectory-level preference and is not restricted to concave functions [ 2, 13 ]. This distinction leads to fundamentally different optimal policy structures and optimization ap-proaches, establishing the two central paradigms of nonlinear MORL. 
+
+2.2 Optimization challenges in nonlinear MORL 
+
+Figure 1 illustrates how optimal policies differ across MORL with linear, SER, and ESR objectives in a simple two-step MOMDP with uNSW (x) = Pmi=1 log xi (Nash Social Welfare [ 14 ]). Nonlinear MORL produces behaviors absent in linear MORL: ESR selects an action no linear MORL policy chooses, and SER yields a stochastic optimal policy. Beyond these behavioral differences, each criterion poses a distinct optimization challenge. 
+
+SER challenge: global-level optimization. In standard RL, the contribution of each state-action pair can be evaluated locally through rewards or advantages, enabling Bellman-style dynamic pro-gramming. In SER, however, nonlinear scalarization is applied outside the expectation, coupling all state-action pairs globally: the marginal contribution of any action depends on the policy’s overall expected return vector, not on local information alone. This precludes local improvement and neces-sitates optimization at the level of the policy-induced distribution. In Figure 1, action probabilities must be optimized jointly, and the SER-optimal policy is stochastic—strictly outperforming all deterministic policies, unlike in single-objective RL or linear MORL. Prior work [ 11 ] addresses this by reformulating the problem as convex optimization over occupancy measures, bypassing Bellman updates entirely. 2s0 s1 sT
+
+a0 : (0 , 0) 
+
+a1 : (9 , 1) 
+
+a2 : (4 , 4) 
+
+a3 : (1 , 9)                   
+
+> Obj. Optimal π∗uNSW (E[R]) E[uNSW (R)]
+> SER 0.5a1+ 0 .5a3log(25) log(9)
+> ESR a2log(16) log(16)
+> Linear a1or a3log(9) log(9)
+
+Figure 1: Optimal policies of MORL with linear, SER, and ESR objectives in a two-step MOMDP with uNSW . The optimal linear MORL policy selects the action corresponding to the higher-weighted objective. Full derivation in Appendix B. 
+
+ESR challenge: Non-Markovian policy. ESR applies nonlinearity at the trajectory level, making the optimal action depend not only on the current state but also on the accumulated reward Racc  
+
+> t
+
+:= 
+
+Pt−1 
+
+> k=0
+
+r(sk, a k). For any t > 1, the ESR objective can be written as 
+
+JESR (π; uESR ) = Eπ
+
+"
+
+uESR Racc  
+
+> t
+
++
+
+> H−1
+
+X
+
+> k=t
+
+r(sk, a k)
+
+!# 
+
+.
+
+Due to the nonlinearity, the future reward and Racc  
+
+> t
+
+cannot be optimized separately. The optimal action at state st therefore depends on Racc  
+
+> t
+
+: trajectories reaching the same state may require different actions depending on their reward history. ESR-optimal policies cannot, in general, be Markovian over the original state space [ 2 , 13 ]. Replacing r(s0, a 0) with = (2 , 0) in Figure 1 shifts the ESR-optimal action at s1 from a3 to a2, confirming that the optimal action depends on the reward history (derivation in Appendix B). Prior works on ESR optimization [ 15 , 16 , 17 ] address this by augmenting the state with Racc  
+
+> t
+
+, restoring Markovianity in the augmented space. 
+
+## 3 AET: A Unified Framework for Nonlinear Scalarization in MORL 
+
+To address offline optimization of nonlinear trajectory-wise utilities and their nonlinear aggregation at the expectation level, we present AET, a unified framework that accommodates both levels of nonlinearity within a single formulation. AET decomposes nonlinear scalarization into three components: Aggregation (A), Expectation (E), and Transformation (T). The AET objective is 
+
+JAET (π; F, G ) = G(Eτ ∼π [F (R(τ ))]) , (3) where F : Rm → Rn is a trajectory-level transformation composed of n trajectory-wise utilities 
+
+F (R) = ( f1(R), . . . , f n(R)) , and G : Rn → R is an expectation-level aggregation. We assume each fi is smooth and G is concave to ensure a well-behaved optimization landscape. Each fi encodes a distinct preference over the return vector, mapping the m-dimensional return vector to n utility dimensions whose expectations are then aggregated by G. For instance, fi(R) = log( Ri)
+
+captures diminishing marginal utility, amplifying gains in low-performing objectives; fi(R) = exp( Ri) captures increasing marginal utility, amplifying gains in already high-performing objectives; and non-convex Cobb-Douglas fi(R1, R 2) = Rρ 
+
+> 1
+
+/(R2)1−ρ captures the efficiency trade-off ratio between two objectives. Linear G aggregates the expected utilities linearly, while concave G amplifies gains in lower-performing exptected utilities, encouraging balanced performance across all utility dimensions. 
+
+Landscape of Nonlinear MORL The AET formulation organizes existing nonlinear MORL objectives by where nonlinearity is placed. Based on the nonlinearity of F and G, we identify four regimes: (i) Linear MORL (linear F , linear G), recovered by F (R) = R and G(v) = w⊤v;(ii) SER-MORL (linear F , concave G), recovered by retaining the identity transformation but adopting a concave aggregation G; (iii) ESR-MORL (nonlinear F , linear G), recovered by setting 
+
+F = ( f1, . . . , f n) with G(v) = 1⊤v; and (iv) AET-MORL (nonlinear F , concave G), recovered by aggregating F = ( f1, . . . , f n) with concave G. We note that ESR-MORL can also be described as F = f1 + · · · + fn with G(v) = v, reducing to a single scalar utility; we retain the vector representation to clearly distinguish it from AET-MORL, where concave G preserves the distinction among multiple utility dimensions. 3This taxonomy makes explicit which regimes lack offline methods: while Linear MORL and SER-MORL are addressed by prior work [ 9 , 10 , 11 ], no existing approach handles ESR-MORL or AET-MORL . ESR-MORL has been studied in online and value iteration setting [ 15 , 16 , 18 ], but (i) no offline method addresses the additional challenge of distribution shift, and (ii) current approaches cannot be extended to optimizing AET objectives with two nonlinearities, as they do not account for nonlinear aggregation G. The AET objective and its offline optimization are novel to this work. We fill these gaps by addressing each source of nonlinearity in turn: Section 4 tackles nonlinear F ,Section 5 tackles nonlinear G, and their combination yields AETDICE. 
+
+## 4 Augmented MOMDP for Nonlinear Transformation F 
+
+We present an augmented MOMDP framework for optimizing nonlinear transformation F . While we adopt the augmented state space from prior work [ 17 ] to restore Markovianity, we define a transformed reward that captures the incremental contribution of each action to F . This serves two purposes: it enables offline optimization of ESR-MORL by reducing it to standard single-objective RL in the augmented MOMDP, and it extends naturally to AET-MORL by reformulating it as SER-MORL in the augmented MOMDP. 
+
+4.1 Transformed Reward in the Augmented Space 
+
+We define the augmented finite-horizon MOMDP ˜M = ( ˜S, A, ˜P , H, ˜p0, ˜r), where each augmented state is given by ˜st = ( st, Racc  
+
+> t
+
+, t ). The initial augmented state is ˜s0 = ( s0, 0, 0) with initial distribution ˜p0(˜ s0) = p0(s0). The transition kernel ˜P is defined as 
+
+˜P (˜ st+1 |˜st, a t) = P (st+1 |st, a t) · I[Racc  
+
+> t+1
+
+= Racc  
+
+> t
+
++ r(st, a t)] , (4) where the timestep advances deterministically from t to t + 1 . Since reward accumulation is absorbed into the transition dynamics and our objective focuses on the trajectory-wise utility F (R(τ )) , we define a transformed reward to capture the incremental contribution of each action to F :
+
+˜r(˜ st, a t) = F  Racc  
+
+> t
+
++ r(st, a t) − F  Racc 
+
+> t
+
+, for t ≥ 1 (5) with ˜r(˜ s0, a 0) = F (r(s0, a 0)) . This induces an exact telescoping sum: PH−1 
+
+> t=0
+
+˜r(˜ st, a t) = F (R(τ )) ,reducing the trajectory-level objective to a standard cumulative reward in the augmented MOMDP. When F is linear, the transformed reward reduces to ˜r(˜ st, a t) = F (r(st, a t)) , which no longer depends on Racc  
+
+> t
+
+; the optimal policy is then independent of the accumulated reward, making the augmentation redundant. Under this construction, a policy must be conditioned on the augmented state ˜st to account for the dependence on accumulated rewards. We denote such policies as ˜π(a|˜st), which are Markovian in ˜M
+
+but non-Markovian in the original MOMDP M. This reduces ESR-MORL to solving single-objective RL in ˜M, as we show below. 
+
+4.2 Offline ESR-MORL 
+
+As described in Section 3, when G is linear, it commutes with the expectation, allowing us to collapse the AET objective into a single-utility case ( n=1) by defining ˜F = G ◦ F : Rm → R. ESR-MORL then becomes standard single-objective RL in ˜M, as the trajectory-level nonlinearity is fully absorbed into the transformed reward. This enables existing offline RL algorithms, such as IQL [ 19 ], to be applied with only minor modifications to account for the augmented state ˜st.
+
+Proposition 4.1 (Reduction to single-objective RL under linear G). Let G be linear. Then for any policy ˜π in the augmented MOMDP ˜M,
+
+JAET (˜ π; F, G ) = G(Eτ ∼π [F (R(τ ))]) = Eτ ∼˜π
+
+h ˜F (R(τ )) 
+
+i
+
+= Eτ ∼˜π
+
+"H−1X
+
+> t=0
+
+˜r(˜ st, a t)
+
+#
+
+, (6) 
+
+where ˜r is defined in (5) with ˜F = G ◦ F .
+
+4Comparison with existing ESR methods. Prior ESR optimization methods [ 15 , 16 ] modify the value function update, rather than transforming the reward, to account for trajectory-wise nonlinearity, achieving effective online optimization. However, this approach does not align with two goals in our framework: offline optimization and AET optimization. Designing a value function update that simultaneously handles both nonlinearity and distribution shift is nontrivial. Our transformed reward decouples these concerns: the nonlinearity of F is absorbed into the reward, while the value function update relies entirely on existing offline RL methods. Furthermore, value-function-based approaches are inherently local and incompatible with the global optimization required by concave 
+
+G in AET-MORL. This motivates the visitation-distribution-based formulation in the augmented MOMDP, which we develop in the next section. In addition, prior work on ESR [ 17 ] conditions the policy on accumulated reward vector Racc  
+
+> t
+
+and assigns the transformed return F (R(τ )) only as a terminal reward. In contrast, our formulation provides a denser reward signal ˜r that captures the incremental contribution of each action to F (R(τ )) ,making it amenable for sample-based optimization. 
+
+## 5 Convex Optimization for Nonlinear Aggregation G 
+
+With nonlinear F absorbed into the transformed reward, optimizing AET-MORL reduces to SER-MORL in ˜M: maximizing a concave G over multiple expected utilities. To handle the global-level optimization required by concave G, we extend the Distribution Correction Estimation (DICE) framework [ 11 , 20 ] to the augmented MOMDP ˜M, yielding AETDICE—offline AET optimization via Di stribution Correction Estimation. 
+
+5.1 Visitation Distribution in the Augmented MOMDP 
+
+In the augmented MOMDP, the visitation distribution induced by a policy ˜π is defined as d˜πt (˜ s, a ) := Pr(˜ st = ˜ s, a t = a | ˜π), representing the probability that ˜π visits the augmented state–action pair 
+
+(˜ s, a ) at timestep t. While the timestep is already encoded within the augmented state ˜s, we retain the index t for notational clarity in the derivations below. Crucially, the expected utility vector becomes linear in the visitation distribution d˜πt :
+
+Eτ ∼˜π [F (R(τ ))] = Eτ ∼˜π
+
+"H−1X
+
+> t=0
+
+˜r(˜ st, a t)
+
+#
+
+=
+
+> H−1
+
+X
+
+> t=0
+
+X
+
+> ˜s,a
+
+d˜πt (˜ s, a ) ˜ r(˜ s, a ). (7) Therefore, AET-MORL reduces to a convex optimization problem over visitation distribution in ˜M,subject to finite-horizon Bellman flow constraints that ensure the validity of d = {dt}H−1 
+
+> t=0
+
+:
+
+max  
+
+> d≥0
+
+G
+
+
+
+> H−1
+
+X
+
+> t=0
+
+X
+
+> ˜s,a
+
+dt(˜ s, a ) ˜ r(˜ s, a )
+
+ (8a) s.t. X
+
+> a
+
+d0(˜ s, a ) = ˜ p0(˜ s), ∀˜s (8b) 
+
+X
+
+> a′
+
+dt+1 (˜ s′, a ′) = X
+
+> ˜s,a
+
+dt(˜ s, a ) ˜P (˜ s′ | ˜s, a ), ∀˜s′, t ∈ { 0, . . . , H − 2}, (8c) where ˜s′ = ( s′, Racc  
+
+> t
+
++ r(s, a ), t + 1) denotes the next augmented state. This formulation enables the global optimization required by SER-like objectives with nonlinear G, and the optimal policy inducing optimal d∗ can be recovered via ˜π∗ 
+
+> t
+
+(a|˜s) = d∗ 
+
+> t
+
+(˜ s, a )/ P 
+
+> a
+
+d∗ 
+
+> t
+
+(˜ s, a ). However, solving this convex optimization directly requires access to the transition dynamics of ˜M. Moreover, even when the original state and action spaces are finite, the augmented state space ˜S is generally continuous, as the accumulated reward Racc  
+
+> t
+
+takes continuous values under general reward functions. This makes the convex formulation impractical even in tabular domains, motivating a sample-based approach. 
+
+5.2 AETDICE: Regularized AET for sample-based optimization 
+
+To derive a sample-based objective from (8) in the offline setting, AETDICE extends the DICE-RL framework to the augmented MOMDP with two key modifications: (i) ϕ-divergence regularization 5applied to the per-timestep data distribution dDt , correcting distribution shift at each step of the finite horizon, and (ii) a slack variable k that decouples the concave aggregation G from the expectation over d. The regularized primal problem is: 
+
+max  
+
+> d∈D ,k∈Rm
+
+G(k) − β
+
+> H−1
+
+X
+
+> t=0
+
+Dϕ(dt∥dDt ), s.t. 
+
+> H−1
+
+X
+
+> t=0
+
+X
+
+> ˜s,a
+
+dt(˜ s, a )˜ r(˜ s, a ) = k, (9) where D denotes the set of non-negative visitation distribution satisfying constraints (8b) – (8c) , β > 0
+
+is a regularization coefficient, and Dϕ(dt ∥ dDt ) := P 
+
+> ˜s,a
+
+dDt (˜ s, a )ϕ  dt(˜ s, a )/d Dt (˜ s, a ) is the ϕ-divergence between dt and the data distribution dDt at time step t. The full derivation, required assumptions, and complete algorithm are provided in Appendix C. 
+
+Dual formulation. We form the Lagrangian of (9) by introducing μ ∈ Rn for the slack constraint, and time-indexed multipliers νt(˜ s) for the Bellman flow constraints (8b) – (8c) , replacing the time-independent multiplier used in standard DICE approaches [ 11 , 20 ] to reflect the finite-horizon structure of the augmented MOMDP. The primal problem becomes max d≥0,k min ν,μ L, where: 
+
+L(d, k, ν, μ) := G(k) − μ⊤k + X
+
+> ˜s
+
+ν0(˜ s)˜ p0(˜ s) − β
+
+> H−1
+
+X
+
+> t=0
+
+Dϕ(dt|| dDt ) + X
+
+> ˜s,a,t
+
+dt(˜ s, a )eν,μ,t (˜ s, a )
+
+with eν,μ,t (˜ s, a ) = μ⊤˜r(˜ s, a ) + E˜s′ [νt+1 (˜ s′)] − νt(˜ s) and νH (˜ s) = 0 for consistency. 
+
+Derivation of training objectives. Under strong duality, we swap the optimization order to 
+
+min ν,μ max d≥0,k L. The inner maximization over d yields a closed-form optimal visitation distribu-tion ratio w∗ 
+
+> t
+
+(˜ s, a ) = d∗ 
+
+> t
+
+(˜ s, a )/d Dt (˜ s, a ) = max  0, (ϕ′)−1 (eν,μ,t (˜ s, a )/β ). We leverage Fenchel conjugates ϕ∗
+
+> +
+
+(y) := sup x≥0{xy − ϕ(x)} and G∗(y) := sup x{x⊤y + G(x)} to simplify the min– max optimization and yield an unconstrained objective that depends only on expectations over ˜p0 and the offline data dDt :
+
+min  
+
+> ν,μ
+
+LAET (ν, μ) := E˜p0 [ν0(˜ s)] + 
+
+> H−1
+
+X
+
+> t=0
+
+EdDt
+
+βϕ ∗ 
+
+> +
+
+(eν,μ,t (˜ s, a )/β ) + G∗(−μ). (10) After minimizing LAET to obtain ν∗ and μ∗, the policy that induces the optimal visitation distribution can be extracted using the optimal visitation ratio w∗ 
+
+> t
+
+via weighted behavior cloning following [20]: 
+
+max  
+
+> π
+
+E(˜ s,a )∼dDt [w∗ 
+
+> t
+
+(˜ s, a ) log π(a|˜st)] .
+
+Comparison with FairDICE. AETDICE differs from the DICE framework [ 11 , 20 ] in three key aspects: (i) prior DICE approaches impose Bellman flow constraints in a discounted infinite-horizon MDP, whereas AETDICE imposes finite-horizon Bellman flow constraints over the augmented state space (8b) – (8c) ; (ii) the Lagrangian multipliers and policy are conditioned on the augmented state 
+
+˜s, and offline data dDt must be preprocessed to include the accumulated reward vector Racc  
+
+> t
+
+; and (iii) AETDICE extends FairDICE, which handles only SER objectives, to support a broader class of nonlinear objectives including ESR and AET, though it operates in a higher-dimensional state space. 
+
+## 6 Experiments 
+
+We conduct two sets of experiments to demonstrate that AETDICE enables offline optimization of AET objectives with nonlinear F and G. First, we focus on offline Fair MORL with concave F and 
+
+G, optimizing and comparing different fairness objectives within a single framework. Second, we go beyond concavity to optimize convex and non-convex trajectory-wise utilities, along with their concave aggregation, on complex continuous-control domains. 
+
+Algorithms. We evaluate offline methods corresponding to each nonlinear MORL regime identified in Section 3: (1) OptiDICE [20 ]: a DICE-based offline RL method with linear F and linear G;(2) FairDICE [ 11 ]: a DICE-based offline MORL method with linear F and concave G; (3) ESR-IQL (ours): an IQL-based method on the augmented MOMDP with nonlinear F and linear G; and (4) AETDICE-Obj (ours): a DICE-based method on the augmented MOMDP, applicable to any combination of F and G.61
+
+> 2
+
+B
+
+A
+
+C                    
+
+> = 50
+> =+60
+> =+30
+> =-10
+> 1
+> 20.0 0.3 0.4 0.45 0.5 0.6 1.0
+> Fairness parameter α
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Percentage of behaviors (%)
+> 100%
+> 78% 64%
+> 44%
+> 22% 36%
+> 35%
+> 65% 64% 55%
+> 21% 32% 36% 45%
+> Behavior A Behavior B Behavior C Figure 2: (a) Fair-Taxi: a taxi agent serving two passenger groups. Each objective corresponds to serving a passenger group.
+> (b) Distribution of behavior patterns across varying nonlinear MORL objectives. Full details in Appendix E.
+
+6.1 Offline Fair MORL: ESR, SER, and BSR 
+
+Fair MORL [ 11 , 21 ] applies concave scalarization to promote equitable performance across objectives, where improvements to lower-performing objectives yield larger gains in overall utility. As discussed in Section 3, the AET framework subsumes existing Fair MORL criteria as special cases. To further bridge trajectory-level and expectation-level fairness, we adopt the α-fairness utility [ 22 ] to construct 
+
+Balanced Scalarized Return (BSR) , a novel objective family parameterized by α that interpolates between trajectory-level and expectation-level fairness: 
+
+JBSR (π; α) = Gα(Eτ ∼π [Fα(R(τ ))]) , Fα(x) = u1−α(x), Gα(x) = 
+
+> n
+
+X
+
+> i=1
+
+uα(xi). (11) where uα(x) = x1−α−11−α for α̸ = 1 and u1(x) = log x. By varying α ∈ [0 , 1] , BSR controls the relative nonlinearity applied at the trajectory level ( Fα) and the aggregation level ( Gα), recovering ESR at α = 0 and SER at α = 1 . We analyze ESR-, BSR-, and SER-optimal policies obtained by AETDICE and illustrate their distinct behaviors in Fair-Taxi environment (Figure 2). Details and full results including other environments including MO-PointMaze-3obj are presented in Appendix E. 
+
+Behavioral differences. Figure 2(a) illustrates three episode-level behavior patterns of optimal nonlinear MORL policies in Fair-Taxi: (A) serving both groups, (B) serving only group 1, and (C) serving only group 2. Figure 2(b) shows their distribution over 100 episodes. The ESR-optimal policy consistently produces pattern (A), balancing return across objectives within each episode. The SER-optimal policy yields a stochastic mixture of (B) and (C), where each trajectory specializes in a single objective and balance is achieved only in expectation. The BSR-optimal policy smoothly interpolates between these extremes: as α increases toward SER, specialized trajectories gradually emerge, while lower α recovers the balanced ESR behavior. State  at  𝒕 = 𝟐𝟓 
+
+> 1
+> 2
+
+3
+
+0      
+
+> Accumulated
+> Reward
+> Behavior until 𝒕 =𝟓𝟎
+> ESR 𝝅
+> SER 𝝅
+> BSR 𝝅
+> Final Return
+
+( 7 , 0 )
+
+( 3 , 2 )
+
+( 3 , 2 )
+
+( 7 , 0 )100% 
+
+> 15%
+> 85%
+> 100%
+
+Figure 3: Non-Markovian behavior of ESR and BSR-optimal policies in Fair-Taxi environment. 
+
+Non-Markovian policy. The non-Markovian structure formalized in Section 4 manifests concretely in the ESR- and BSR-optimal policies. Under these objectives, the concavity of F transforms the original reward through Racc  
+
+> t
+
+: as one objective accumulates higher returns, its transformed marginal reward diminishes, steering the policy toward the under-served objective. Since the transformed 7reward depends on Racc  
+
+> t
+
+, the optimal action from the same state varies with trajectory history, making the policy inherently non-Markovian. In contrast, the SER-optimal policy is unaffected, as its reward does not depend on Racc  
+
+> t
+
+. Figure 3 captures a state at t = 25 where group 1 has already been served three times. The ESR-optimal policy shifts to group 2 due to diminished marginal reward for group 1, while the SER-optimal policy continues serving group 1 independently of history. The BSR-optimal policy ( α = 0 .45 ) stochastically chooses between the two strategies. 
+
+Quantitative evaluation. The quantile plot in Figure 4 illustrates how different Fair MORL objectives shape the per-trajectory return distribution across individual objective dimensions. The SER-optimal policy achieves higher expected returns but with large variance across trajectories, while the ESR-optimal policy yields lower expected returns with significantly reduced variance. The BSR-optimal policy lies between these extremes, offering a tunable trade-off. Prior work has noted that SER is suited for repeated policy execution and ESR for single-shot deployment [ 4]. BSR accommodates practitioners who seek the benefits of repeated execution while constraining the variability across objectives, interpolating between the two regimes via α.AET-SER AET-BSR AET-ESR 
+
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+
+Objective Dimension 1   
+
+> AET-SER AET-BSR AET-ESR
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+
+Objective Dimension 2   
+
+> AET-SER AET-BSR AET-ESR
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+
+Objective Dimension 3 
+
+> Mean
+> Median
+
+Figure 4: Quantile distributions of per-trajectory returns in MO-PointMaze-3obj environment 
+
+6.2 Beyond Concavity: General AET Objectives 
+
+Beyond Fair MORL, the AET framework accommodates diverse trajectory-level utilities and their aggregation by varying F and G. We demonstrate this on the D4MORL benchmark [ 9 ], a more complex continuous-control domain, with four configurations: (i) convex F (x) = exp( x/50) with linear G(x), which prioritizes high-performing objectives; (ii) the same convex F with concave 
+
+G(x) = P 
+
+> i
+
+log( xi), which combines trajectory-level specialization with expectation-level balance; and (iii) non-convex Cobb-Douglas F (x) = xρ
+
+> 1
+
+/x 21−ρ with linear G, a single trajectory-wise utility case that optimizes trajectory-wise efficiency; and (iv) non-convex Cobb-Douglas f1 for efficiency and concave safety-threshold f2(x) = log( x − Rth ) designed to penalize collapse, aggregated by concave G.
+
+Convex utility F. We apply convex F with increasing marginal utility to MO-Ant, where the two objectives correspond to movement in orthogonal directions. Convex F amplifies gains from concentrating on a single objective, encouraging the policy to commit to one direction per episode rather than distributing effort across both. Under Linear MORL, the agent moves diagonally according to the preference weights (Behavior C in Figure 5). With convex F and linear G (i), however, the amplification effect causes the policy to specialize exclusively in one direction (Behavior A), even under equal weighting. Pairing the same convex F with concave G (ii) addresses this at the expectation level: the concave aggregation amplifies under-served utility dimensions, producing a stochastic mixture of Behavior A and Behavior B, where each trajectory specializes in a different direction yet balance is maintained across episodes—a behavior that is difficult to achieve with linear G, as it requires precise weight tuning to counteract the amplification of convex F .
+
+Cobb-Douglas utility. We focus on MO-Walker2d and MO-Halfcheetah as two objectives, forward locomotion and energy consumption, present a natural efficiency trade-off. The Cobb-Douglas utility 
+
+F (x) = xρ
+
+> 1
+
+/(x2)1−ρ is convex in one objective and concave in the other, making it non-convex overall. Despite this, the utility has a natural interpretation in these environments: by treating energy consumption as the denominator, the Cobb-Douglas utility effectively optimizes the movement-to-energy ratio, capturing trajectory-wise efficiency. By varying ρ, one controls the relative emphasis on forward locomotion versus energy consumption. However, at excessively low values (e.g., ρ = 0 .1), 8Figure 5: (a) MO-Ant-v2: AETDICE with convex F and concave G produces a stochastic mixture of specialized behaviors (Behavior A: 67%, Behavior B: 33%), while Linear MORL with equal preference weights produces balanced diagonal movement (Behavior C). (b) Over-optimization of Cobb-Douglas utility leads to agent collapse. (c) Adding safety utility f2 maintains Cobb-Douglas efficiency while preventing collapse. the MO-Walker2d agent frequently collapses, as the utility overly prioritizes energy saving at the expense of maintaining stable locomotion. 
+
+Cobb-Douglas utility with safety utility. To counteract the collapse caused by over-optimizing efficiency, we introduce a safety utility f2(x) = log( x − Rth ) that penalizes trajectories approaching a safety threshold, analogous to a log-barrier. This is aggregated with the Cobb-Douglas utility via concave G, forming a two-utility AET objective: 
+
+JAET (˜ π) = log 
+
+
+
+Eτ ∼˜π
+
+ R(τ )ρ
+
+C(τ )1−ρ
+
+ 
+
++ log ( Eτ ∼˜π [Rs(τ ) − Rth ]) (12) where Rth = 0 .8H is set to 80% of the maximum achievable safety return. Figure 5(b,c) compares AETDICE policies optimizing Cobb-Douglas utility alone versus with the additional safety utility, showing that the safety utility successfully prevents the Walker2d agent from collapsing. These results demonstrate that the AET framework extends beyond concave transformations to handle a broader class of practical objectives. Full results are presented in Appendix F. Table 1: Results on MO-Ant with convex trajectory-level utility F . Linear is abbreviated as Lin.                                                        
+
+> METHOD CONVEX F+LINEAR GCONVEX F+CONCAVE G
+> LIN -[1 .0,0.0] 724 .85 ±1.84 12 .89 ±0.02
+> LIN -[0 .5,0.5] 684 .53 ±7.53 13 .04 ±0.02
+> LIN -[0 .0,1.0] 1221 .13 ±28 .26 12 .25 ±0.03
+> FAIR DICE 681 .95 ±24 .28 13 .04 ±0.07
+> ESR-IQL 1251 .46 ±17 .88 12 .24 ±0.01
+> AET-ESR 1067 .22 ±6.81 13 .04 ±0.12
+> AETDICE 953 .53 ±16 .31 13 .69 ±0.05
+
+## 7 Conclusion 
+
+We presented AET, a unified framework that organizes nonlinear MORL objectives by the position of nonlinearity—trajectory-level transformation F and expectation-level aggregation G—and identifies two previously unaddressed regimes: offline ESR-MORL and AET-MORL. To fill these gaps, we proposed AETDICE, which introduces a transformed reward that absorbs nonlinear F into per-step rewards in an augmented MOMDP, and a finite-horizon DICE formulation that handles the global optimization required by concave G. Empirically, AETDICE optimizes ESR, SER, BSR, and novel AET objectives within a single framework, revealing distinct policy behaviors—including non-Markovian strategies and stochastic mixtures—that emerge from the interaction of both levels of nonlinearity. Limitations and broader impact are discussed in Appendix J. 98 Acknowledgements 
+
+This work was partly supported by Institute of Information & Communications Technology Planning 
+
+& Evaluation (IITP) grant funded by the Korea government (MSIT) (No. RS-2022-II220311, Develop-ment of Goal-Oriented Reinforcement Learning Techniques for Contact-Rich Robotic Manipulation of Everyday Objects, No. RS-2024- 00457882, AI Research Hub Project, No. RS-2019- II190079, Artificial Intelligence Graduate School Program (Korea University), the IITP (Institute of Information 
+
+& Communications Technology Planning & Evaluation)-ITRC (Information Technology Research Center) grant funded by the Korea government (Ministry of Science and ICT) (IITP-2026-RS-2024-00436857), BK21 Four project of the National Research Foundation of Korea, the National Research Foundation of Korea (NRF) grant funded by the Korea government (MSIT) (RS2025-00560367), the IITP under the Artificial Intelligence Star Fellowship support program to nurture the best talents (IITP-2026-RS-2025-02304828) grant funded by the Korea government (MSIT). This work was also supported by the Institute of Information & Communications Technology Planning & Evaluation (IITP) grant (RS-2020-II201361, Artificial Intelligence Graduate School Program (Yonsei University), and the AI Computing Infrastructure Enhancement (GPU Rental Support) User Support Program funded by the Ministry of Science and ICT (MSIT) (No. RQT-25-090109), Republic of Korea. 
+
+## References 
+
+[1] Kristof Van Moffaert and Ann Nowé. Multi-objective reinforcement learning using sets of pareto dominating policies. The Journal of Machine Learning Research , 15(1):3483–3512, 2014. [2] Wang Chi Cheung. Regret minimization for reinforcement learning with vectorial feedback and complex objectives. Advances in Neural Information Processing Systems , 32, 2019. [3] Runzhe Yang, Xingyuan Sun, and Karthik Narasimhan. A generalized algorithm for multi-objective reinforcement learning and policy adaptation. Advances in neural information pro-cessing systems , 32, 2019. [4] Diederik M Roijers, Peter Vamplew, Shimon Whiteson, and Richard Dazeley. A survey of multi-objective sequential decision-making. Journal of Artificial Intelligence Research , 48:67–113, 2013. [5] Mridul Agarwal, Vaneet Aggarwal, and Tian Lan. Multi-objective reinforcement learning with non-linear scalarization. In Proceedings of the 21st International Conference on Autonomous Agents and Multiagent Systems , pages 9–17, 2022. [6] Diederik Roijers, Denis Steckelmacher, and Ann Nowé. Multi-objective reinforcement learning for the expected utility of the return. In Adaptive Learning Agents Workshop 2018 , 2018. [7] Conor F Hayes, Roxana R˘ adulescu, Eugenio Bargiacchi, Johan Källström, Matthew Macfarlane, Mathieu Reymond, Timothy Verstraeten, Luisa M Zintgraf, Richard Dazeley, Fredrik Heintz, et al. A practical guide to multi-objective reinforcement learning and planning. arXiv preprint arXiv:2103.09568 , 2021. [8] Conor F Hayes, Timothy Verstraeten, Diederik M Roijers, Enda Howley, and Patrick Mannion. Expected scalarised returns dominance: a new solution concept for multi-objective decision making. Neural Computing and Applications , 37(19):13079–13099, 2025. [9] Baiting Zhu, Meihua Dang, and Aditya Grover. Scaling pareto-efficient decision making via offline multi-objective rl. arXiv preprint arXiv:2305.00567 , 2023. [10] Qian Lin, Chao Yu, Zongkai Liu, and Zifan Wu. Policy-regularized offline multi-objective reinforcement learning. In Proceedings of the 23rd International Conference on Autonomous Agents and Multiagent Systems , pages 1201–1209, 2024. [11] Woosung Kim, Jinho Lee, Jongmin Lee, and Byung-Jun Lee. Fairdice: Fairness-driven offline multi-objective reinforcement learning. arXiv preprint arXiv:2506.08062 , 2025. 10 [12] Roxana R˘ adulescu, Patrick Mannion, Yijie Zhang, Diederik M Roijers, and Ann Nowé. A utility-based analysis of equilibria in multi-objective normal-form games. The Knowledge Engineering Review , 35:e32, 2020. [13] Ziming Fan, Nianli Peng, Muhang Tian, and Brandon Fain. Welfare and fairness in multi-objective reinforcement learning. In Proceedings of the 2023 International Conference on Autonomous Agents and Multiagent Systems , pages 1991–1999, 2023. [14] Mamoru Kaneko and Kenjiro Nakamura. The nash social welfare function. Econometrica: Journal of the Econometric Society , pages 423–435, 1979. [15] Guanbao Yu, Umer Siddique, and Paul Weng. Fair deep reinforcement learning with preferential treatment. In ECAI , pages 2922–2929, 2023. [16] Umer Siddique, Peilang Li, and Yongcan Cao. Learning fair pareto-optimal policies in multi-objective reinforcement learning. In The Seventeenth Workshop on Adaptive and Learning Agents .[17] Nianli Peng, Muhang Tian, and Brandon Fain. Multi-objective reinforcement learning with nonlinear preferences: Provable approximation for maximizing expected scalarized return. In Proceedings of the 24th International Conference on Autonomous Agents and Multiagent Systems , pages 1632–1640, 2025. [18] Nianli Peng and Brandon Fain. Nonlinear multi-objective reinforcement learning with provable guarantees. arXiv preprint arXiv:2311.02544 , 2023. [19] Ilya Kostrikov, Ashvin Nair, and Sergey Levine. Offline reinforcement learning with implicit q-learning. arXiv preprint arXiv:2110.06169 , 2021. [20] Jongmin Lee, Wonseok Jeon, Byungjun Lee, Joelle Pineau, and Kee-Eung Kim. Optidice: Offline policy optimization via stationary distribution correction estimation. In International Conference on Machine Learning , pages 6120–6130. PMLR, 2021. [21] Giseung Park, Woohyeon Byeon, Seongmin Kim, Elad Havakuk, Amir Leshem, and Youngchul Sung. The max-min formulation of multi-objective reinforcement learning: From theory to a model-free algorithm. In International Conference on Machine Learning , pages 39616–39642. PMLR, 2024. [22] Jeonghoon Mo and Jean Walrand. Fair end-to-end window-based congestion control. IEEE/ACM Transactions on networking , 8(5):556–567, 2002. [23] Kristof Van Moffaert, Madalina M Drugan, and Ann Nowé. Scalarized multi-objective rein-forcement learning: Novel design techniques. In 2013 IEEE symposium on adaptive dynamic programming and reinforcement learning (ADPRL) , pages 191–199. IEEE, 2013. [24] Daniel J Lizotte, Michael H Bowling, and Susan A Murphy. Efficient reinforcement learning with multiple reward functions for randomized controlled trial analysis. In ICML , volume 10, pages 695–702, 2010. [25] Kristof Van Moffaert, Madalina M Drugan, and Ann Nowé. Hypervolume-based multi-objective reinforcement learning. In International Conference on Evolutionary Multi-Criterion Optimiza-tion , pages 352–366. Springer, 2013. [26] Joar Skalse and Alessandro Abate. On the limitations of markovian rewards to express multi-objective, risk-sensitive, and modal tasks. In Uncertainty in Artificial Intelligence , pages 1974–1984. PMLR, 2023. [27] Umer Siddique, Abhinav Sinha, and Yongcan Cao. Fairness in preference-based reinforcement learning. arXiv preprint arXiv:2306.09995 , 2023. [28] Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. Conservative q-learning for offline reinforcement learning. Advances in neural information processing systems , 33:1179– 1191, 2020. 11 [29] Lili Chen, Kevin Lu, Aravind Rajeswaran, Kimin Lee, Aditya Grover, Misha Laskin, Pieter Abbeel, Aravind Srinivas, and Igor Mordatch. Decision transformer: Reinforcement learning via sequence modeling. Advances in neural information processing systems , 34:15084–15097, 2021. [30] Runzhe Wu, Yufeng Zhang, Zhuoran Yang, and Zhaoran Wang. Offline constrained multi-objective reinforcement learning via pessimistic dual value iteration. Advances in Neural Information Processing Systems , 34:25439–25451, 2021. [31] Justin Fu, Aviral Kumar, Ofir Nachum, George Tucker, and Sergey Levine. D4rl: Datasets for deep data-driven reinforcement learning, 2020. 12 A Related Works 
+
+Multi-Objective Reinforcement Learning Multi-objective reinforcement learning (MORL) stud-ies sequential decision-making problems with vector-valued rewards, where no single policy is universally optimal under the Pareto dominance relation [ 4]. As a result, MORL methods often aim to compute a set of trade-off solutions (e.g., Pareto-optimal or coverage sets) so that a decision maker can later select a policy once preferences are specified [23, 1]. A widely used instantiation is linear scalarization, which reduces the problem to a standard single-objective MDP by optimizing a weighted sum of objectives and thereby enables the use of conventional RL algorithms [ 24 , 25 ]. This perspective has led to two main solution paradigms: set-based approaches, which learn a collection of Pareto-optimal policies, and preference-conditioned methods, which adapt a single policy to different trade-offs [4, 23, 1]. 
+
+Nonlinear Preference in MORL However, linear scalarization cannot capture richer preference structures such as fairness, balance, or risk sensitivity [ 26 ]. To address this limitation, recent work has explored nonlinear scalarization based on concave utility functions applied to return vectors. Under appropriate smoothness and concavity conditions, such nonlinear objectives remain tractable to optimize [ 5, 17 ]. This line of work includes welfare-oriented criteria such as Nash social welfare and Gini-based measures, which encourage equitable performance across objectives [ 13 , 27 ]. Related approaches also study max–min formulations that explicitly promote balanced outcomes, often combined with entropy regularization to stabilize learning in model-free online settings [ 21 ]. Together, these works reflect a broader shift from linear trade-offs toward more expressive preference modeling in MORL. 
+
+Offline RL and Offline MORL Offline reinforcement learning (RL) focuses on learning policies from fixed datasets without additional environment interaction, where distributional shift is a central challenge. Existing approaches address this issue through conservative value estimation [ 28 ], implicit value regularization [ 19 ], divergence-regularized optimization [ 20 ], and return-conditioned sequence modeling [29]. In the multi-objective setting, most offline approaches rely on linear scalarization and require explicit preference conditioning during training or evaluation [ 30 , 10 ]. FairDICE [ 11 ] adapts stationary distribution correction to a nonlinear welfare objective, showing that certain nonlinear criteria can be handled in offline MORL. However, it is tailored to a specific welfare formulation and does not directly generalize to broader classes of nonlinear objectives with different placements of nonlinearity in the return structure. 
+
+## B Optimal Policies in the Two-Step MOMDP Example 
+
+In this section, we derive the optimal policies for linear, SER, and ESR objectives in the two-step MOMDP shown in Figure 6 (reproduced from Figure 1 for convenience). Through these derivations, we illustrate the distinct optimization challenges that arise from nonlinear MORL objectives.   
+
+> s0s1sT
+
+a0 : (0 , 0) 
+
+a1 : (9 , 1) 
+
+a2 : (4 , 4) 
+
+a3 : (1 , 9)                   
+
+> Obj. Optimal π∗uNSW (E[R]) E[uNSW (R)]
+> SER 0.5a1+ 0 .5a3log(25) log(9)
+> ESR a2log(16) log(16)
+> Linear a1or a3log(9) log(9)
+
+Figure 6: Optimal policies of MORL with linear, SER, and ESR objectives in a two-step MOMDP with uNSW (x) = P 
+
+> i
+
+log( Ri).
+
+Linear scalarization. For linear preference weights [w1, w 2] ∈ R2+, the linear MORL objective is defined as Jlin (π; w) = Eπ [w1R1 + w2R2]. The optimal policy selects a1 when w1 > w 2 and a3
+
+when w1 < w 2, with both SER uNSW (E[R]) and ESR E[uNSW (R)] remaining constant at log 9 in either case. The exception is w1 = w2, where a1 and a3 are equally optimal, making any stochastic 13 mixture also optimal. However, Scalarized Expected Return (SER) is no longer constant in this case, as it varies with the mixing probability. 
+
+Scalarized Expected Return (SER). SER maximizes JSER (π) = uNSW (Eπ [R]) . Unlike the linear case, optimizing SER is not straightforward: letting p1, p2, p3 denote the probabilities of selecting 
+
+a1, a2, a3, one must solve a convex optimization over the full policy distribution. This reflects a key challenge of SER optimization—the nonlinearity applies to the expected return, requiring global optimization over the entire policy rather than local, per-action evaluation. The convex optimization can be written as: 
+
+max 
+
+> p1,p 2,p 3
+
+log(9 p1 + 4 p2 + p3) + log( p1 + 4 p2 + 9 p3)
+
+s.t. p1 + p2 + p3 = 1 , p1, p 2, p 3 ≥ 0. (13) where the optimal solution is p∗ 
+
+> 1
+
+= 0 .5, p∗ 
+
+> 2
+
+= 0 , p∗ 
+
+> 3
+
+= 0 .5, yielding a stochastic policy that mixes a1
+
+and a3 equally. 
+
+Expected Scalarized Return (ESR). ESR maximizes JESR (π) = Eπ [uNSW (R)] . Since the nonlin-earity is applies before the expectation, each action can be evaluated independently: uNSW (R(a1)) = log 9 , uNSW (R(a2)) = log 16 , uNSW (R(a3)) = log 9 . The optimal policy is therefore deterministic: 
+
+π∗ = a2.
+
+B.1 Demonstrating ESR non-Markovianity 
+
+By changing the initial state-action pair (s0, a 0) such that the reward at s0 becomes (2 , 0) in-stead of (0 , 0) , the previously accumulated reward at s1 shifts from (0 , 0) to (2 , 0) . This changes each trajectory’s return vector to R(a1) = (11 , 1) , R(a2) = (6 , 4) , R(a3) = (3 , 9) , yielding 
+
+uNSW (R(a1)) = log 11 , uNSW (R(a2)) = log 24 , NSW (R(a3)) = log 27 . The optimal action at s1
+
+shifts from a2 to a3, demonstrating that the ESR-optimal policy depends on the accumulated reward and is therefore non-Markovian in the original state space. 
+
+## C Derivation of the AETDICE Loss Functions 
+
+In this section, we provide the full derivation of the AETDICE loss functions. AETDICE assumes the augmented MOMDP ˜M defined in Section 4 with the transformed reward: 
+
+˜r(˜ st, a t) = F (Racc  
+
+> t
+
++ r(st, a t)) − F (Racc  
+
+> t
+
+) ∈ Rn. (14) The AET-MORL objective max ˜π JAET (˜ π; F, G ) is reformulated to a convex optimization in terms of d = {dt(˜ s, a )}H−1 
+
+> t=0
+
+, the visitation distributions in ˜M as 
+
+max  
+
+> d≥0
+
+G
+
+
+
+> H−1
+
+X
+
+> t=0
+
+X
+
+> ˜s,a
+
+dt(˜ s, a ) ˜ r(˜ s, a )
+
+ (15a) s.t. X
+
+> a
+
+d0(˜ s, a ) = ˜ p0(˜ s), ∀˜s (15b) 
+
+X
+
+> a′
+
+dt+1 (˜ s′, a ′) = X
+
+> ˜s,a
+
+dt(˜ s, a ) ˜P (˜ s′ | ˜s, a ), ∀˜s′, t ∈ { 0, . . . , H − 2}, (15c) where ˜s′ = ( s′, Racc  
+
+> t
+
++ r(s, a ), t + 1) . No flow constraint is imposed at t = H − 1, as all transitions from dH−1 lead to the terminal state. 
+
+C.1 Regularized Primal Problem 
+
+To enable sample-based optimization of the problem in offline setting, we follow the derivation from [ 11 ] by (i) adding ϕ-divergence regularization against per-timestep data distribution dDt and (ii) introducing a slack variable k ∈ Rn to relocate the expected utility vector outside the concave 14 aggregation: 
+
+max   
+
+> d≥0,k∈Rn
+
+G(k) − β
+
+> H−1
+
+X
+
+> t=0
+
+Dϕ(dt ∥ dDt ) (16a) s.t. 
+
+> H−1
+
+X
+
+> t=0
+
+X
+
+> ˜s,a
+
+dt(˜ s, a ) ˜ r(˜ s, a ) = k, (16b) 
+
+X
+
+> a
+
+d0(˜ s, a ) = ˜ p0(˜ s), ∀˜s ∈ ˜S, (16c) 
+
+X
+
+> a′
+
+dt+1 (˜ s′, a ′) = X
+
+> ˜s,a
+
+dt(˜ s, a ) ˜P (˜ s′ | ˜s, a ), ∀˜s′, t ∈ { 0, . . . , H − 2}, (16d) where no flow constraint is imposed at t = H, as all transitions from dH−1 lead to the terminal state. 
+
+Assumptions. We require: (i) G is concave and continuous; (ii) ϕ is strictly convex, with ϕ(1) = 0 ;and (iii) the data distribution satisfies dDt (˜ s, a ) > 0 for all reachable (˜ s, a ) and t, so that the ϕ-divergence is well-defined and Slater’s condition is satisfied. Assumption (iii) is stronger than the corresponding coverage assumption in DICE-based offline RL [ 20 ], which only requires coverage over the original state-action space. In the augmented MOMDP, coverage must additionally hold over the accumulated reward Racc  
+
+> t
+
+, yet the set of Racc  
+
+> t
+
+values reachable from a given state is generally a strict subset of Rm. This can be partially mitigated by initializing trajectories in the data with nonzero accumulated rewards, but the coverage requirement remains fundamentally more demanding than in the original MOMDP. 
+
+Role of the slack variable k. The slack variable k is a technique first introduced in [ 11 ], which decouples the expectation over d from the concave aggregation G. By enforcing (16b) , the expected transformed reward is computed separately and passed to G through k. This decoupling is essential for deriving an unbiased sample-based approximation of the Lagrangian dual: without k, estimating 
+
+G
+
+P
+
+> t
+
+P 
+
+> ˜s,a
+
+dt(˜ s, a ) ˜ r(˜ s, a )
+
+
+
+from samples would require applying G to an empirical average, which is biased by Jensen’s inequality. 
+
+C.2 Lagrangian Dual 
+
+We derive the Lagrangian dual of (16) by introducing multipliers νt(˜ s) for each Bellman-flow constraints (16c)–(16d), and μ ∈ Rn for the slack constraint (16b): 
+
+max  
+
+> d≥0,k
+
+min  
+
+> ν,μ
+
+L(d, k, ν, μ) = G(k) − μ⊤
+
+X
+
+> t, ˜s,a
+
+dt(˜ s, a ) ˜ r(˜ s, a ) − k
+
+ − β
+
+> H−1
+
+X
+
+> t=0
+
+Dϕ(dt ∥ dDt )+ X
+
+> ˜s
+
+ν0(˜ s) ˜p0(˜ s) − X
+
+> a
+
+d0(˜ s, a )
+
+!
+
++
+
+> H−2
+
+X
+
+> t=0
+
+X
+
+> ˜s
+
+νt(˜ s′)
+
+X
+
+> ˜s,a
+
+˜P (˜ s′ | ˜s, a ) dt(˜ s, a ) − X
+
+> a
+
+dt+1 (˜ s′, a )
+
+ . (17) 15 To enable sample-based evaluation of the dual function, we reorganize the last term of the dual function into expectations with respect to the visitation distribution d:
+
+X
+
+> ˜s
+
+ν0(˜ s) ˜ p0(˜ s) − X
+
+> ˜s,a
+
+ν0(˜ s) d0(˜ s, a )+ X
+
+> ˜s,a
+
+d0(˜ s, a ) X
+
+> ˜s′
+
+˜P (˜ s′ | ˜s, a ) ν1(˜ s′) − X
+
+> ˜s,a
+
+ν1(˜ s) d1(˜ s, a )+ X
+
+> ˜s,a
+
+d1(˜ s, a ) X
+
+> ˜s′
+
+˜P (˜ s′ | ˜s, a ) ν2(˜ s′) − · · · − X
+
+> ˜s,a
+
+νH−1(˜ s) dH−1(˜ s, a ) + X
+
+> ˜s,a
+
+dH−1(˜ s, a ) X
+
+> ˜s′
+
+˜P (˜ s′ | ˜s, a ) νH (˜ s′)
+
+| {z } 
+
+> := 0
+
+. (18) where we adopt νH (˜ s) := 0 for all ˜s ∈ ˜S for notational uniformity. This enables the derivation of the reorganized Lagrangian dual: 
+
+L(d, k, ν, μ) = G(k) − μ⊤k − β
+
+> H−1
+
+X
+
+> t=0
+
+Dϕ(dt|| dDt ) + X
+
+> ˜s
+
+ν0(˜ s)˜ p0(˜ s) + X
+
+> ˜s,a,t
+
+dt(˜ s, a )eν,μ,t (˜ s, a )
+
+where eν,μ,t (˜ s, a ) = μ⊤˜r(˜ s, a ) + E˜s′ [νt+1 (˜ s′)] − νt(˜ s).
+
+C.3 Switching the order of optimization via strong duality 
+
+We leverage strong duality of (16) enabled by the data coverage assumption and satisfaction of Slater’s condition to swap the optimization order to min ν,μ max d≥0, k L. This yields a closed-form solution for d and enables simplification of the dual function via conjugate functions. We define the per-timestep visitation ratio wt(˜ s, a ) := dt(˜ s,a )  
+
+> dDt(˜ s,a )
+
+prior to obtaining the closed-form solution to further simplify the Lagrangian: 
+
+L = G(k) − μ⊤k + E˜p0 [ν0(˜ s)] + 
+
+> H−1
+
+X
+
+> t=0
+
+E(˜ s,a )∼dDt
+
+h
+
+wt(˜ s, a ) eν,μ,t (˜ s, a ) − β ϕ (wt(˜ s, a )) 
+
+i
+
+. (19) Given (ν, μ, k), the inner maximization in (19) decouples pointwise across (t, ˜s, a ):
+
+max 
+
+> w≥0
+
+n
+
+w · eν,μ,t (˜ s, a ) − β ϕ (w)
+
+o
+
+. (20) The first-order condition eν,μ,t (˜ s, a ) − β ϕ ′(w) = 0 yields the closed-form maximizer 
+
+w∗ 
+
+> t
+
+(˜ s, a ) = max 
+
+
+
+0, (ϕ′)−1
+
+ eν,μ,t (˜ s, a )
+
+β
+
+ 
+
+, (21) where the max(0 , ·) enforces the non-negativity constraint. 
+
+Fenchel-conjugate substitution. Define the non-negative-restricted Fenchel conjugate of ϕ,
+
+ϕ∗
+
+> +
+
+(y) := sup 
+
+> w≥0
+
+ wy − ϕ(w) . (22) By a direct change of variables, 
+
+sup 
+
+> w≥0
+
+ wz − βϕ (w) = β sup 
+
+> w≥0
+
+n
+
+w zβ − ϕ(w)
+
+o
+
+= β ϕ ∗
+
+> +
+
+ zβ
+
+
+
+. (23) Substituting (23) with z = eν,μ,t (˜ s, a ) into (19) eliminates the inner maximization over wt:
+
+max  
+
+> d≥0
+
+L = G(k) − μ⊤k + E˜p0 [ν0(˜ s)] + 
+
+> H−1
+
+X
+
+> t=0
+
+EdDt
+
+
+
+β ϕ ∗
+
+> +
+
+ eν,μ,t (˜ s, a )
+
+β
+
+ 
+
+. (24) 16 The remaining k-dependent part of the Lagrangian is G(k) − μ⊤k, maximized unconstrained over 
+
+k ∈ Rn. Following the convention used elsewhere in the paper, define the (concave) conjugate of G
+
+as G∗(y) := sup x
+
+ x⊤y + G(x) . Then 
+
+max 
+
+> k∈Rn
+
+ G(k) − μ⊤k = max 
+
+> k∈Rn
+
+ k⊤(−μ) + G(k) = G∗(−μ). (25) Combining the two conjugate formulations reduces the dual problem to a sample-based loss function given by, 
+
+min  
+
+> ν,μ
+
+LAET (ν, μ) := E˜p0 [ν0(˜ s)] + 
+
+> H−1
+
+X
+
+> t=0
+
+E(˜ s,a )∼dDt
+
+
+
+β ϕ ∗
+
+> +
+
+ eν,μ,t (˜ s, a )
+
+β
+
+ 
+
++ G∗(−μ). (26) Crucially, LAET is expressed entirely as expectations over ˜p0 and the offline dataset {dDt }H−1 
+
+> t=0
+
+. It does not require knowledge of the augmented transition kernel ˜P (the ˜P -expectation inside eν,μ,t is replaced by single-sample plug-in νt+1 (˜ st+1 ) at offline transitions (˜ st, a t, ˜st+1 )), nor does it require explicit access to the primal visitation distributions {dt}. It can therefore be optimized using standard stochastic gradient descent on neural-network parametrizations νθ,t and μ.
+
+C.4 Policy Extraction 
+
+After minimizing (26) to obtain (ν∗, μ∗), the optimal visitation ratio w∗ 
+
+> t
+
+is recovered from (21) using eν∗,μ∗,t . The optimal augmented-state policy ˜π∗ 
+
+> t
+
+(a | ˜s) inducing the optimal visitation 
+
+d∗ 
+
+> t
+
+= w∗ 
+
+> t
+
+dDt is then extracted. In the tabular case, this reduces to direct normalization: ˜π∗ 
+
+> t
+
+(a | ˜s) =         
+
+> w∗
+> t(˜ s,a )dDt(˜ s,a )
+> P
+> a′w∗
+> t(˜ s,a ′)dDt(˜ s,a ′)
+
+. In continuous case, we use weighted behavior cloning following [20]: 
+
+max  
+
+> ˜π
+
+E(˜ s,a )∼dDt [w∗ 
+
+> t
+
+(˜ s, a ) log ˜ π(a | ˜s)] . (27) 
+
+C.5 Choice of ϕ-Divergence and Aggregation G
+
+We use the χ2-divergence for ϕ and a piecewise-log function for the concave aggregation G.
+
+χ2 divergence. ϕ(x) = 12 (x − 1) 2 for x ≥ 0. Its convex conjugate is 
+
+ϕ∗
+
+> +
+
+(y) = 12
+
+ [y + 1] +
+
+2 − 12 , w∗ 
+
+> t
+
+(˜ s, a ) =  eν,μ,t (˜ s, a )/β + 1 
+
+> +
+
+, (28) where [ · ]+ := max(0 , ·).
+
+Piecewise-log aggregation. In practice, we avoid using G(x) = P 
+
+> i
+
+log( xi) directly, as logarithm is undefined for negative values that may arise during optimization. Instead, we use a piecewise extension G(x) = Pdi=1 g(xi) with 
+
+g(x) = 
+
+log( x), x ≥ 1,
+
+− 12 (x − 2) 2 + 12 , x < 1. (29) which is concave, strictly increasing, and well-defined on all of R. With G∗(p) := sup x{p⊤x +
+
+G(x)}, its conjugate is G∗(−μ) = Pdi=1 g∗(−μi) with 
+
+g∗(−μ) = 
+
+−1 − log( μ), 0 < μ < 1, 
+
+> 12
+
+μ2 − 2μ + 12 , μ ≥ 1. (30) 
+
+C.6 Full Algorithm of AETDICE 
+
+We present the full algorithm of AETDICE in Algorithm 1. A key implementation consideration is that the Lagrangian multipliers νt(˜ s) are defined per timestep, and the neural network must be able to represent this time dependence. In standard offline RL datasets, trajectories are stored with timestep information, but each sample’s contribution to the loss does not depend on when it occurs within the episode. This allows data augmentation along the time axis, which we describe in the following section. 17 Algorithm 1 AETDICE: Offline AET Optimization via Distribution Correction Estimation 
+
+Require: Offline dataset D = {(st, a t, rt, s t+1 , t )} from the original MOMDP M; transformation 
+
+F : Rm → Rn; aggregation G : Rn → R; dual network νψ , policy network ˜πθ ; divergence temperature β > 0; learning rate η
+
+Ensure: Augmented-state policy ˜πθ approximating the AET-optimal policy 
+
+// Stage 1: Dataset preprocessing (one-time)  
+
+> 1:
+
+Construct augmented dataset eD: for each trajectory in D, compute accumulated rewards Racc  
+
+> t
+
+=
+
+Pt−1 
+
+> k=0
+
+r(sk, a k) and form augmented transitions (˜ st, a t, ˜rt, ˜st+1 ) with ˜st = ( st, Racc  
+
+> t
+
+, t ) 
+
+> 2:
+
+Compute the transformed reward for each transition: 
+
+˜rt = F (Racc  
+
+> t
+
++ r(st, a t)) − F (Racc  
+
+> t
+
+) ∈ Rn
+
+// Stage 2: Initialization  
+
+> 3:
+
+Initialize ψ, θ 
+
+> 4:
+
+if G is nonlinear then  
+
+> 5:
+
+Initialize μ ∈ Rn 
+
+> 6:
+
+else  
+
+> 7:
+
+Fix μ = 1 or preference weights of a choice (no slack constraint needed when G is linear)  
+
+> 8:
+
+end if // Stage 3: Joint dual / policy optimization  
+
+> 9:
+
+while not converged do  
+
+> 10:
+
+Sample minibatch B = {(˜ st, a t, ˜rt, ˜st+1 )} from eD and initial states ˜s0 ∼ ˜p0 
+
+> 11:
+
+Compute empirical slack-augmented advantage at each transition: 
+
+ˆeμ,ψ,t (˜ st, a t) = μ⊤˜rt + νψ (˜ st+1 ) − νψ (˜ st)
+
+(single-sample plug-in for E˜s′∼ ˜P [νt+1 (˜ s′)] ; boundary νψ (˜ sH ) := 0 at terminal transitions)  
+
+> 12:
+
+Update dual parameters ψ (and μ if G is nonlinear) by minimizing the empirical AET dual loss: 
+
+bLAET (ψ, μ) = E˜s0∼ ˜p0
+
+νψ (˜ s0) + E(˜ st,a t,˜st+1 )∼ eD
+
+
+
+β ϕ ∗
+
+> +
+
+ ˆeμ,ψ,t (˜ st, a t)
+
+β
+
+ 
+
++ G∗(−μ)
+
+via ψ ← ψ − η∇ψ bLAET and μ ← μ − η∇μ bLAET  
+
+> 13:
+
+Compute optimal visitation ratio at sampled transitions: 
+
+w∗(˜ st, a t) = max 
+
+
+
+0, (ϕ′)−1
+
+ ˆeμ,ψ,t (˜ st, a t)
+
+β
+
+  
+
+> 14:
+
+Update policy parameters θ via weighted behavior cloning: 
+
+Lθ = − E(˜ st,a t)∼ eD [w∗(˜ st, a t) log ˜ πθ (at | ˜st)] 
+
+via θ ← θ − η∇θ Lθ 
+
+> 15:
+
+end while  
+
+> 16:
+
+return ˜πθ
+
+18 D Time-Index Augmentation in the Augmented MOMDP 
+
+We describe the data augmentation procedure used to support learning in the augmented MOMDP. The goal is to enrich the dataset with additional time-indexed contexts while preserving the original state-action distribution. 
+
+D.1 Dataset and Augmentation Strategy 
+
+We begin with a dataset D0 collected by a behavior policy πb, consisting of tuples (st, a t, Racc  
+
+> t
+
+, t ),where Racc  
+
+> t
+
+= Pt−1 
+
+> k=0
+
+r(sk, a k) is recorded during data collection. No assumptions are made about the optimality of πb. Augmentation is performed solely over the discrete time index t ∈ { 0, 1, . . . , H };all other components of the augmented state—including s and Racc —are taken directly from D0 and are never resampled or synthetically modified. 
+
+D.2 Multi-Head Lagrangian Multiplier 
+
+Augmentation is implemented through the parameterization of the Lagrangian multiplier ν(s, Racc , t ).The neural network consists of a shared trunk processing (s, Racc ), followed by a multi-head output indexed by time, producing [ν(s, Racc , 0) , . . . , ν (s, Racc , H )] . For each data point (s, Racc ) from 
+
+D0, the full set of time-indexed outputs is available during training. This exposes the dual objective to a richer collection of time-conditioned contexts without altering the underlying state-action distribution, and ensures that the multipliers are well-trained across the entire episode horizon. 
+
+## E Environment Details 1
+
+> 2
+
+B
+
+A
+
+C        
+
+> = 50
+> =+60
+> =+30
+> =-10
+> 1
+> 2
+> (a) Fair-Taxi (b) MO-PointMaze-2obj (c) MO-PointMaze-3obj
+> Figure 7: Visualization of the multi-objective environments. Each environment balances multiple objectives over a finite horizon ( H= 50 for Fair-Taxi and H= 300 MO-PointMaze).
+
+E.1 Finite Fair-Taxi 
+
+The Finite Fair-Taxi environment is adapted from the multi-objective taxi domain of Fan et al. [ 13 ]and formulated as a finite-horizon grid-world task. A taxi operates on an N × N grid and serves passengers associated with different origin–destination pairs, where each passenger group defines one reward dimension. Because only one passenger can be transported at a time and episodes have a fixed horizon, the agent must allocate time across groups, introducing a fairness trade-off between objectives. All experiments use a two-objective setting. 
+
+State and Action Spaces. The state is discrete and encodes the taxi location (x, y ), a binary indicator of whether a passenger is onboard, and the index of the passenger group currently being served (or a special value if none). The action space consists of six discrete actions: move north, south, east, west, pick up, and drop off. Movement actions are clipped at grid boundaries. Pickup is valid only when the taxi is at an origin location and not already carrying a passenger, and drop-off is valid only when the taxi is at the corresponding destination of the onboard passenger. 19 Reward Function. Rewards are vector-valued with dimension m = 2 . At each time step, the reward vector rt ∈ R2 is defined as follows: a successful delivery for group i yields r(i) 
+
+> t
+
+= 30 and 
+
+r(j) 
+
+> t
+
+= 0 for j̸ = i; invalid pickup or drop-off actions incur r(1)  
+
+> t
+
+= r(2)  
+
+> t
+
+= −10 ; all other transitions produce zero reward. To introduce asymmetry between objectives, the rewards and penalties for group 1 are scaled by a factor of two, resulting in r(1)  
+
+> t
+
+∈ { 60 , −20 , 0} while group 2 retains {30 , −10 , 0}.Rewards are therefore sparse and event-driven. 
+
+Episode Termination and Layout. Episodes terminate after a fixed horizon of 50 time steps. The two origin–destination pairs are placed in distant regions of the grid, with each origin uniquely paired to a destination. Serving one group typically requires traveling in a direction that does not overlap with the other, so dedicating time to one group reduces the opportunity to serve the other. This creates a temporal trade-off between objectives within each episode. 
+
+Offline Dataset Construction For the Fair-Taxi domain, offline datasets are generated using a mixture of single-objective policies following the strategy. Each policy is a tabular Q-function optimized for a different linear scalarization of the reward vector. During data collection, policies are alternated within each episode according to fixed time intervals, producing trajectories that contain segments optimized for different objectives. This switching scheme encourages diverse return profiles across episodes and prevents the dataset from being dominated by trajectories specialized to a single objective. Episodes start from a fixed initial taxi location to ensure comparability across policies. Each episode runs for at most 50 steps. The dataset stores state, action, next state, reward vector, timestep index, terminal flag, and accumulated return vector at each step. 
+
+E.2 MO-PointMaze 
+
+The MO-PointMaze environment is a continuous-state multi-objective navigation task adapted from the D4RL maze domains [ 31 ]. A point-mass agent moves in a 2D maze containing multiple spatial goal regions, where each goal corresponds to one reward dimension. Because the goals are spatially separated by walls and corridors, the agent must allocate time across regions, inducing a trade-off between objectives within each episode. 
+
+State and Action Spaces. The observation space is inherited from the underlying D4RL PointMaze environment and includes the agent’s 2D position and velocity. Experiments use a discretized action space consisting of movements along the four cardinal directions with several fixed magnitudes. This discretization stabilizes training and ensures consistent coverage during offline data collection. The episode horizon is set to 300 steps. 
+
+Maze Layouts. Two layouts are used. In the two-objective setting 7b, the agent starts bottom left region of a compact maze with two goal regions located in different corridors. In the three-objective setting 7c, the maze contains three goals positioned in distinct regions. Reaching one goal generally requires moving away from the others, making simultaneous proximity infeasible. 
+
+Reward Function. Rewards are vector-valued with dimension equal to the number of goals m.At each time step, the reward for objective i depends on the Euclidean distance between the agent’s position st and the i-th goal location gi:
+
+r(i) 
+
+> t
+
+= exp 
+
+
+
+− ∥st − gi∥
+
+d0
+
+
+
+,
+
+where d0 is a scaling constant proportional to the maze cell size. Rewards decay rapidly with distance, so meaningful reward in one dimension requires the agent to remain near the corresponding goal region for a sustained period. In the two-objective setting, the first reward dimension is scaled by a factor of two to introduce asymmetry between objectives. In the three-objective setting, all reward dimensions are equally scaled. 
+
+Multi-Objective Trade-off. Due to the rapid spatial decay of rewards and the maze topology, the agent cannot remain close to multiple goals at the same time. Policies must therefore schedule visits 20 Figure 8: Visualization of the offline dataset return distributions for the MO-PointMaze environment. 
+
+(Left) The cumulative returns in the 2-objective setting, illustrating the trade-off between the two goals. (Right) The spatial distribution of returns in the 3-objective setting. to different regions within an episode, creating a temporal trade-off between objectives. This makes the environment well suited for analyzing differences between trajectory-level and expectation-level scalarization. 
+
+Offline Dataset Collection. Offline datasets are generated using heuristic navigation policies that move toward specific goal regions following shortest-path routes. By varying goal targets and switching patterns over time, the dataset covers diverse behaviors, including specialization on a single objective and sequential visitation of multiple goals. This diversity ensures that the dataset contains trajectories with a wide range of return trade-offs, which is essential for evaluating multi-objective offline RL methods. The resulting return distributions are visualized in Figure 8. 
+
+E.3 MO-MuJoCo (D4MORL) 
+
+We use the multi-objective MuJoCo benchmark from D4MORL [ 9 ], which extends the standard Mu-JoCo locomotion suite by replacing scalar rewards with vector-valued multi-objective rewards while leaving the underlying physics, observation space, and action space unchanged. Five environments are used: MO-Ant, MO-Walker2d, MO-HalfCheetah. For all environments we use the expert-uniform 
+
+and amateur-uniform dataset splits provided by [ 9], in which the behaviour-policy preferences are sampled uniformly from the 2-simplex during data collection; each split contains 50,000 transitions per env. 
+
+State and Action Spaces. States and continuous actions are inherited from the underlying MuJoCo environments. State and action dimensions are Ant 27/8, HalfCheetah 17/6, Walker2d 17/6, Hopper 11/3, Swimmer 8/2 — verify. We follow the standard MuJoCo convention of clipping actions to 
+
+[−1, 1] before computing the reward. 
+
+Reward Function. At each time step the reward is a vector rt ∈ R2 whose two components capture distinct physical aspects of the task: forward and lateral velocity in MO-Ant, forward speed and energy saving in MO-HalfCheetah and MO-Walker2d, forward speed and energy efficiency in MO-Swimmer, and running and jumping in MO-Hopper. Both components include a shared survival bonus and a shared action-norm penalty, so the two objectives are positively oriented (higher is better) and partially correlated. We refer to [ 9 ] for exact formulae. To study the effect of asymmetry between objectives, the per-objective rewards are min–max normalized at dataset load time: 
+
+˜r(i) 
+
+> t
+
+= ci · r(i) 
+
+> t
+
+− r(i)min 
+
+r(i)max − r(i)min 
+
+,
+
+where r(i)min , r (i)max are computed over the offline dataset and ci ∈ R+ is a per-objective scaling factor. We use the symmetric default c = (1 , 1) for all environments and additionally c = (2 , 1) in MO-Ant for an objective-1-favouring variant. 21 Episode Termination and Horizon. All environments use a fixed horizon of H = 500 steps. Standard MuJoCo early-termination conditions apply (height/angle bounds in MO-Walker2d and MO-Hopper, instability bounds in MO-Ant); transitions following early termination contribute zero reward and are masked out by the buffer. 
+
+Cobb-Douglas Reward Reshaping. Two of our experiments (G-linear with F -Cobb-Douglas, and G-log with combined F -Cobb-Douglas and F -threshold) require the reward vector to be split into a clean (return, cost) pair. The relevant D4MORL environments admit such a split because their second objective takes the saving form const − ∥ a∥2 + alive . For MO-HalfCheetah, we recover the action-norm cost as r(1)  
+
+> t
+
+← 5 − r(1)  
+
+> t
+
+, yielding a (forward speed , ∥a∥2) layout. For MO-Walker2d we use a 3-dimensional layout (speed , cost , safety ), where speed and cost match the MO-HalfCheetah reshape and the safety channel is a quadratic balance reward rsafety  
+
+> t
+
+= (1 − 2h2
+
+> norm
+
+) + (1 − 2a2
+
+> norm
+
+)
+
+computed from the height and torso-angle observations normalized to the env’s safety bounds (so 
+
+rsafety  
+
+> t
+
+∈ [−2, +2] in-bounds, peaking at the upright centre). The Cobb-Douglas utility consumes (speed, cost), and the safety channel feeds a separate piecewise-log threshold; the two combine through the outer aggregation G.
+
+## F Additional Experiment Results 
+
+F.1 Fair-Taxi 
+
+We report quantitative performance on the Finite Fair-Taxi environment under ESR, BSR ( α = 0 .5), and SER objectives. All values are log-scaled utilities (mean ± standard deviation over three seeds), so numerical differences reflect multiplicative gaps in the underlying objective values. Each policy is trained using the same AET framework with a different nonlinear objective and evaluated under all three criteria; entry (i, j ) in Table 2 reports the performance of a policy trained for objective i when evaluated using objective j.Across all objectives, policies achieve their highest performance when evaluated under the same criterion used during training, indicating that ESR, BSR, and SER correspond to distinct optimization targets in practice. Policies trained under BSR exhibit intermediate behavior: while optimized for BSR, they retain comparatively higher performance under ESR and SER evaluations than policies trained under the extreme objectives. Overall, these results demonstrate that nonlinear objectives are not interchangeable, and that objective mismatch can lead to substantial degradation even when numerical differences appear small due to log scaling. Table 2: Performance of offline Fair MORL in Fair-Taxi environment. Rows correspond to the nonlinear objective used for training, and columns correspond to the evaluation objective. All values are log-scaled utilities (mean ± standard deviation over 3 random seeds).             
+
+> METHOD ESR BSR SER AET-ESR 1.197 ±0.002 −0.797 ±0.002 1.130 ±0.000
+> AET-BSR 0.193 ±0.011 −0.788 ±0.004 1.748 ±0.009
+> AET-SER 0.110 ±0.034 −1.045 ±0.035 1.804 ±0.002
+
+F.2 MO-PointMaze 
+
+We next examine how these behavioral differences translate into return trade-offs in a continuous-state setting. Figure 9 shows the achieved return vectors. In the two-objective case, ESR produces balanced trajectories along the diagonal trade-off, whereas SER concentrates near extreme regions that prioritize a single objective per episode. BSR ( α = 0 .5) spans intermediate trade-offs. The same pattern is more pronounced in the three-objective setting, where SER lies near the corners, ESR occupies the balanced interior, and BSR fills the space between. ESR-IQL aligns with ESR-style trade-offs, while AETDICE covers the full spectrum. Table 3 reports performance under multiple evaluation criteria (ESR, BSR, SER, and LSR), reflecting different preference structures. The AETDICE variants achieve strong performance on their respective target objectives, demonstrating that the proposed framework can effectively optimize a range of 22 Table 3: Comparison of ESR, BSR, SER, and LSR (linear scalarization return with coefficients of 1) scores in MO-PointMaze. For each method, performance is reported with respect to the objective it directly optimizes (mean ± standard deviation over 3 random seeds). 
+
+METHOD ESR BSR 0.5 SER LSR 
+
+MO-P OINT MAZE -2 OBJ 
+
+AETDICE 
+
+ESR 6.67 ±0.08 11 .90 ±0.17 8.73 ±0.08 164 .86 ±6.68 
+
+BSR 0.5 5.91 ±0.32 11 .93 ±0.11 9.01 ±0.04 211 .79 ±12 .29 
+
+SER 4.06 ±0.05 11 .82 ±0.05 9.74 ±0.02 284 .05 ±1.42 
+
+Linear Scalarization 
+
+w = [0 .5, 0.5] 3.64 ±0.01 8.77 ±0.02 3.81 ±0.02 417 .01 ±3.13 
+
+w = [1 .0, 0.0] 3.63 ±0.02 8.71 ±0.04 3.82 ±0.03 409 .62 ±5.70 
+
+w = [0 .75 , 0.25] 3.67 ±0.02 8.91 ±0.19 4.53 ±1.19 415 .88 ±6.09 
+
+Other 
+
+ESR-IQL 6.56 ±0.01 11 .59 ±0.03 8.56 ±0.02 153 .78 ±1.49 
+
+MO-P OINT MAZE -3 OBJ 
+
+AETDICE 
+
+ESR 6.79 ±0.15 11 .76 ±0.10 10 .15 ±0.02 86 .05 ±0.46 
+
+BSR 0.5 4.72 ±0.24 12 .04 ±0.07 11 .14 ±0.05 120 .34 ±1.77 
+
+SER −0.19 ±0.03 11 .43 ±0.03 12 .81 ±0.02 213 .78 ±1.38 
+
+Linear Scalarization 
+
+w = [0 .5, 0.5] −0.26 ±0.07 10 .61 ±0.06 12 .27 ±0.01 176 .92 ±1.63 
+
+w = [1 .0, 0.0] −0.34 ±0.03 2.49 ±0.06 2.17 ±0.03 203 .20 ±4.01 
+
+w = [0 .75 , 0.25] −0.38 ±0.01 2.41 ±0.04 −2.20 ±0.03 198 .15 ±3.22 
+
+Other 
+
+ESR-IQL 7.20 ±0.03 12 .03 ±0.04 10 .17 ±0.02 87 .16 ±0.94 
+
+nonlinear criteria within a unified approach. In the three-objective setting, ESR-IQL attains the highest ESR score, consistent with its specialization. Linear scalarization achieves high linear scalarized return (LSR), as expected, but yields lower performance under nonlinear utilities, often producing policies that prioritize a single objective rather than balancing across objectives. 
+
+Figure 9: Performance results in the MO-PointMaze-2obj (left) and MO-PointMaze-3obj (right) environment. 
+
+F.3 D4MORL Environments and reward modifications. We run three experiment families on D4MORL. The first is experiment on the performance of various AETDICE objectives on MO-Ant and MO-Walker2d with the original D4MORL rewards and datasets. The second is the Cobb–Douglas (CD) experiment on MO-Walker2d and MO-HalfCheetah, where we reshape the reward into a (return, cost) layout 23 because the CD utility requires a monotone-increasing reward in dimension 0 and a monotone-increasing cost in dimension 1. The third is the safety utility aggregated CD experiment on MO-Walker2d, which adds a safety reward to prevent a “drop-and-die” exploit. 
+
+CD reshape (MO-Walker2d, MO-HalfCheetah). Both environments expose a forward-speed reward rv = vx + ralive and an energy-saving reward re = 4 − ∥ a∥2 + ralive . We keep the forward speed unchanged and recover the action-energy cost from re:
+
+R0 = rv , R1 = 5 − re = ∥a∥2.
+
+Safety utility aggregated CD (MO-Walker2d). Walker2d ends an episode when the torso height h
+
+leaves [0 .8, 2.0] or the torso angle θ leaves [−1, 1] . A CD agent at low ρ can game this by ending the episode early to shrink the cost denominator. To prevent this we add a third reward that scores the posture or location of the upper body of walker2d agent inside the safe zone. Normalizing h and θ so the safe zone maps to [−1, 1] via ¯h = ( h − 1.4) /0.6 and ¯θ = θ, we define 
+
+R2 =  −2 ¯h2 + 1  +  −2 ¯θ2 + 1 .
+
+Per step, R2 ∈ [−2, 2] inside the safe zone, peaking at +2 at the upright center and dropping to 
+
+−2 at the env bounds. R2 feeds the threshold branch of the F -utility while R0 and R1 feed the Cobb–Douglas branch, so the safety floor is decoupled from the speed/cost trade-off. Table 4: Results of MO-Ant Expert with Concave G and Convex F. (mean ± standard deviation over 5 random seeds)                                                                                                                  
+
+> METHOD w= [1 ,0] w= [0 .5,0.5] w= [0 ,1] G,F
+> LIN -[1 .0,0.0] 1089 .56 ±27 .60 729 .61 ±10 .94 369 .66 ±11 .93 12 .91 ±0.03
+> LIN -[0 .5,0.5] 584 .69 ±18 .29 689 .23 ±12 .74 793 .77 ±23 .10 13 .05 ±0.04
+> LIN -[0 .0,1.0] 88 .83 ±1.53 1221 .97 ±26 .71 2355 .10 ±53 .65 12 .25 ±0.03
+> FAIR DICE 617 .17 ±19 .68 682 .65 ±20 .06 748 .13 ±30 .64 13 .04 ±0.06
+> ESR-IQL
+> [1 .0,0.0] 1296 .49 ±30 .66 811 .82 ±14 .71 327 .15 ±6.20 12 .96 ±0.03 [0 .5,0.5] 85 .54 ±1.61 1243 .33 ±17 .07 2401 .12 ±34 .37 12 .23 ±0.02 [0 .0,1.0] 87 .32 ±3.82 1240 .07 ±19 .36 2392 .82 ±40 .01 12 .25 ±0.04
+> AET-DICE 816 .78 ±61 .16 949 .73 ±22 .02 1082 .68 ±85 .08 13 .69 ±0.05
+
+Table 5: Results of MO-Ant Amateur with Concave G and Convex F. (mean ± standard deviation over 5 random seeds)                                                                                                                  
+
+> METHOD w= [1 ,0] w= [0 .5,0.5] w= [0 ,1] G,F
+> LIN -[1 .0,0.0] 869 .42 ±27 .99 636 .55 ±10 .38 403 .67 ±17 .70 12 .77 ±0.03
+> LIN -[0 .5,0.5] 540 .80 ±29 .59 623 .84 ±13 .05 706 .89 ±29 .54 12 .85 ±0.04
+> LIN -[0 .0,1.0] 138 .07 ±6.21 875 .34 ±22 .25 1612 .61 ±50 .02 12 .31 ±0.02
+> FAIR DICE 509 .52 ±12 .81 638 .80 ±26 .01 768 .09 ±54 .61 12 .87 ±0.07 [1 .0,0.0] 1570 .58 ±17 .03 876 .82 ±9.37 183 .06 ±3.94 12 .57 ±0.03 [0 .5,0.5] 98 .57 ±14 .41 976 .31 ±13 .21 1854 .05 ±37 .46 12 .11 ±0.12 [0 .0,1.0] 88 .11 ±2.58 977 .25 ±13 .05 1866 .40 ±27 .70 12 .01 ±0.02
+> AET-DICE 610 .17 ±46 .86 654 .87 ±7.66 699 .56 ±31 .71 12 .96 ±0.03
+
+## G Ablation Study: Impact of Regularization Strength 
+
+We study how the regularization coefficient β, which controls the strength of the ϕ-divergence penalty in AETDICE, affects performance under different AET objectives. Figure 10 reports evaluation scores under ESR, BSR, and SER criteria as β varies on MO-PointMaze-2obj. The effective range of β in our experiments is considerably smaller than values commonly reported for DICE-style methods in single-objective settings. This is expected: offline MORL datasets are collected from 24 Table 6: Results of MO-Walker2d Expert with Concave G and Convex F. (mean ± standard deviation over 5 random seeds) 
+
+METHOD w = [1 , 0] w = [0 .5, 0.5] w = [0 , 1] G, F
+
+LIN -[1 .0, 0.0] 718 .58 ± 23 .50 675 .69 ± 40 .14 632 .80 ± 93 .83 13 .02 ± 0.13 
+
+LIN -[0 .5, 0.5] 279 .96 ± 41 .59 1856 .50 ± 202 .64 3433 .03 ± 443 .57 13 .76 ± 0.06 
+
+LIN -[0 .0, 1.0] 10 .28 ± 1.19 7292 .20 ± 402 .27 14574 .12 ± 805 .61 11 .91 ± 0.07 
+
+FAIR DICE 307 .14 ± 15 .98 1733 .19 ± 97 .94 3159 .25 ± 207 .63 13 .78 ± 0.04 [1 .0, 0.0] 689 .95 ± 85 .09 772 .39 ± 123 .46 854 .84 ± 328 .36 13 .21 ± 0.25 [0 .5, 0.5] 10 .53 ± 1.45 7366 .92 ± 326 .81 14723 .31 ± 654 .99 11 .94 ± 0.10 [0 .0, 1.0] 12 .35 ± 0.83 6765 .08 ± 427 .43 13517 .81 ± 854 .75 12 .02 ± 0.10 
+
+AET-DICE 246 .26 ± 70 .02 2566 .75 ± 850 .14 4887 .23 ± 1637 .10 13 .87 ± 0.78 
+
+Table 7: Results of MO-Walker2d Amateur with Concave G and Convex F. (mean ± standard deviation over 5 random seeds) 
+
+METHOD w = [1 , 0] w = [0 .5, 0.5] w = [0 , 1] G, F
+
+LIN -[1 .0, 0.0] 540 .87 ± 11 .01 491 .55 ± 24 .05 442 .23 ± 44 .79 12 .38 ± 0.11 
+
+LIN -[0 .5, 0.5] 227 .71 ± 13 .15 2780 .73 ± 199 .93 5333 .75 ± 402 .39 14 .01 ± 0.09 
+
+LIN -[0 .0, 1.0] 8.37 ± 0.86 8119 .82 ± 251 .87 16231 .27 ± 504 .44 11 .81 ± 0.08 
+
+FAIR DICE 261 .07 ± 18 .87 1143 .11 ± 77 .84 2025 .16 ± 160 .95 13 .17 ± 0.09 [1 .0, 0.0] 176 .32 ± 25 .68 149 .61 ± 26 .89 122 .91 ± 31 .93 9.94 ± 0.41 [0 .5, 0.5] 42 .31 ± 11 .21 6710 .95 ± 614 .79 13379 .58 ± 1237 .66 13 .20 ± 0.22 [0 .0, 1.0] 39 .94 ± 6.93 6607 .13 ± 427 .73 13174 .33 ± 861 .51 13 .16 ± 0.12 
+
+AET-DICE 277 .03 ± 42 .64 3376 .26 ± 532 .50 6475 .49 ± 1102 .24 14 .37 ± 0.08 10 10 10 9 10 8 10 7 10 6                       
+
+> 4.0
+> 4.5
+> 5.0
+> 5.5
+> 6.0
+> 6.5
+> ESR
+> 10 10 10 910 810 710 6
+> 9.0
+> 9.5
+> 10.0
+> 10.5
+> 11.0
+> 11.5
+> 12.0
+> BSR
+> 10 10 10 910 810 710 6
+> 8.00
+> 8.25
+> 8.50
+> 8.75
+> 9.00
+> 9.25
+> 9.50
+> 9.75
+> SER
+> Beta
+> AETDICE-ESR( =0) AETDICE-BSR( =0.5) AETDICE-SER( =1)
+
+Figure 10: Performance of AETDICE with varying β values on MO-PointMaze-2obj dataset. policies trained under diverse preference weights, so trajectories optimal for one trade-off can be highly suboptimal for another AET objective. Smaller regularization is needed to permit the larger distribution shift required for finding the target objective’s optimum within such heterogeneous data. This makes achieving strong offline performance more demanding, as the optimizer must deviate further from the data distribution. Nevertheless, with sufficiently small β, AETDICE achieves strong performance across all objectives, and performance varies smoothly as β changes, indicating stable optimization. These results demonstrate that AETDICE enables effective optimization of AET objectives—including those previously intractable—given appropriate regularization. 
+
+## H Hyperparameter 
+
+Table 10 summarizes the default hyperparameters used for AETDICE. The policy πθ , critic νψ ,and preference parameters μ are all optimized using Adam with a learning rate of 3 × 10 −4 and a batch size of 256. Both the policy and critic are implemented as three-layer multilayer perceptrons with hidden dimension 768, except in MO-PointMaze-3obj where we increase the width to 1024 to accommodate the higher-dimensional return structure. Training is performed for 10 6 gradient steps. 25 Table 8: Results of Walker2d Cobb-Douglas objectives.                                     
+
+> METHOD CD(0.1) CD(0.5) SAFE -CD(0.1) SAFE -CD(0.5) BC 0.051 ±0.043 1.766 ±0.453 15 .440 18 .680
+> ESR-IQL 0.128 ±0.120 4.136 ±0.728 15 .440 19 .571
+> ESR-DICE 0.107 ±0.060 4.432 ±1.270 15 .446 19 .221
+> SAFE -CD AET 0.330 ±0.043 4.456 ±0.826 16 .272 19 .572
+
+Table 9: Results of HalfCheetah Cobb-Douglas objectives.                     
+
+> METHOD CD(0.1) CD(0.5) BC 0.139 ±0.092 3.686 ±0.838
+> ESR-IQL 1.516 ±0.561 22 .010 ±6.660
+> ESR-DICE 12 .842 ±2.570 45 .768 ±6.580
+
+We use the Pearson χ2 divergence for occupancy regularization. The divergence coefficient β is tuned over a logarithmic range β ∈ { 10 −6, 5 × 10 −7, 10 −7, 5 × 10 −8, 10 −8, 5 × 10 −9, 10 −9, 5 ×
+
+10 −10 , 10 −10 }. This range is smaller than what is typically used in single-objective DICE settings, as nonlinear multi-objective scalarization and trajectory-level return conditioning change the effective scale of the dual residuals. Using a log-scale sweep ensures a balanced trade-off between stability and objective optimization. 
+
+H.1 IQL Baseline Implementation 
+
+For the ESR-based IQL baseline, we adopt the same network architecture as AETDICE to ensure a fair comparison. In particular, we use identical state encoders, symlog-transformed sinusoidal embeddings for the accumulated return inputs, and three-layer multilayer perceptrons with the same hidden dimensions. We tune the expectile parameter τ over {0.8, 0.85 , 0.9} and the temperature parameter βIQL over 
+
+{10 , 12 , 14 , 16 , 18 }. IQL models are trained for 3 × 10 5 gradient steps using the Adam optimizer with the same learning rate and batch size as AETDICE. Table 10: Hyperparameters for AETDICE on MO-PointMaze. 
+
+πθ learning rate 3 × 10 −4
+
+νψ learning rate 3 × 10 −4
+
+μ learning rate 3 × 10 −4
+
+Batch size 256 Hidden dim of νψ and πθ 768 (1024 for MO-PointMaze-3obj) n_layer of νψ and πθ 3Training steps 10 6
+
+Divergence f Pearson χ2
+
+β
+
+{10 −6, 5 × 10 −7, 10 −7, 5 × 10 −8, 10 −8,
+
+5 × 10 −9, 10 −9, 5 × 10 −10 , 10 −10 }
+
+## I Computational Resources 
+
+All experiments were run on a single workstation with an Intel® Xeon® Gold 6330 CPU (256 GB RAM) and an NVIDIA RTX 3090 GPU. Training one AETDICE or IQL policy per task took approximately 15-20 minutes on average, with GPU memory consumption staying below 20 GB throughout training. 26 Table 11: Hyperparameters for AETDICE on D4MORL [ 9] (MO-Ant-v2, MO-Walker2d-v2, MO-HalfCheetah-v2). 
+
+πθ learning rate 3 × 10 −4
+
+νψ learning rate 3 × 10 −4
+
+μ learning rate 3 × 10 −4
+
+Batch size 512 Hidden dim of νψ and πθ 512 n_layer of νψ and πθ 4Training steps 10 6
+
+Divergence f Pearson χ2
+
+β {10 −4, 10 −5, 10 −6}
+
+## J Limitation and Impact statement 
+
+Limitation While AETDICE enables offline optimization of a broader class of nonlinear MORL objectives, it inherits the fundamental challenges of offline MORL. First, as discussed in the abla-tion study (Appendix G), offline MORL datasets are collected from policies trained under diverse preference weights, making trajectories optimal for one objective highly suboptimal for another. This requires smaller regularization to permit larger distribution shift, making offline optimization more demanding than in the single-objective setting. Second, the augmented state space introduces additional scalability challenges. Incorporating Racc  
+
+> t
+
+into the state increases the dimensionality by m
+
+(the number of objectives), and the data must provide sufficient coverage over this augmented space. As the number of objectives grows, the coverage requirement becomes increasingly difficult to satisfy, potentially limiting the applicability of AETDICE to problems with a large number of objectives. 
+
+Impact statement AETDICE advances offline MORL by enabling optimization of nonlinear objectives that capture fairness and balanced performance across multiple criteria. This is relevant to real-world equitable decision-making, where policies must balance competing objectives both within and across episodes. As a methodological contribution, we do not anticipate direct negative societal impacts. However, as with any offline RL method, the quality of learned policies depends on the data, and biases present in the dataset may propagate to the optimized policy. 27
