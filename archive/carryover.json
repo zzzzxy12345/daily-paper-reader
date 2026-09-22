@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-09-21T23:22:21.757637+00:00",
-  "updated_date": "20260921",
+  "generated_at": "2026-09-22T22:39:34.935315+00:00",
+  "updated_date": "20260922",
   "carryover_days": 9,
   "tag_states": {
     "agent": {
-      "updated_date": "20260921",
+      "updated_date": "20260922",
       "carryover_days": 9,
       "items": []
     },
     "rl-papers": {
-      "updated_date": "20260921",
+      "updated_date": "20260922",
       "carryover_days": 9,
       "items": []
     }
